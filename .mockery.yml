@@ -1,4 +1,8 @@
-dir: ./pkg/models
-name: ".*ReaderWriter"
-outpkg: mocks
-output: ./pkg/models/mocks
+template: testify
+packages:
+  github.com/stashapp/stash/pkg/models:
+    config:
+      include-interface-regex: ".*ReaderWriter"
+      dir: ./pkg/models/mocks
+      pkgname: mocks
+      filename: "{{.InterfaceName}}.go"

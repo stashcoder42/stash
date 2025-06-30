@@ -10,18 +10,18 @@ import (
 )
 
 type Database struct {
-	File           *FileReaderWriter
-	Folder         *FolderReaderWriter
-	Gallery        *GalleryReaderWriter
-	GalleryChapter *GalleryChapterReaderWriter
-	Image          *ImageReaderWriter
-	Group          *GroupReaderWriter
-	Performer      *PerformerReaderWriter
-	Scene          *SceneReaderWriter
-	SceneMarker    *SceneMarkerReaderWriter
-	Studio         *StudioReaderWriter
-	Tag            *TagReaderWriter
-	SavedFilter    *SavedFilterReaderWriter
+	File           *MockFileReaderWriter
+	Folder         *MockFolderReaderWriter
+	Gallery        *MockGalleryReaderWriter
+	GalleryChapter *MockGalleryChapterReaderWriter
+	Image          *MockImageReaderWriter
+	Group          *MockGroupReaderWriter
+	Performer      *MockPerformerReaderWriter
+	Scene          *MockSceneReaderWriter
+	SceneMarker    *MockSceneMarkerReaderWriter
+	Studio         *MockStudioReaderWriter
+	Tag            *MockTagReaderWriter
+	SavedFilter    *MockSavedFilterReaderWriter
 }
 
 func (*Database) Begin(ctx context.Context, exclusive bool) (context.Context, error) {
@@ -59,18 +59,18 @@ func (*Database) Reset() error {
 
 func NewDatabase() *Database {
 	return &Database{
-		File:           &FileReaderWriter{},
-		Folder:         &FolderReaderWriter{},
-		Gallery:        &GalleryReaderWriter{},
-		GalleryChapter: &GalleryChapterReaderWriter{},
-		Image:          &ImageReaderWriter{},
-		Group:          &GroupReaderWriter{},
-		Performer:      &PerformerReaderWriter{},
-		Scene:          &SceneReaderWriter{},
-		SceneMarker:    &SceneMarkerReaderWriter{},
-		Studio:         &StudioReaderWriter{},
-		Tag:            &TagReaderWriter{},
-		SavedFilter:    &SavedFilterReaderWriter{},
+		File:           &MockFileReaderWriter{},
+		Folder:         &MockFolderReaderWriter{},
+		Gallery:        &MockGalleryReaderWriter{},
+		GalleryChapter: &MockGalleryChapterReaderWriter{},
+		Image:          &MockImageReaderWriter{},
+		Group:          &MockGroupReaderWriter{},
+		Performer:      &MockPerformerReaderWriter{},
+		Scene:          &MockSceneReaderWriter{},
+		SceneMarker:    &MockSceneMarkerReaderWriter{},
+		Studio:         &MockStudioReaderWriter{},
+		Tag:            &MockTagReaderWriter{},
+		SavedFilter:    &MockSavedFilterReaderWriter{},
 	}
 }
 

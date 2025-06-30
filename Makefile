@@ -317,7 +317,7 @@ it:
 # generates test mocks
 .PHONY: generate-test-mocks
 generate-test-mocks:
-	go run github.com/vektra/mockery/v2
+	go run github.com/vektra/mockery/v3
 
 # runs server
 # sets the config file to use the local dev config
