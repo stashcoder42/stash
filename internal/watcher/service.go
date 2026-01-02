@@ -12,6 +12,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/stashapp/stash/internal/manager/config"
+	"github.com/stashapp/stash/pkg/fsutil"
 	"github.com/stashapp/stash/pkg/logger"
 )
 
@@ -341,34 +342,9 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 
 // isMediaFile checks if a file is a media file based on extension.
 func (s *Service) isMediaFile(path string) bool {
-	ext := filepath.Ext(path)
-	if ext == "" {
-		return false
-	}
-	ext = ext[1:] // Remove leading dot
-
-	// Check video extensions
-	for _, e := range s.config.GetVideoExtensions() {
-		if ext == e {
-			return true
-		}
-	}
-
-	// Check image extensions
-	for _, e := range s.config.GetImageExtensions() {
-		if ext == e {
-			return true
-		}
-	}
-
-	// Check gallery extensions
-	for _, e := range s.config.GetGalleryExtensions() {
-		if ext == e {
-			return true
-		}
-	}
-
-	return false
+	return fsutil.MatchExtension(path, s.config.GetVideoExtensions()) ||
+		fsutil.MatchExtension(path, s.config.GetImageExtensions()) ||
+		fsutil.MatchExtension(path, s.config.GetGalleryExtensions())
 }
 
 // processBatch handles a batch of file paths after debouncing.

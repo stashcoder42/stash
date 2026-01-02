@@ -171,8 +171,9 @@ func TestService_isMediaFile(t *testing.T) {
 		{"hidden file", "/path/to/.hidden", false},
 		{"directory like", "/path/to/mp4/", false},
 
-		// Case sensitivity (extensions should be case-sensitive based on config)
-		{"uppercase MP4", "/path/to/video.MP4", false}, // config has lowercase only
+		// Case insensitivity (fsutil.MatchExtension uses strings.EqualFold)
+		{"uppercase MP4", "/path/to/video.MP4", true},
+		{"mixed case MkV", "/path/to/video.MkV", true},
 	}
 
 	for _, tc := range tests {
