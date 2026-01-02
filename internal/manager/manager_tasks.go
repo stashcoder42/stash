@@ -87,6 +87,10 @@ type ScanMetadataInput struct {
 
 	// Filter options for the scan
 	Filter *ScanMetaDataFilterInput `json:"filter"`
+
+	// CreateMissingFolders enables automatic creation of parent folder entries.
+	// Used by the file watcher when scanning files in unscanned directories.
+	CreateMissingFolders bool `json:"createMissingFolders"`
 }
 
 // Filter options for meta data scannning

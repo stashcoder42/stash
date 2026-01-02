@@ -111,6 +111,8 @@ models:
     model: github.com/stashapp/stash/internal/dlna.Status
   DLNAIP:
     model: github.com/stashapp/stash/internal/dlna.Dlnaip
+  WatcherStatus:
+    model: github.com/stashapp/stash/internal/watcher.Status
   IdentifySource:
     model: github.com/stashapp/stash/internal/identify.Source
   IdentifyMetadataTaskOptions:

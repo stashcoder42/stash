@@ -290,6 +290,13 @@ const (
 
 	// Developer options
 	ExtraBlobsPaths = "developer_options.extra_blob_paths"
+
+	// File Watcher options
+	WatcherEnabled          = "watcher.enabled"
+	WatcherDebounceMs       = "watcher.debounce_ms"
+	WatcherScanOnChange     = "watcher.scan_on_change"
+	WatcherIdentifyOnChange = "watcher.identify_on_change"
+	WatcherCleanOnRemove    = "watcher.clean_on_remove"
 )
 
 // slice default values
@@ -1624,6 +1631,39 @@ func (i *Config) GetVideoSortOrder() string {
 	}
 
 	return ret
+}
+
+// GetWatcherEnabled returns true if the file watcher is enabled.
+func (i *Config) GetWatcherEnabled() bool {
+	return i.getBool(WatcherEnabled)
+}
+
+// GetWatcherDebounceMs returns the debounce delay in milliseconds for the file watcher.
+// Defaults to 5000ms (5 seconds) if not set or invalid.
+func (i *Config) GetWatcherDebounceMs() int {
+	ret := i.getInt(WatcherDebounceMs)
+	if ret <= 0 {
+		return 5000
+	}
+	return ret
+}
+
+// GetWatcherScanOnChange returns true if files should be scanned when changes are detected.
+// Defaults to true.
+func (i *Config) GetWatcherScanOnChange() bool {
+	return i.getBoolDefault(WatcherScanOnChange, true)
+}
+
+// GetWatcherIdentifyOnChange returns true if files should be identified after scanning
+// when changes are detected.
+func (i *Config) GetWatcherIdentifyOnChange() bool {
+	return i.getBool(WatcherIdentifyOnChange)
+}
+
+// GetWatcherCleanOnRemove returns true if database entries should be cleaned
+// when files are removed. Uses fingerprint matching to detect moves vs deletions.
+func (i *Config) GetWatcherCleanOnRemove() bool {
+	return i.getBool(WatcherCleanOnRemove)
 }
 
 // GetLogFile returns the filename of the file to output logs to.

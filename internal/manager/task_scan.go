@@ -63,6 +63,13 @@ func (j *ScanJob) Execute(ctx context.Context, progress *job.Progress) error {
 		minModTime = *j.input.Filter.MinModTime
 	}
 
+	// Extract library root paths for CreateMissingFolders support
+	stashPaths := cfg.GetStashPaths()
+	libraryRoots := make([]string, len(stashPaths))
+	for i, sp := range stashPaths {
+		libraryRoots[i] = sp.Path
+	}
+
 	j.scanner.Scan(ctx, getScanHandlers(j.input, taskQueue, progress), file.ScanOptions{
 		Paths:                  paths,
 		ScanFilters:            []file.PathFilter{newScanFilter(c, repo, minModTime)},
@@ -70,6 +77,8 @@ func (j *ScanJob) Execute(ctx context.Context, progress *job.Progress) error {
 		ParallelTasks:          cfg.GetParallelTasksWithAutoDetection(),
 		HandlerRequiredFilters: []file.Filter{newHandlerRequiredFilter(cfg, repo)},
 		Rescan:                 j.input.Rescan,
+		LibraryRoots:           libraryRoots,
+		CreateMissingFolders:   j.input.CreateMissingFolders,
 	}, progress)
 
 	taskQueue.Close()

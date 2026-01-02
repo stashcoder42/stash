@@ -65,6 +65,7 @@ func makeConfigResult() *ConfigResult {
 		Dlna:      makeConfigDLNAResult(),
 		Scraping:  makeConfigScrapingResult(),
 		Defaults:  makeConfigDefaultsResult(),
+		Watcher:   makeConfigWatcherResult(),
 		UI:        makeConfigUIResult(),
 	}
 }
@@ -239,6 +240,18 @@ func makeConfigDefaultsResult() *ConfigDefaultSettingsResult {
 
 func makeConfigUIResult() map[string]interface{} {
 	return config.GetInstance().GetUIConfiguration()
+}
+
+func makeConfigWatcherResult() *ConfigWatcherResult {
+	config := config.GetInstance()
+
+	return &ConfigWatcherResult{
+		Enabled:          config.GetWatcherEnabled(),
+		DebounceMs:       config.GetWatcherDebounceMs(),
+		ScanOnChange:     config.GetWatcherScanOnChange(),
+		IdentifyOnChange: config.GetWatcherIdentifyOnChange(),
+		CleanOnRemove:    config.GetWatcherCleanOnRemove(),
+	}
 }
 
 func (r *queryResolver) ValidateStashBoxCredentials(ctx context.Context, input config.StashBoxInput) (*StashBoxValidationResult, error) {

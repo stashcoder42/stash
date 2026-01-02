@@ -136,6 +136,15 @@ type ScanOptions struct {
 
 	// When true files in path will be rescanned even if they haven't changed
 	Rescan bool
+
+	// LibraryRoots are the configured stash library paths.
+	// Used by CreateMissingFolders to determine folder hierarchy.
+	LibraryRoots []string
+
+	// CreateMissingFolders will create folder entries for any missing parent
+	// folders up to the library root. Use this when scanning specific file paths
+	// that may be in directories not yet in the database.
+	CreateMissingFolders bool
 }
 
 // Scan starts the scanning process.
@@ -625,6 +634,105 @@ func (s *scanJob) handleFolderRename(ctx context.Context, file scanFile) (*model
 	return renamedFrom, nil
 }
 
+// findLibraryRoot finds which library root contains the given path.
+// Returns empty string if no matching library root is found.
+func (s *scanJob) findLibraryRoot(path string) string {
+	for _, root := range s.options.LibraryRoots {
+		if strings.HasPrefix(path, root) {
+			return root
+		}
+	}
+	return ""
+}
+
+// createFolderEntry creates a single folder entry in the database.
+func (s *scanJob) createFolderEntry(ctx context.Context, folderPath string, parentID *models.FolderID) (*models.Folder, error) {
+	now := time.Now()
+
+	info, err := os.Stat(folderPath)
+	if err != nil {
+		return nil, fmt.Errorf("stat folder %q: %w", folderPath, err)
+	}
+
+	toCreate := &models.Folder{
+		DirEntry: models.DirEntry{
+			ModTime: info.ModTime(),
+		},
+		Path:           folderPath,
+		ParentFolderID: parentID,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}
+
+	logger.Infof("%s doesn't exist. Creating new folder entry...", folderPath)
+
+	if err := s.withTxn(ctx, func(ctx context.Context) error {
+		return s.Repository.Folder.Create(ctx, toCreate)
+	}); err != nil {
+		return nil, fmt.Errorf("creating folder %q: %w", folderPath, err)
+	}
+
+	// Cache the new folder ID
+	s.folderPathToID.Store(folderPath, toCreate.ID)
+
+	return toCreate, nil
+}
+
+// ensureFolderHierarchy creates any missing folder entries from the library root
+// down to the parent of the specified file path. Returns the folder ID of the
+// immediate parent directory.
+func (s *scanJob) ensureFolderHierarchy(ctx context.Context, filePath string) (*models.FolderID, error) {
+	dir := filepath.Dir(filePath)
+
+	// Check if folder already exists
+	existingID, err := s.getFolderID(ctx, dir)
+	if err != nil {
+		return nil, err
+	}
+	if existingID != nil {
+		return existingID, nil
+	}
+
+	// Find library root for this path
+	libraryRoot := s.findLibraryRoot(filePath)
+	if libraryRoot == "" {
+		return nil, fmt.Errorf("file %q is not under any library path", filePath)
+	}
+
+	// Build list of folders to create from root down to parent
+	var foldersToCreate []string
+	current := dir
+	for current != libraryRoot && len(current) > len(libraryRoot) {
+		foldersToCreate = append([]string{current}, foldersToCreate...)
+		current = filepath.Dir(current)
+	}
+
+	// Add the root itself if not in database
+	rootID, _ := s.getFolderID(ctx, libraryRoot)
+	if rootID == nil {
+		foldersToCreate = append([]string{libraryRoot}, foldersToCreate...)
+	}
+
+	// Create folders in order from root to target
+	var lastCreatedID *models.FolderID
+	for _, folderPath := range foldersToCreate {
+		// Check again in case another goroutine created it
+		existingID, _ := s.getFolderID(ctx, folderPath)
+		if existingID != nil {
+			lastCreatedID = existingID
+			continue
+		}
+
+		folder, err := s.createFolderEntry(ctx, folderPath, lastCreatedID)
+		if err != nil {
+			return nil, err
+		}
+		lastCreatedID = &folder.ID
+	}
+
+	return lastCreatedID, nil
+}
+
 func (s *scanJob) onExistingFolder(ctx context.Context, f scanFile, existing *models.Folder) (*models.Folder, error) {
 	update := false
 
@@ -755,15 +863,20 @@ func (s *scanJob) onNewFile(ctx context.Context, f scanFile) (models.File, error
 	}
 
 	if parentFolderID == nil {
-		// if parent folder doesn't exist, assume it's not yet created
-		// add this file to the queue to be created later
-		if s.retrying {
-			// if we're retrying and the folder still doesn't exist, then it's a problem
+		if s.options.CreateMissingFolders {
+			// Create folder hierarchy immediately on first pass
+			parentFolderID, err = s.ensureFolderHierarchy(ctx, path)
+			if err != nil {
+				return nil, fmt.Errorf("creating folder hierarchy for %q: %w", path, err)
+			}
+		} else if s.retrying {
+			// Normal scan without CreateMissingFolders - folder still doesn't exist after retry
 			return nil, fmt.Errorf("parent folder for %q doesn't exist", path)
+		} else {
+			// Normal scan - defer to retry pass in case folder is created by another goroutine
+			s.retryList = append(s.retryList, f)
+			return nil, nil
 		}
-
-		s.retryList = append(s.retryList, f)
-		return nil, nil
 	}
 
 	baseFile.ParentFolderID = *parentFolderID

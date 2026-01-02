@@ -16,6 +16,7 @@ import (
 	"github.com/stashapp/stash/internal/dlna"
 	"github.com/stashapp/stash/internal/log"
 	"github.com/stashapp/stash/internal/manager/config"
+	"github.com/stashapp/stash/internal/watcher"
 	"github.com/stashapp/stash/pkg/ffmpeg"
 	"github.com/stashapp/stash/pkg/fsutil"
 	"github.com/stashapp/stash/pkg/job"
@@ -58,7 +59,8 @@ type Manager struct {
 	PluginPackageManager  *pkg.Manager
 	ScraperPackageManager *pkg.Manager
 
-	DLNAService *dlna.Service
+	DLNAService    *dlna.Service
+	WatcherService *watcher.Service
 
 	Database   *sqlite.Database
 	Repository models.Repository
@@ -155,6 +157,29 @@ func (s *Manager) RefreshDLNA() {
 	} else if enabled && !dlnaService.IsRunning() {
 		if err := dlnaService.Start(nil); err != nil {
 			logger.Warnf("error starting DLNA service: %v", err)
+		}
+	}
+}
+
+// RefreshWatcher starts/stops the file watcher service as needed.
+func (s *Manager) RefreshWatcher() {
+	if s.WatcherService == nil {
+		return
+	}
+
+	enabled := s.Config.GetWatcherEnabled()
+	running := s.WatcherService.IsRunning()
+
+	if enabled && !running {
+		if err := s.WatcherService.Start(); err != nil {
+			logger.Warnf("error starting file watcher service: %v", err)
+		}
+	} else if !enabled && running {
+		s.WatcherService.Stop()
+	} else if enabled && running {
+		// Refresh paths in case stash paths changed
+		if err := s.WatcherService.RefreshPaths(); err != nil {
+			logger.Warnf("error refreshing file watcher paths: %v", err)
 		}
 	}
 }
@@ -433,6 +458,10 @@ func (s *Manager) GetSystemStatus() *SystemStatus {
 // Shutdown gracefully stops the manager
 func (s *Manager) Shutdown() {
 	// TODO: Each part of the manager needs to gracefully stop at some point
+
+	if s.WatcherService != nil {
+		s.WatcherService.Stop()
+	}
 
 	if s.StreamManager != nil {
 		s.StreamManager.Shutdown()
