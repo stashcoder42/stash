@@ -57,7 +57,9 @@ func startSystray(exit chan int, faviconProvider FaviconProvider) {
 
 func systrayInitialize(exit chan<- int, faviconProvider FaviconProvider) {
 	favicon := faviconProvider.GetFavicon()
-	systray.SetTemplateIcon(favicon, favicon)
+	if len(favicon) > 0 {
+		systray.SetTemplateIcon(favicon, favicon)
+	}
 	systray.SetTooltip("🟢 Stash is Running.")
 
 	openStashButton := systray.AddMenuItem("Open Stash", "Open a browser window to Stash")
