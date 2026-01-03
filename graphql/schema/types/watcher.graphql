@@ -1,3 +1,13 @@
+"Mode for file watcher scan behavior"
+enum WatcherScanMode {
+  "File watcher does not trigger scans"
+  DISABLED
+  "File watcher triggers scan only"
+  SCAN
+  "File watcher triggers scan followed by identify"
+  SCAN_AND_IDENTIFY
+}
+
 "File watcher status"
 type WatcherStatus {
   "Whether the watcher is currently running"
@@ -20,28 +30,20 @@ type WatcherStatus {
 
 "Configuration for the file watcher"
 input ConfigWatcherInput {
-  "Enable or disable the file watcher"
-  enabled: Boolean
+  "Scan mode for the file watcher"
+  scanMode: WatcherScanMode
   "Debounce delay in milliseconds before triggering scan"
   debounceMs: Int
-  "Trigger scan when files change"
-  scanOnChange: Boolean
-  "Trigger identify after scan when files change"
-  identifyOnChange: Boolean
   "Trigger clean when files are removed (detects moves via fingerprint matching)"
   cleanOnRemove: Boolean
 }
 
 "File watcher configuration result"
 type ConfigWatcherResult {
-  "Whether the file watcher is enabled"
-  enabled: Boolean!
+  "Scan mode for the file watcher"
+  scanMode: WatcherScanMode!
   "Debounce delay in milliseconds"
   debounceMs: Int!
-  "Whether to trigger scan on file change"
-  scanOnChange: Boolean!
-  "Whether to trigger identify after scan"
-  identifyOnChange: Boolean!
   "Whether to trigger clean on file removal"
   cleanOnRemove: Boolean!
 }

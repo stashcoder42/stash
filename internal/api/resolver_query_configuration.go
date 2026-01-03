@@ -243,14 +243,12 @@ func makeConfigUIResult() map[string]interface{} {
 }
 
 func makeConfigWatcherResult() *ConfigWatcherResult {
-	config := config.GetInstance()
+	cfg := config.GetInstance()
 
 	return &ConfigWatcherResult{
-		Enabled:          config.GetWatcherEnabled(),
-		DebounceMs:       config.GetWatcherDebounceMs(),
-		ScanOnChange:     config.GetWatcherScanOnChange(),
-		IdentifyOnChange: config.GetWatcherIdentifyOnChange(),
-		CleanOnRemove:    config.GetWatcherCleanOnRemove(),
+		ScanMode:      cfg.GetWatcherScanMode(),
+		DebounceMs:    cfg.GetWatcherDebounceMs(),
+		CleanOnRemove: cfg.GetWatcherCleanOnRemove(),
 	}
 }
 

@@ -19,11 +19,10 @@ import (
 // Config interface for watcher configuration.
 type Config interface {
 	GetStashPaths() config.StashConfigs
-	GetWatcherEnabled() bool
+	GetWatcherScanMode() config.WatcherScanMode
 	GetWatcherDebounceMs() int
-	GetWatcherScanOnChange() bool
-	GetWatcherIdentifyOnChange() bool
 	GetWatcherCleanOnRemove() bool
+	IsWatcherEffectivelyEnabled() bool
 	GetVideoExtensions() []string
 	GetImageExtensions() []string
 	GetGalleryExtensions() []string
@@ -353,22 +352,25 @@ func (s *Service) processBatch(paths []string) {
 		return
 	}
 
+	scanMode := s.config.GetWatcherScanMode()
+	if !scanMode.ShouldScan() {
+		return
+	}
+
 	atomic.AddInt64(&s.triggeredScans, 1)
 
 	ctx := context.Background()
 
-	// Trigger scan if enabled
-	if s.config.GetWatcherScanOnChange() {
-		logger.Infof("[watcher] Triggering scan for paths: %v", paths)
-		if err := s.scanTrigger.TriggerScan(ctx, paths); err != nil {
-			s.setError(err)
-			logger.Errorf("[watcher] Scan failed: %v", err)
-			return
-		}
+	// Trigger scan
+	logger.Infof("[watcher] Triggering scan for paths: %v", paths)
+	if err := s.scanTrigger.TriggerScan(ctx, paths); err != nil {
+		s.setError(err)
+		logger.Errorf("[watcher] Scan failed: %v", err)
+		return
 	}
 
-	// Trigger identify if enabled
-	if s.config.GetWatcherIdentifyOnChange() {
+	// Trigger identify if mode includes identification
+	if scanMode.ShouldIdentify() {
 		logger.Infof("[watcher] Triggering identify for paths: %v", paths)
 		if err := s.scanTrigger.TriggerIdentify(ctx, paths); err != nil {
 			s.setError(err)
@@ -392,7 +394,7 @@ func (s *Service) processRemovalBatch(paths []string) {
 	// First, trigger a scan of all library paths to detect moves.
 	// This will find files with matching fingerprints at new locations
 	// and update their paths in the database.
-	if s.config.GetWatcherScanOnChange() {
+	if s.config.GetWatcherScanMode().ShouldScan() {
 		logger.Infof("[watcher] Triggering scan for move detection (removed: %v)", paths)
 		if err := s.scanTrigger.TriggerScan(ctx, nil); err != nil {
 			s.setError(err)

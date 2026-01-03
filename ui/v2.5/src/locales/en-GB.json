@@ -293,19 +293,17 @@
     },
     "watcher": {
       "title": "File Watcher",
-      "enabled": "File watcher enabled",
-      "disabled": "File watcher disabled",
-      "enabled_by_default": "Enabled by default",
-      "enabled_by_default_desc": "Start file watcher automatically when Stash starts",
+      "scan_mode": "Scan Mode",
+      "scan_mode_desc": "Action to take when files are added or modified",
+      "mode": {
+        "disabled": "Disabled",
+        "scan": "Scan Only",
+        "scan_and_identify": "Scan and Identify"
+      },
       "debounce_ms": "Debounce Delay (ms)",
       "debounce_ms_desc": "Delay before triggering scan after file changes are detected",
-      "scan_on_change": "Scan on Change",
-      "scan_on_change_desc": "Trigger library scan when files are added or modified",
-      "identify_on_change": "Identify on Change",
-      "identify_on_change_desc": "Automatically run identify task after scanning new files",
       "clean_on_remove": "Clean on Remove",
-      "clean_on_remove_desc": "Trigger clean task when files are deleted",
-      "last_error": "Error"
+      "clean_on_remove_desc": "Trigger clean task when files are deleted"
     },
     "general": {
       "auth": {

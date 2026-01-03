@@ -124,10 +124,8 @@ fragment ConfigDLNAData on ConfigDLNAResult {
 }
 
 fragment ConfigWatcherData on ConfigWatcherResult {
-  enabled
+  scanMode
   debounceMs
-  scanOnChange
-  identifyOnChange
   cleanOnRemove
 }
 
