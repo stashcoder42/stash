@@ -123,7 +123,7 @@ func (s *Service) Start() error {
 	s.running = true
 	go s.processEvents()
 
-	logger.Infof("File watcher service started, watching %d directories", s.watchCount)
+	logger.Infof("[watcher] Service started, watching %d directories", s.watchCount)
 	return nil
 }
 
@@ -136,7 +136,7 @@ func (s *Service) Stop() {
 		return
 	}
 
-	logger.Info("Stopping file watcher service")
+	logger.Info("[watcher] Stopping service")
 
 	if s.cancel != nil {
 		s.cancel()
@@ -155,7 +155,7 @@ func (s *Service) Stop() {
 	s.watchCount = 0
 	s.rootPaths = nil
 
-	logger.Info("File watcher service stopped")
+	logger.Info("[watcher] Service stopped")
 }
 
 // IsRunning returns whether the service is running.
@@ -200,7 +200,7 @@ func (s *Service) RefreshPaths() error {
 		return nil
 	}
 
-	logger.Info("Refreshing file watcher paths")
+	logger.Info("[watcher] Refreshing paths")
 
 	// Get current config paths
 	configPaths := make(map[string]bool)
@@ -227,7 +227,7 @@ func (s *Service) addWatchesForPaths() error {
 	for _, sp := range stashPaths {
 		s.rootPaths = append(s.rootPaths, sp.Path)
 		if err := s.addWatchRecursive(sp.Path); err != nil {
-			logger.Warnf("Failed to watch path %s: %v", sp.Path, err)
+			logger.Warnf("[watcher] Failed to watch path %s: %v", sp.Path, err)
 			// Continue with other paths even if one fails
 		}
 	}
@@ -248,7 +248,7 @@ func (s *Service) addWatchRecursive(path string) error {
 
 		if err := s.watcher.Add(p); err != nil {
 			if IsWatchLimitError(err) {
-				logger.Warnf("Watch limit reached, cannot watch: %s. %s", p, GetWatchLimitRecommendation())
+				logger.Warnf("[watcher] Watch limit reached, cannot watch: %s. %s", p, GetWatchLimitRecommendation())
 				return filepath.SkipDir
 			}
 			return err
@@ -289,7 +289,7 @@ func (s *Service) processEvents() {
 				return
 			}
 			s.setError(err)
-			logger.Errorf("File watcher error: %v", err)
+			logger.Errorf("[watcher] Error: %v", err)
 		}
 	}
 }
@@ -309,7 +309,7 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 				// It's a new directory, add watch recursively
 				s.mutex.Lock()
 				if err := s.addWatchRecursive(event.Name); err != nil {
-					logger.Warnf("Failed to watch new directory %s: %v", event.Name, err)
+					logger.Warnf("[watcher] Failed to watch new directory %s: %v", event.Name, err)
 				}
 				s.mutex.Unlock()
 			}
@@ -353,25 +353,26 @@ func (s *Service) processBatch(paths []string) {
 		return
 	}
 
-	logger.Infof("File watcher triggering scan for %d changed files", len(paths))
 	atomic.AddInt64(&s.triggeredScans, 1)
 
 	ctx := context.Background()
 
 	// Trigger scan if enabled
 	if s.config.GetWatcherScanOnChange() {
+		logger.Infof("[watcher] Triggering scan for paths: %v", paths)
 		if err := s.scanTrigger.TriggerScan(ctx, paths); err != nil {
 			s.setError(err)
-			logger.Errorf("File watcher scan failed: %v", err)
+			logger.Errorf("[watcher] Scan failed: %v", err)
 			return
 		}
 	}
 
 	// Trigger identify if enabled
 	if s.config.GetWatcherIdentifyOnChange() {
+		logger.Infof("[watcher] Triggering identify for paths: %v", paths)
 		if err := s.scanTrigger.TriggerIdentify(ctx, paths); err != nil {
 			s.setError(err)
-			logger.Errorf("File watcher identify failed: %v", err)
+			logger.Errorf("[watcher] Identify failed: %v", err)
 		}
 	}
 }
@@ -384,7 +385,6 @@ func (s *Service) processRemovalBatch(paths []string) {
 		return
 	}
 
-	logger.Infof("File watcher processing %d removed files", len(paths))
 	atomic.AddInt64(&s.triggeredCleans, 1)
 
 	ctx := context.Background()
@@ -393,9 +393,10 @@ func (s *Service) processRemovalBatch(paths []string) {
 	// This will find files with matching fingerprints at new locations
 	// and update their paths in the database.
 	if s.config.GetWatcherScanOnChange() {
+		logger.Infof("[watcher] Triggering scan for move detection (removed: %v)", paths)
 		if err := s.scanTrigger.TriggerScan(ctx, nil); err != nil {
 			s.setError(err)
-			logger.Errorf("File watcher scan for move detection failed: %v", err)
+			logger.Errorf("[watcher] Scan for move detection failed: %v", err)
 			return
 		}
 	}
@@ -415,9 +416,10 @@ func (s *Service) processRemovalBatch(paths []string) {
 	// The clean operation finds database entries where the file no longer exists.
 	// Files that were moved will have updated paths from the scan above and won't be cleaned.
 	// Files that were truly deleted will be cleaned.
+	logger.Infof("[watcher] Triggering clean for directories: %v", dirs)
 	if err := s.scanTrigger.TriggerClean(ctx, dirs); err != nil {
 		s.setError(err)
-		logger.Errorf("File watcher clean failed: %v", err)
+		logger.Errorf("[watcher] Clean failed: %v", err)
 	}
 }
 
