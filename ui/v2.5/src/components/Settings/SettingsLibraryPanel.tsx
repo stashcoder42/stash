@@ -1,18 +1,47 @@
 import React from "react";
+import { Button, Form } from "react-bootstrap";
+import { FormattedMessage, useIntl } from "react-intl";
 import { Icon } from "../Shared/Icon";
 import { LoadingIndicator } from "../Shared/LoadingIndicator";
 import { StashSetting } from "./StashConfiguration";
 import { SettingSection } from "./SettingSection";
-import { BooleanSetting, StringListSetting, StringSetting } from "./Inputs";
+import {
+  BooleanSetting,
+  NumberSetting,
+  StringListSetting,
+  StringSetting,
+} from "./Inputs";
 import { useSettings } from "./context";
-import { useIntl } from "react-intl";
-import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
+import { faQuestionCircle, faSyncAlt } from "@fortawesome/free-solid-svg-icons";
 import { ExternalLink } from "../Shared/ExternalLink";
+import {
+  useWatcherStatus,
+  useEnableWatcher,
+  useDisableWatcher,
+} from "src/core/StashService";
+import { useToast } from "src/hooks/Toast";
 
 export const SettingsLibraryPanel: React.FC = () => {
   const intl = useIntl();
-  const { general, loading, error, saveGeneral, defaults, saveDefaults } =
-    useSettings();
+  const Toast = useToast();
+  const {
+    general,
+    loading,
+    error,
+    saveGeneral,
+    defaults,
+    saveDefaults,
+    watcher,
+    saveWatcher,
+  } = useSettings();
+
+  const {
+    data: watcherStatusData,
+    loading: watcherStatusLoading,
+    refetch: watcherStatusRefetch,
+  } = useWatcherStatus();
+  const [enableWatcher] = useEnableWatcher();
+  const [disableWatcher] = useDisableWatcher();
 
   function commaDelimitedToList(value: string | undefined) {
     if (value) {
@@ -157,6 +186,115 @@ export const SettingsLibraryPanel: React.FC = () => {
           onChange={(v) => {
             saveDefaults({ deleteGenerated: v });
           }}
+        />
+      </SettingSection>
+
+      <SettingSection headingID="config.watcher.title">
+        <Form.Group>
+          <h5>
+            {intl.formatMessage(
+              { id: "status" },
+              {
+                statusText: watcherStatusLoading
+                  ? "..."
+                  : intl.formatMessage({
+                      id: watcherStatusData?.watcherStatus.running
+                        ? "actions.running"
+                        : "actions.not_running",
+                    }),
+              }
+            )}
+          </h5>
+          {watcherStatusData?.watcherStatus.lastError && (
+            <div className="text-danger mb-2">
+              <FormattedMessage id="config.watcher.last_error" />:{" "}
+              {watcherStatusData.watcherStatus.lastError}
+            </div>
+          )}
+        </Form.Group>
+
+        <Form.Group>
+          <Button
+            variant={
+              watcherStatusData?.watcherStatus.running ? "danger" : "success"
+            }
+            className="mr-2"
+            disabled={watcherStatusLoading}
+            onClick={async () => {
+              try {
+                if (watcherStatusData?.watcherStatus.running) {
+                  await disableWatcher();
+                  Toast.success(
+                    intl.formatMessage({ id: "config.watcher.disabled" })
+                  );
+                } else {
+                  await enableWatcher();
+                  Toast.success(
+                    intl.formatMessage({ id: "config.watcher.enabled" })
+                  );
+                }
+              } catch (e) {
+                Toast.error(e);
+              } finally {
+                watcherStatusRefetch();
+              }
+            }}
+          >
+            <FormattedMessage
+              id={
+                watcherStatusData?.watcherStatus.running
+                  ? "actions.disable"
+                  : "actions.enable"
+              }
+            />
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => watcherStatusRefetch()}
+            disabled={watcherStatusLoading}
+          >
+            <Icon icon={faSyncAlt} />
+          </Button>
+        </Form.Group>
+
+        <BooleanSetting
+          id="watcher-enabled"
+          headingID="config.watcher.enabled_by_default"
+          subHeadingID="config.watcher.enabled_by_default_desc"
+          checked={watcher.enabled ?? false}
+          onChange={(v) => saveWatcher({ enabled: v })}
+        />
+
+        <NumberSetting
+          id="watcher-debounce-ms"
+          headingID="config.watcher.debounce_ms"
+          subHeadingID="config.watcher.debounce_ms_desc"
+          value={watcher.debounceMs ?? 5000}
+          onChange={(v) => saveWatcher({ debounceMs: v })}
+        />
+
+        <BooleanSetting
+          id="watcher-scan-on-change"
+          headingID="config.watcher.scan_on_change"
+          subHeadingID="config.watcher.scan_on_change_desc"
+          checked={watcher.scanOnChange ?? true}
+          onChange={(v) => saveWatcher({ scanOnChange: v })}
+        />
+
+        <BooleanSetting
+          id="watcher-identify-on-change"
+          headingID="config.watcher.identify_on_change"
+          subHeadingID="config.watcher.identify_on_change_desc"
+          checked={watcher.identifyOnChange ?? false}
+          onChange={(v) => saveWatcher({ identifyOnChange: v })}
+        />
+
+        <BooleanSetting
+          id="watcher-clean-on-remove"
+          headingID="config.watcher.clean_on_remove"
+          subHeadingID="config.watcher.clean_on_remove_desc"
+          checked={watcher.cleanOnRemove ?? false}
+          onChange={(v) => saveWatcher({ cleanOnRemove: v })}
         />
       </SettingSection>
     </>
