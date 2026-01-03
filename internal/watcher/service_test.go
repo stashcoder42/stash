@@ -12,33 +12,30 @@ import (
 // mockConfig implements the Config interface for testing.
 type mockConfig struct {
 	stashPaths        config.StashConfigs
-	enabled           bool
+	scanMode          config.WatcherScanMode
 	debounceMs        int
-	scanOnChange      bool
-	identifyOnChange  bool
 	cleanOnRemove     bool
 	videoExtensions   []string
 	imageExtensions   []string
 	galleryExtensions []string
 }
 
-func (m *mockConfig) GetStashPaths() config.StashConfigs   { return m.stashPaths }
-func (m *mockConfig) GetWatcherEnabled() bool              { return m.enabled }
-func (m *mockConfig) GetWatcherDebounceMs() int            { return m.debounceMs }
-func (m *mockConfig) GetWatcherScanOnChange() bool         { return m.scanOnChange }
-func (m *mockConfig) GetWatcherIdentifyOnChange() bool     { return m.identifyOnChange }
-func (m *mockConfig) GetWatcherCleanOnRemove() bool        { return m.cleanOnRemove }
-func (m *mockConfig) GetVideoExtensions() []string         { return m.videoExtensions }
-func (m *mockConfig) GetImageExtensions() []string         { return m.imageExtensions }
-func (m *mockConfig) GetGalleryExtensions() []string       { return m.galleryExtensions }
+func (m *mockConfig) GetStashPaths() config.StashConfigs       { return m.stashPaths }
+func (m *mockConfig) GetWatcherScanMode() config.WatcherScanMode { return m.scanMode }
+func (m *mockConfig) GetWatcherDebounceMs() int                { return m.debounceMs }
+func (m *mockConfig) GetWatcherCleanOnRemove() bool            { return m.cleanOnRemove }
+func (m *mockConfig) IsWatcherEffectivelyEnabled() bool {
+	return m.scanMode != config.WatcherScanModeDisabled || m.cleanOnRemove
+}
+func (m *mockConfig) GetVideoExtensions() []string   { return m.videoExtensions }
+func (m *mockConfig) GetImageExtensions() []string   { return m.imageExtensions }
+func (m *mockConfig) GetGalleryExtensions() []string { return m.galleryExtensions }
 
 func newMockConfig() *mockConfig {
 	return &mockConfig{
 		stashPaths:        nil,
-		enabled:           true,
+		scanMode:          config.WatcherScanModeScan,
 		debounceMs:        100,
-		scanOnChange:      true,
-		identifyOnChange:  false,
 		cleanOnRemove:     true,
 		videoExtensions:   []string{"mp4", "mkv", "avi"},
 		imageExtensions:   []string{"jpg", "png", "gif"},
@@ -187,10 +184,9 @@ func TestService_isMediaFile(t *testing.T) {
 func TestService_processBatch(t *testing.T) {
 	t.Parallel()
 
-	t.Run("calls TriggerScan when enabled", func(t *testing.T) {
+	t.Run("calls TriggerScan when mode is SCAN", func(t *testing.T) {
 		cfg := newMockConfig()
-		cfg.scanOnChange = true
-		cfg.identifyOnChange = false
+		cfg.scanMode = config.WatcherScanModeScan
 		trigger := &mockScanTrigger{}
 		s := NewService(cfg, trigger)
 
@@ -202,10 +198,9 @@ func TestService_processBatch(t *testing.T) {
 		assert.ElementsMatch(t, paths, scanCalls[0])
 	})
 
-	t.Run("calls TriggerIdentify when enabled", func(t *testing.T) {
+	t.Run("calls TriggerIdentify when mode is SCAN_AND_IDENTIFY", func(t *testing.T) {
 		cfg := newMockConfig()
-		cfg.scanOnChange = true
-		cfg.identifyOnChange = true
+		cfg.scanMode = config.WatcherScanModeScanAndIdentify
 		trigger := &mockScanTrigger{}
 		s := NewService(cfg, trigger)
 
@@ -217,9 +212,9 @@ func TestService_processBatch(t *testing.T) {
 		assert.ElementsMatch(t, paths, identifyCalls[0])
 	})
 
-	t.Run("does not call TriggerScan when disabled", func(t *testing.T) {
+	t.Run("does not call TriggerScan when mode is DISABLED", func(t *testing.T) {
 		cfg := newMockConfig()
-		cfg.scanOnChange = false
+		cfg.scanMode = config.WatcherScanModeDisabled
 		trigger := &mockScanTrigger{}
 		s := NewService(cfg, trigger)
 
@@ -228,10 +223,9 @@ func TestService_processBatch(t *testing.T) {
 		assert.Len(t, trigger.getScanCalls(), 0)
 	})
 
-	t.Run("does not call TriggerIdentify when disabled", func(t *testing.T) {
+	t.Run("does not call TriggerIdentify when mode is SCAN only", func(t *testing.T) {
 		cfg := newMockConfig()
-		cfg.scanOnChange = true
-		cfg.identifyOnChange = false
+		cfg.scanMode = config.WatcherScanModeScan
 		trigger := &mockScanTrigger{}
 		s := NewService(cfg, trigger)
 
@@ -252,7 +246,7 @@ func TestService_processBatch(t *testing.T) {
 
 	t.Run("increments triggeredScans counter", func(t *testing.T) {
 		cfg := newMockConfig()
-		cfg.scanOnChange = true
+		cfg.scanMode = config.WatcherScanModeScan
 		trigger := &mockScanTrigger{}
 		s := NewService(cfg, trigger)
 
@@ -269,7 +263,7 @@ func TestService_processRemovalBatch(t *testing.T) {
 
 	t.Run("calls TriggerScan for move detection", func(t *testing.T) {
 		cfg := newMockConfig()
-		cfg.scanOnChange = true
+		cfg.scanMode = config.WatcherScanModeScan
 		trigger := &mockScanTrigger{}
 		s := NewService(cfg, trigger)
 
@@ -284,7 +278,7 @@ func TestService_processRemovalBatch(t *testing.T) {
 
 	t.Run("calls TriggerClean with parent directories", func(t *testing.T) {
 		cfg := newMockConfig()
-		cfg.scanOnChange = true
+		cfg.scanMode = config.WatcherScanModeScan
 		trigger := &mockScanTrigger{}
 		s := NewService(cfg, trigger)
 
@@ -312,7 +306,7 @@ func TestService_processRemovalBatch(t *testing.T) {
 
 	t.Run("increments triggeredCleans counter", func(t *testing.T) {
 		cfg := newMockConfig()
-		cfg.scanOnChange = true
+		cfg.scanMode = config.WatcherScanModeScan
 		trigger := &mockScanTrigger{}
 		s := NewService(cfg, trigger)
 

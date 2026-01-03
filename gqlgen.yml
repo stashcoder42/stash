@@ -52,6 +52,8 @@ models:
   # autobind on config causes generation issues
   BlobsStorageType:
     model: github.com/stashapp/stash/internal/manager/config.BlobsStorageType
+  WatcherScanMode:
+    model: github.com/stashapp/stash/internal/manager/config.WatcherScanMode
   StashConfig:
     model: github.com/stashapp/stash/internal/manager/config.StashConfig
   StashConfigInput:

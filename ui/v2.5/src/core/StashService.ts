@@ -2661,15 +2661,6 @@ export const useAddTempDLNAIP = () => GQL.useAddTempDlnaipMutation();
 
 export const useRemoveTempDLNAIP = () => GQL.useRemoveTempDlnaipMutation();
 
-export const useWatcherStatus = () =>
-  GQL.useWatcherStatusQuery({
-    fetchPolicy: "no-cache",
-  });
-
-export const useEnableWatcher = () => GQL.useEnableWatcherMutation();
-
-export const useDisableWatcher = () => GQL.useDisableWatcherMutation();
-
 export const useConfigureWatcher = () =>
   GQL.useConfigureWatcherMutation({
     update: updateConfiguration,

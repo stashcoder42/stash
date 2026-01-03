@@ -1,17 +1,7 @@
-mutation EnableWatcher {
-  enableWatcher
-}
-
-mutation DisableWatcher {
-  disableWatcher
-}
-
 mutation ConfigureWatcher($input: ConfigWatcherInput!) {
   configureWatcher(input: $input) {
-    enabled
+    scanMode
     debounceMs
-    scanOnChange
-    identifyOnChange
     cleanOnRemove
   }
 }

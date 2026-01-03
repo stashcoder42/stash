@@ -162,21 +162,22 @@ func (s *Manager) RefreshDLNA() {
 }
 
 // RefreshWatcher starts/stops the file watcher service as needed.
+// The watcher runs if scanMode is not DISABLED or if cleanOnRemove is enabled.
 func (s *Manager) RefreshWatcher() {
 	if s.WatcherService == nil {
 		return
 	}
 
-	enabled := s.Config.GetWatcherEnabled()
+	shouldRun := s.Config.IsWatcherEffectivelyEnabled()
 	running := s.WatcherService.IsRunning()
 
-	if enabled && !running {
+	if shouldRun && !running {
 		if err := s.WatcherService.Start(); err != nil {
 			logger.Warnf("error starting file watcher service: %v", err)
 		}
-	} else if !enabled && running {
+	} else if !shouldRun && running {
 		s.WatcherService.Stop()
-	} else if enabled && running {
+	} else if shouldRun && running {
 		// Refresh paths in case stash paths changed
 		if err := s.WatcherService.RefreshPaths(); err != nil {
 			logger.Warnf("error refreshing file watcher paths: %v", err)
