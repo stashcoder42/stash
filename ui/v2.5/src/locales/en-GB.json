@@ -293,6 +293,7 @@
     },
     "watcher": {
       "title": "File Watcher",
+      "network_warning": "File watching does not work on network-mounted storage (NFS, SMB).",
       "scan_mode": "Scan Mode",
       "scan_mode_desc": "Action to take when files are added or modified",
       "mode": {

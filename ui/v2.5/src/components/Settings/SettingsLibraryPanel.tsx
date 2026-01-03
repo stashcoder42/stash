@@ -175,7 +175,10 @@ export const SettingsLibraryPanel: React.FC = () => {
         />
       </SettingSection>
 
-      <SettingSection headingID="config.watcher.title">
+      <SettingSection
+        headingID="config.watcher.title"
+        subHeadingID="config.watcher.network_warning"
+      >
         <SelectSetting
           id="watcher-scan-mode"
           headingID="config.watcher.scan_mode"
