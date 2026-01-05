@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 )
@@ -57,11 +56,11 @@ func GetWorkingDirectory() string {
 
 // GetHomeDirectory returns the path of the user's home directory.  ~ on Unix and C:\Users\UserName on Windows
 func GetHomeDirectory() string {
-	currentUser, err := user.Current()
+	home, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
 	}
-	return currentUser.HomeDir
+	return home
 }
 
 // EnsureDir will create a directory at the given path if it doesn't already exist
