@@ -5,6 +5,7 @@ package watcher
 import (
 	"context"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
@@ -179,7 +180,10 @@ func (s *Service) Status() *Status {
 	}
 
 	if s.batcher != nil {
-		status.PendingEvents = s.batcher.PendingCount()
+		status.PendingEvents += s.batcher.PendingCount()
+	}
+	if s.removeBatcher != nil {
+		status.PendingEvents += s.removeBatcher.PendingCount()
 	}
 
 	if s.lastError != nil {
@@ -299,22 +303,13 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 
 	// Handle new directories - add them to the watch list
 	if event.Op&fsnotify.Create != 0 {
-		// Check if it's a directory
-		if err := filepath.WalkDir(event.Name, func(p string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
+		info, err := os.Stat(event.Name)
+		if err == nil && info.IsDir() {
+			s.mutex.Lock()
+			if err := s.addWatchRecursive(event.Name); err != nil {
+				logger.Warnf("[watcher] Failed to watch new directory %s: %v", event.Name, err)
 			}
-			if p == event.Name && d.IsDir() {
-				// It's a new directory, add watch recursively
-				s.mutex.Lock()
-				if err := s.addWatchRecursive(event.Name); err != nil {
-					logger.Warnf("[watcher] Failed to watch new directory %s: %v", event.Name, err)
-				}
-				s.mutex.Unlock()
-			}
-			return filepath.SkipAll
-		}); err != nil {
-			// ignore walk errors, just checking if directory
+			s.mutex.Unlock()
 		}
 	}
 

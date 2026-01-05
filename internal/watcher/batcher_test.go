@@ -79,6 +79,7 @@ func TestEventBatcher_Debounce(t *testing.T) {
 	})
 
 	t.Run("rapid adds reset timer and batch together", func(t *testing.T) {
+		done := make(chan struct{})
 		var mu sync.Mutex
 		flushCount := 0
 		var receivedPaths []string
@@ -88,17 +89,22 @@ func TestEventBatcher_Debounce(t *testing.T) {
 			flushCount++
 			receivedPaths = paths
 			mu.Unlock()
+			close(done)
 		})
 		defer b.Stop()
 
 		// Add paths rapidly (faster than debounce delay)
 		for i := 0; i < 5; i++ {
 			b.Add("/path/file.mp4")
-			time.Sleep(20 * time.Millisecond)
+			time.Sleep(20 * time.Millisecond) // This sleep is intentional - testing rapid adds
 		}
 
-		// Wait for flush
-		time.Sleep(150 * time.Millisecond)
+		// Wait for flush with timeout
+		select {
+		case <-done:
+		case <-time.After(500 * time.Millisecond):
+			t.Fatal("timeout waiting for flush")
+		}
 
 		mu.Lock()
 		assert.Equal(t, 1, flushCount, "should only flush once")
@@ -144,18 +150,21 @@ func TestEventBatcher_Stop(t *testing.T) {
 	t.Parallel()
 
 	t.Run("stop cancels pending timer", func(t *testing.T) {
-		flushCalled := false
-		b := NewEventBatcher(100*time.Millisecond, func(paths []string) {
-			flushCalled = true
+		flushed := make(chan struct{})
+		b := NewEventBatcher(50*time.Millisecond, func(paths []string) {
+			close(flushed)
 		})
 
 		b.Add("/path/a.mp4")
 		b.Stop()
 
-		// Wait longer than debounce delay
-		time.Sleep(150 * time.Millisecond)
-
-		assert.False(t, flushCalled, "flush should not be called after stop")
+		// Wait a bit longer than debounce to confirm flush doesn't happen
+		select {
+		case <-flushed:
+			t.Fatal("flush should not be called after stop")
+		case <-time.After(100 * time.Millisecond):
+			// Expected - flush didn't happen
+		}
 	})
 
 	t.Run("stop clears pending paths", func(t *testing.T) {
@@ -187,6 +196,15 @@ func TestEventBatcher_NilProcessor(t *testing.T) {
 
 	b.Add("/path/a.mp4")
 
-	// Wait for flush - should not panic
-	time.Sleep(100 * time.Millisecond)
+	// Wait for internal flush to complete (no panic = success)
+	// Use PendingCount polling with timeout
+	deadline := time.Now().Add(200 * time.Millisecond)
+	for time.Now().Before(deadline) {
+		if b.PendingCount() == 0 {
+			return // Success - flush completed without panic
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	// If we get here, flush completed (pending cleared) or timed out
+	// Either way, no panic occurred which is the test goal
 }

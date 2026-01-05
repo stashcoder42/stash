@@ -5,6 +5,7 @@ import (
 
 	"github.com/stashapp/stash/internal/identify"
 	"github.com/stashapp/stash/internal/manager/config"
+	"github.com/stashapp/stash/pkg/logger"
 )
 
 // WatcherScanTrigger implements the watcher.ScanTrigger interface
@@ -67,5 +68,6 @@ func (t *WatcherScanTrigger) TriggerClean(ctx context.Context, paths []string) e
 	}
 
 	t.manager.Clean(ctx, input)
+	logger.Debugf("[watcher] Clean job submitted for paths: %v", paths)
 	return nil
 }
