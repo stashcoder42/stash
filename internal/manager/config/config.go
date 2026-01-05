@@ -295,6 +295,9 @@ const (
 	WatcherScanModeKey   = "watcher.scan_mode"
 	WatcherDebounceMs    = "watcher.debounce_ms"
 	WatcherCleanOnRemove = "watcher.clean_on_remove"
+
+	// File Watcher defaults
+	DefaultWatcherDebounceMs = 5000
 )
 
 // slice default values
@@ -1642,11 +1645,11 @@ func (i *Config) GetWatcherScanMode() WatcherScanMode {
 }
 
 // GetWatcherDebounceMs returns the debounce delay in milliseconds for the file watcher.
-// Defaults to 5000ms (5 seconds) if not set or invalid.
+// Defaults to DefaultWatcherDebounceMs (5 seconds) if not set or invalid.
 func (i *Config) GetWatcherDebounceMs() int {
 	ret := i.getInt(WatcherDebounceMs)
 	if ret <= 0 {
-		return 5000
+		return DefaultWatcherDebounceMs
 	}
 	return ret
 }
