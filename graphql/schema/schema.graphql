@@ -242,8 +242,6 @@ type Query {
     @deprecated(reason: "Use scrapeGroupURL instead")
   "Scrapes a complete group record based on a URL"
   scrapeGroupURL(url: String!): ScrapedGroup
-  "Scrapes a complete audio record based on a URL"
-  scrapeAudioURL(url: String!): ScrapedAudio
 
   # Plugins
   "List loaded plugins"
@@ -419,6 +417,9 @@ type Mutation {
 
   "Assigns a file to an audio"
   audioAssignFile(input: AssignAudioFileInput!): Boolean!
+
+  "Generates waveform visualization for an audio file"
+  audioGenerateWaveform(id: ID!): String!
 
   audioMarkerCreate(input: AudioMarkerCreateInput!): AudioMarker
   audioMarkerUpdate(input: AudioMarkerUpdateInput!): AudioMarker

@@ -1,0 +1,27 @@
+query FindAudioMarkers(
+  $filter: FindFilterType
+  $audio_marker_filter: AudioMarkerFilterType
+  $ids: [ID!]
+) {
+  findAudioMarkers(
+    filter: $filter
+    audio_marker_filter: $audio_marker_filter
+    ids: $ids
+  ) {
+    count
+    audio_markers {
+      ...AudioMarkerData
+    }
+  }
+}
+
+query FindAudioMarkerTags($id: ID!) {
+  audioMarkerTags(audio_id: $id) {
+    tag {
+      ...TagData
+    }
+    audio_markers {
+      ...AudioMarkerData
+    }
+  }
+}

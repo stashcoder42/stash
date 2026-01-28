@@ -13,6 +13,8 @@ type AudioMarker {
 
   "The path to stream this marker"
   stream: String! # Resolver
+  "The path to the marker preview image (audio's waveform)"
+  preview: String! # Resolver
 }
 
 input AudioMarkerCreateInput {

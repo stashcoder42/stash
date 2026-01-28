@@ -20,9 +20,11 @@ $sidebar-width: 250px;
 @import "src/components/Performers/styles.scss";
 @import "src/components/FrontPage/styles.scss";
 @import "src/components/Scenes/styles.scss";
+@import "src/components/Audios/styles.scss";
 @import "src/components/SceneDuplicateChecker/styles.scss";
 @import "src/components/SceneFilenameParser/styles.scss";
 @import "src/components/ScenePlayer/styles.scss";
+@import "src/components/AudioPlayer/styles.scss";
 @import "src/components/Settings/styles.scss";
 @import "src/components/Setup/styles.scss";
 @import "src/components/Studios/styles.scss";
@@ -560,6 +562,7 @@ textarea.text-input {
 }
 
 .scene-card-preview,
+.audio-card-preview,
 .gallery-card-image,
 .tag-card-image,
 .image-card-preview {

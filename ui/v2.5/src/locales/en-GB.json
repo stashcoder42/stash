@@ -169,7 +169,12 @@
   "also_known_as": "Also known as",
   "appears_with": "Appears With",
   "ascending": "Ascending",
+  "audio": "Audio",
   "audio_codec": "Audio Codec",
+  "audio_count": "Audio Count",
+  "audio_marker": "Audio Marker",
+  "audio_markers": "Audio Markers",
+  "audios": "Audios",
   "average_resolution": "Average Resolution",
   "between_and": "and",
   "birth_year": "Birth Year",
@@ -184,6 +189,7 @@
   "career_length": "Career Length",
   "career_start": "Career Start",
   "chapters": "Chapters",
+  "channels": "Channels",
   "circumcised": "Circumcised",
   "circumcised_types": {
     "CUT": "Cut",
@@ -363,6 +369,8 @@
       "excluded_image_gallery_patterns_head": "Excluded image/gallery patterns",
       "excluded_video_patterns_desc": "Regexps of video files/paths to exclude from Scan and add to Clean tasks.",
       "excluded_video_patterns_head": "Excluded video patterns",
+      "excluded_audio_patterns_desc": "Regexps of audio files/paths to exclude from Scan and add to Clean",
+      "excluded_audio_patterns_head": "Excluded Audio Patterns",
       "ffmpeg": {
         "download_ffmpeg": {
           "description": "Downloads FFmpeg into the configuration directory and clears the ffmpeg and ffprobe paths to resolve from the configuration directory.",
@@ -415,6 +423,8 @@
       "heatmap_generation": "Funscript Heatmap Generation",
       "image_ext_desc": "Comma-delimited list of file extensions that will be identified as images.",
       "image_ext_head": "Image extensions",
+      "audio_ext_desc": "Comma-delimited list of file extensions that will be identified as audio files.",
+      "audio_ext_head": "Audio extensions",
       "include_audio_desc": "Includes audio stream when generating previews.",
       "include_audio_head": "Include audio",
       "logging": "Logging",
@@ -551,6 +561,7 @@
         "generating_from_paths": "Generating for scenes from the following paths",
         "generating_scenes": "Generating for {num} {scene}"
       },
+      "generate_audio_waveforms_during_scan": "Generate audio waveforms",
       "generate_clip_previews_during_scan": "Generate previews for image clips",
       "generate_desc": "Generate supporting image, sprite, video, vtt and other files.",
       "generate_image_phashes_during_scan": "Generate image perceptual hashes",
@@ -924,6 +935,7 @@
   "containing_group_count": "Containing Group Count",
   "containing_groups": "Containing Groups",
   "countables": {
+    "audios": "{count, plural, one {Audio} other {Audios}}",
     "files": "{count, plural, one {File} other {Files}}",
     "galleries": "{count, plural, one {Gallery} other {Galleries}}",
     "groups": "{count, plural, one {Group} other {Groups}}",
@@ -1090,7 +1102,8 @@
       "transcodes": "Transcodes",
       "transcodes_tooltip": "MP4 transcodes will be pre-generated for all content; useful for slow CPUs but requires much more disk space",
       "video_previews": "Previews",
-      "video_previews_tooltip": "Video previews which play when hovering over a scene"
+      "video_previews_tooltip": "Video previews which play when hovering over a scene",
+      "audio_waveforms": "Audio waveforms"
     },
     "scenes_found": "{count} scenes found",
     "studios_found": "{count} studios found",
@@ -1415,6 +1428,7 @@
   "release_notes": "Release Notes",
   "resolution": "Resolution",
   "resume_time": "Resume Time",
+  "sample_rate": "Sample Rate",
   "scene": "Scene",
   "sceneTagger": "Scene Tagger",
   "scene_code": "Studio Code",
@@ -1678,6 +1692,7 @@
     "default_filter_set": "Default filter set",
     "delete_past_tense": "Deleted {count, plural, one {{singularEntity}} other {{pluralEntity}}}",
     "generating_screenshot": "Generating screenshot…",
+    "generating_waveform": "Generating waveform…",
     "image_index_too_large": "Error: Image index is larger than the number of images in the Gallery",
     "merged_performers": "Merged performers",
     "merged_scenes": "Merged scenes",

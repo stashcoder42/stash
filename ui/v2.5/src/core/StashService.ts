@@ -287,6 +287,74 @@ export const queryFindSceneMarkers = (filter: ListFilterModel) =>
 
 export const useMarkerStrings = () => GQL.useMarkerStringsQuery();
 
+// Audio queries
+
+export const useFindAudio = (id: string) => {
+  const skip = id === "new" || id === "";
+  return GQL.useFindAudioQuery({ variables: { id }, skip });
+};
+
+export const useFindAudios = (filter?: ListFilterModel) =>
+  GQL.useFindAudiosQuery({
+    skip: filter === undefined,
+    variables: {
+      filter: filter?.makeFindFilter(),
+      audio_filter: filter?.makeFilter(),
+    },
+  });
+
+export const queryFindAudios = (filter: ListFilterModel) =>
+  client.query<GQL.FindAudiosQuery>({
+    query: GQL.FindAudiosDocument,
+    variables: {
+      filter: filter.makeFindFilter(),
+      audio_filter: filter.makeFilter(),
+    },
+  });
+
+export const queryFindAudiosByID = (audioIDs: string[]) =>
+  client.query<GQL.FindAudiosByIdQuery>({
+    query: GQL.FindAudiosByIdDocument,
+    variables: {
+      id: audioIDs,
+    },
+  });
+
+export const queryFindAudiosForSelect = (filter: ListFilterModel) =>
+  client.query<GQL.FindAudiosForSelectQuery>({
+    query: GQL.FindAudiosForSelectDocument,
+    variables: {
+      filter: filter.makeFindFilter(),
+      audio_filter: filter.makeFilter(),
+    },
+  });
+
+export const queryFindAudiosByIDForSelect = (audioIDs: string[]) =>
+  client.query<GQL.FindAudiosForSelectQuery>({
+    query: GQL.FindAudiosForSelectDocument,
+    variables: {
+      ids: audioIDs,
+    },
+  });
+
+export const useFindAudioMarkers = (filter?: ListFilterModel) =>
+  GQL.useFindAudioMarkersQuery({
+    skip: filter === undefined,
+    variables: {
+      filter: filter?.makeFindFilter(),
+      audio_marker_filter: filter?.makeFilter(),
+    },
+  });
+
+export const queryFindAudioMarkers = (filter: ListFilterModel) =>
+  client.query<GQL.FindAudioMarkersQuery>({
+    query: GQL.FindAudioMarkersDocument,
+    variables: {
+      filter: filter.makeFindFilter(),
+      audio_marker_filter: filter.makeFilter(),
+    },
+  });
+
 export const useFindGallery = (id: string) => {
   const skip = id === "new" || id === "";
   return GQL.useFindGalleryQuery({ variables: { id }, skip });
@@ -1603,6 +1671,303 @@ export const useSceneMarkersDestroy = (
 
       evictTypeFields(cache, sceneMarkerMutationImpactedTypeFields);
       evictQueries(cache, sceneMarkerMutationImpactedQueries);
+    },
+  });
+
+// Audio mutations
+
+const audioMutationImpactedTypeFields = {
+  Performer: ["audios", "audio_count"],
+  Tag: ["audio_count"],
+};
+
+const audioMutationImpactedQueries = [
+  GQL.FindAudiosDocument,
+  GQL.FindPerformersDocument,
+  GQL.FindTagsDocument,
+];
+
+export const mutateCreateAudio = (input: GQL.AudioCreateInput) =>
+  client.mutate<GQL.AudioCreateMutation>({
+    mutation: GQL.AudioCreateDocument,
+    variables: { input },
+    update(cache, result) {
+      const audio = result.data?.audioCreate;
+      if (!audio) return;
+
+      updateStats(cache, "audio_count", 1);
+
+      evictTypeFields(cache, audioMutationImpactedTypeFields);
+      evictQueries(cache, audioMutationImpactedQueries);
+    },
+  });
+
+export const useAudioCreate = () =>
+  GQL.useAudioCreateMutation({
+    update(cache, result) {
+      const audio = result.data?.audioCreate;
+      if (!audio) return;
+
+      updateStats(cache, "audio_count", 1);
+
+      evictTypeFields(cache, audioMutationImpactedTypeFields);
+      evictQueries(cache, audioMutationImpactedQueries);
+    },
+  });
+
+export const useAudioUpdate = () =>
+  GQL.useAudioUpdateMutation({
+    update(cache, result) {
+      if (!result.data?.audioUpdate) return;
+
+      evictTypeFields(cache, audioMutationImpactedTypeFields);
+      evictQueries(cache, audioMutationImpactedQueries);
+    },
+  });
+
+export const useAudiosUpdate = (input: GQL.AudioUpdateInput[]) =>
+  GQL.useAudiosUpdateMutation({
+    variables: { input },
+    update(cache, result) {
+      if (!result.data?.audiosUpdate) return;
+
+      evictTypeFields(cache, audioMutationImpactedTypeFields);
+      evictQueries(cache, audioMutationImpactedQueries);
+    },
+  });
+
+export const useBulkAudioUpdate = (input: GQL.BulkAudioUpdateInput) =>
+  GQL.useBulkAudioUpdateMutation({
+    variables: { input },
+    update(cache, result) {
+      if (!result.data?.bulkAudioUpdate) return;
+
+      evictTypeFields(cache, audioMutationImpactedTypeFields);
+      evictQueries(cache, audioMutationImpactedQueries);
+    },
+  });
+
+export const useAudioDestroy = (input: GQL.AudioDestroyInput) =>
+  GQL.useAudioDestroyMutation({
+    variables: input,
+    update(cache, result) {
+      if (!result.data?.audioDestroy) return;
+
+      updateStats(cache, "audio_count", -1);
+
+      const obj = { __typename: "Audio", id: input.id };
+      deleteObject(cache, obj, GQL.FindAudioDocument);
+
+      evictTypeFields(cache, audioMutationImpactedTypeFields);
+      evictQueries(cache, audioMutationImpactedQueries);
+    },
+  });
+
+export const useAudiosDestroy = (input: GQL.AudiosDestroyInput) =>
+  GQL.useAudiosDestroyMutation({
+    variables: input,
+    update(cache, result) {
+      if (!result.data?.audiosDestroy) return;
+
+      updateStats(cache, "audio_count", -(input.ids?.length ?? 0));
+
+      evictTypeFields(cache, audioMutationImpactedTypeFields);
+      evictQueries(cache, audioMutationImpactedQueries);
+    },
+  });
+
+export const useAudioSaveActivity = () =>
+  GQL.useAudioSaveActivityMutation({
+    update(cache, result, { variables }) {
+      if (!result.data?.audioSaveActivity || !variables) return;
+
+      const { id, resume_time, playDuration } = variables;
+
+      cache.modify({
+        id: cache.identify({ __typename: "Audio", id }),
+        fields: {
+          resume_time() {
+            return resume_time ?? null;
+          },
+          play_duration(value) {
+            return playDuration ?? value;
+          },
+        },
+      });
+    },
+  });
+
+export const useAudioResetActivity = (id: string) =>
+  GQL.useAudioResetActivityMutation({
+    variables: { id },
+    update(cache, result) {
+      if (!result.data?.audioResetActivity) return;
+
+      cache.modify({
+        id: cache.identify({ __typename: "Audio", id }),
+        fields: {
+          resume_time() {
+            return 0;
+          },
+          play_duration() {
+            return 0;
+          },
+        },
+      });
+    },
+  });
+
+export const useAudioIncrementO = (id: string) =>
+  GQL.useAudioAddOMutation({
+    variables: { id },
+    update(cache, result) {
+      if (!result.data?.audioAddO) return;
+
+      updateO(cache, "Audio", id, result.data.audioAddO.count);
+    },
+  });
+
+export const useAudioDecrementO = (id: string) =>
+  GQL.useAudioDeleteOMutation({
+    variables: { id },
+    update(cache, result) {
+      if (!result.data?.audioDeleteO) return;
+
+      updateO(cache, "Audio", id, result.data.audioDeleteO.count);
+    },
+  });
+
+export const useAudioResetO = (id: string) =>
+  GQL.useAudioResetOMutation({
+    variables: { id },
+    update(cache, result) {
+      if (!result.data?.audioResetO) return;
+
+      updateO(cache, "Audio", id, 0);
+    },
+  });
+
+export const mutateAudioSetPrimaryFile = (id: string, fileID: string) =>
+  client.mutate<GQL.AudioAssignFileMutation>({
+    mutation: GQL.AudioAssignFileDocument,
+    variables: {
+      input: {
+        audio_id: id,
+        file_id: fileID,
+      },
+    },
+  });
+
+export const useAudioIncrementPlayCount = () =>
+  GQL.useAudioAddPlayMutation({
+    update(cache, result, { variables }) {
+      if (!result.data?.audioAddPlay || !variables) return;
+
+      cache.modify({
+        id: cache.identify({ __typename: "Audio", id: variables.id }),
+        fields: {
+          play_count() {
+            return result.data?.audioAddPlay?.count;
+          },
+        },
+      });
+    },
+  });
+
+export const useAudioDecrementPlayCount = () =>
+  GQL.useAudioDeletePlayMutation({
+    update(cache, result, { variables }) {
+      if (!result.data?.audioDeletePlay || !variables) return;
+
+      cache.modify({
+        id: cache.identify({ __typename: "Audio", id: variables.id }),
+        fields: {
+          play_count() {
+            return result.data?.audioDeletePlay?.count;
+          },
+        },
+      });
+    },
+  });
+
+export const useAudioResetPlayCount = () =>
+  GQL.useAudioResetPlayCountMutation({
+    update(cache, result, { variables }) {
+      if (!result.data?.audioResetPlayCount || !variables) return;
+
+      cache.modify({
+        id: cache.identify({ __typename: "Audio", id: variables.id }),
+        fields: {
+          play_count() {
+            return 0;
+          },
+        },
+      });
+    },
+  });
+
+export const useAudioGenerateWaveform = () =>
+  GQL.useAudioGenerateWaveformMutation();
+
+// Audio marker mutations
+
+const audioMarkerMutationImpactedTypeFields = {
+  Tag: ["audio_marker_count"],
+};
+
+const audioMarkerMutationImpactedQueries = [
+  GQL.FindAudioMarkersDocument,
+  GQL.FindTagsDocument,
+];
+
+export const useAudioMarkerCreate = () =>
+  GQL.useAudioMarkerCreateMutation({
+    update(cache, result) {
+      if (!result.data?.audioMarkerCreate) return;
+
+      evictTypeFields(cache, audioMarkerMutationImpactedTypeFields);
+      evictQueries(cache, audioMarkerMutationImpactedQueries);
+    },
+  });
+
+export const useAudioMarkerUpdate = () =>
+  GQL.useAudioMarkerUpdateMutation({
+    update(cache, result) {
+      if (!result.data?.audioMarkerUpdate) return;
+
+      evictTypeFields(cache, audioMarkerMutationImpactedTypeFields);
+      evictQueries(cache, audioMarkerMutationImpactedQueries);
+    },
+  });
+
+export const useAudioMarkerDestroy = () =>
+  GQL.useAudioMarkerDestroyMutation({
+    update(cache, result, { variables }) {
+      if (!result.data?.audioMarkerDestroy || !variables) return;
+
+      const obj = { __typename: "AudioMarker", id: variables.id };
+      cache.evict({ id: cache.identify(obj) });
+
+      evictTypeFields(cache, audioMarkerMutationImpactedTypeFields);
+      evictQueries(cache, audioMarkerMutationImpactedQueries);
+    },
+  });
+
+export const useAudioMarkersDestroy = (
+  input: GQL.AudioMarkersDestroyMutationVariables
+) =>
+  GQL.useAudioMarkersDestroyMutation({
+    variables: input,
+    update(cache, result) {
+      if (!result.data?.audioMarkersDestroy) return;
+
+      for (const id of input.ids) {
+        const obj = { __typename: "AudioMarker", id };
+        cache.evict({ id: cache.identify(obj) });
+      }
+
+      evictTypeFields(cache, audioMarkerMutationImpactedTypeFields);
+      evictQueries(cache, audioMarkerMutationImpactedQueries);
     },
   });
 

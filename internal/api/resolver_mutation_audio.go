@@ -785,3 +785,8 @@ func (r *mutationResolver) AudioAssignFile(ctx context.Context, input AssignAudi
 
 	return true, nil
 }
+
+func (r *mutationResolver) AudioGenerateWaveform(ctx context.Context, id string) (string, error) {
+	manager.GetInstance().GenerateAudioWaveform(ctx, id)
+	return "ok", nil
+}

@@ -371,9 +371,10 @@ func (s *Server) getSceneRoutes() chi.Router {
 func (s *Server) getAudioRoutes() chi.Router {
 	repo := s.manager.Repository
 	return audioRoutes{
-		routes:      routes{txnManager: repo.TxnManager},
-		audioFinder: repo.Audio,
-		fileGetter:  repo.File,
+		routes:            routes{txnManager: repo.TxnManager},
+		audioFinder:       repo.Audio,
+		audioMarkerFinder: repo.AudioMarker,
+		fileGetter:        repo.File,
 	}.Routes()
 }
 

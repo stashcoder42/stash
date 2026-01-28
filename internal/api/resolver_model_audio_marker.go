@@ -32,3 +32,9 @@ func (r *audioMarkerResolver) Stream(ctx context.Context, obj *models.AudioMarke
 	builder := urlbuilders.NewAudioMarkerURLBuilder(baseURL, obj)
 	return builder.GetStreamURL(), nil
 }
+
+func (r *audioMarkerResolver) Preview(ctx context.Context, obj *models.AudioMarker) (string, error) {
+	baseURL, _ := ctx.Value(BaseURLCtxKey).(string)
+	builder := urlbuilders.NewAudioMarkerURLBuilder(baseURL, obj)
+	return builder.GetPreviewURL(), nil
+}

@@ -66,6 +66,16 @@ export const SettingsLibraryPanel: React.FC = () => {
             saveGeneral({ galleryExtensions: commaDelimitedToList(v) })
           }
         />
+
+        <StringSetting
+          id="audio-extensions"
+          headingID="config.general.audio_ext_head"
+          subHeadingID="config.general.audio_ext_desc"
+          value={listToCommaDelimited(general.audioExtensions ?? undefined)}
+          onChange={(v) =>
+            saveGeneral({ audioExtensions: commaDelimitedToList(v) })
+          }
+        />
       </SettingSection>
 
       <SettingSection headingID="config.library.exclusions">
@@ -103,6 +113,24 @@ export const SettingsLibraryPanel: React.FC = () => {
           value={general.imageExcludes ?? undefined}
           onChange={(v) => saveGeneral({ imageExcludes: v })}
           defaultNewValue="sample\.jpg$"
+        />
+
+        <StringListSetting
+          id="excluded-audio-patterns"
+          headingID="config.general.excluded_audio_patterns_head"
+          subHeading={
+            <span>
+              {intl.formatMessage({
+                id: "config.general.excluded_audio_patterns_desc",
+              })}
+              <ExternalLink href="https://docs.stashapp.cc/beginner-guides/exclude-file-configuration">
+                <Icon icon={faQuestionCircle} />
+              </ExternalLink>
+            </span>
+          }
+          value={general.audioExcludes ?? undefined}
+          onChange={(v) => saveGeneral({ audioExcludes: v })}
+          defaultNewValue="sample\.mp3$"
         />
       </SettingSection>
 

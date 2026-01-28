@@ -96,6 +96,7 @@ export const LibraryTasks: React.FC = () => {
       scanGeneratePhashes: false,
       scanGenerateThumbnails: false,
       scanGenerateClipPreviews: false,
+      scanGenerateAudioWaveforms: false,
     };
   }
 
@@ -116,6 +117,7 @@ export const LibraryTasks: React.FC = () => {
       phashes: true,
       previews: true,
       markers: true,
+      audioWaveforms: true,
       previewOptions: {
         previewSegments: 0,
         previewSegmentDuration: 0,

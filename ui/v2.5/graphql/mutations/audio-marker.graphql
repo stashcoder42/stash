@@ -1,0 +1,53 @@
+mutation AudioMarkerCreate(
+  $title: String!
+  $seconds: Float!
+  $end_seconds: Float
+  $audio_id: ID!
+  $primary_tag_id: ID!
+  $tag_ids: [ID!] = []
+) {
+  audioMarkerCreate(
+    input: {
+      title: $title
+      seconds: $seconds
+      end_seconds: $end_seconds
+      audio_id: $audio_id
+      primary_tag_id: $primary_tag_id
+      tag_ids: $tag_ids
+    }
+  ) {
+    ...AudioMarkerData
+  }
+}
+
+mutation AudioMarkerUpdate(
+  $id: ID!
+  $title: String!
+  $seconds: Float!
+  $end_seconds: Float
+  $audio_id: ID!
+  $primary_tag_id: ID!
+  $tag_ids: [ID!] = []
+) {
+  audioMarkerUpdate(
+    input: {
+      id: $id
+      title: $title
+      seconds: $seconds
+      end_seconds: $end_seconds
+      audio_id: $audio_id
+      primary_tag_id: $primary_tag_id
+      tag_ids: $tag_ids
+    }
+  ) {
+    ...AudioMarkerData
+  }
+}
+
+mutation AudioMarkerDestroy($id: ID!) {
+  audioMarkerDestroy(id: $id)
+}
+
+mutation AudioMarkersDestroy($ids: [ID!]!) {
+  audioMarkersDestroy(ids: $ids)
+}

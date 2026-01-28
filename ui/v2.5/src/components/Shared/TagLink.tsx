@@ -63,7 +63,7 @@ const CommonLinkComponent: React.FC<ICommonLinkProps> = ({
 
 interface IPerformerLinkProps {
   performer: INamedObject & { disambiguation?: string | null };
-  linkType?: "scene" | "gallery" | "image" | "scene_marker";
+  linkType?: "scene" | "gallery" | "image" | "scene_marker" | "audio";
   className?: string;
 }
 
@@ -82,6 +82,8 @@ export const PerformerLink: React.FC<IPerformerLinkProps> = ({
         return NavUtils.makePerformerImagesUrl(performer);
       case "scene_marker":
         return NavUtils.makePerformerSceneMarkersUrl(performer);
+      case "audio":
+        return NavUtils.makePerformerAudiosUrl(performer);
       case "scene":
       default:
         return NavUtils.makePerformerScenesUrl(performer);

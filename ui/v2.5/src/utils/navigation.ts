@@ -130,6 +130,27 @@ const makePerformerGroupsUrl = (
   return `/groups?${filter.makeQueryParameters()}`;
 };
 
+const makePerformerAudiosUrl = (
+  performer: Partial<GQL.PerformerDataFragment>,
+  extraPerformer?: ILabeledId,
+  extraCriteria?: ModifierCriterion<CriterionValue>[]
+) => {
+  if (!performer.id) return "#";
+  const filter = new ListFilterModel(GQL.FilterMode.Audios, undefined);
+  const criterion = new PerformersCriterion();
+  criterion.value.items = [
+    { id: performer.id, label: performer.name || `Performer ${performer.id}` },
+  ];
+
+  if (extraPerformer) {
+    criterion.value.items.push(extraPerformer);
+  }
+
+  filter.criteria.push(criterion);
+  addExtraCriteria(filter.criteria, extraCriteria);
+  return `/audios?${filter.makeQueryParameters()}`;
+};
+
 const makePerformerSceneMarkersUrl = (
   performer: Partial<GQL.PerformerDataFragment>
 ) => {
@@ -482,6 +503,7 @@ const NavUtils = {
   makePerformerImagesUrl,
   makePerformerGalleriesUrl,
   makePerformerGroupsUrl,
+  makePerformerAudiosUrl,
   makePerformerSceneMarkersUrl,
   makePerformersCountryUrl,
   makeStudioScenesUrl,

@@ -17,6 +17,8 @@ input GenerateMetadataInput {
   imagePhashes: Boolean
   imageThumbnails: Boolean
   clipPreviews: Boolean
+  "Generate audio waveforms"
+  audioWaveforms: Boolean
 
   "scene ids to generate for"
   sceneIDs: [ID!]
@@ -60,6 +62,7 @@ type GenerateMetadataOptions {
   interactiveHeatmapsSpeeds: Boolean
   imageThumbnails: Boolean
   clipPreviews: Boolean
+  audioWaveforms: Boolean
 }
 
 type GeneratePreviewOptions {
@@ -102,6 +105,8 @@ input ScanMetadataInput {
   scanGenerateThumbnails: Boolean
   "Generate image clip previews during scan"
   scanGenerateClipPreviews: Boolean
+  "Generate audio waveforms during scan"
+  scanGenerateAudioWaveforms: Boolean
 
   "Filter options for the scan"
   filter: ScanMetaDataFilterInput
@@ -126,6 +131,8 @@ type ScanMetadataOptions {
   scanGenerateThumbnails: Boolean!
   "Generate image clip previews during scan"
   scanGenerateClipPreviews: Boolean!
+  "Generate audio waveforms during scan"
+  scanGenerateAudioWaveforms: Boolean!
 }
 
 input CleanMetadataInput {

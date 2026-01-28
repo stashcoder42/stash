@@ -26,6 +26,8 @@ fragment TagData on Tag {
   studio_count_all: studio_count(depth: -1)
   group_count
   group_count_all: group_count(depth: -1)
+  audio_count
+  audio_count_all: audio_count(depth: -1)
 
   parents {
     ...SlimTagData
@@ -83,6 +85,7 @@ fragment TagListData on Tag {
   performer_count
   studio_count
   group_count
+  audio_count
 
   parents {
     ...SlimTagData

@@ -21,6 +21,7 @@ import { useToast } from "src/hooks/Toast";
 import { useConfigurationContext } from "src/hooks/Config";
 import { tagRelationHook } from "src/core/tags";
 import { TagScenesPanel } from "./TagScenesPanel";
+import { TagAudiosPanel } from "./TagAudiosPanel";
 import { TagMarkersPanel } from "./TagMarkersPanel";
 import { TagImagesPanel } from "./TagImagesPanel";
 import { TagPerformersPanel } from "./TagPerformersPanel";
@@ -59,6 +60,7 @@ interface ITagParams {
 const validTabs = [
   "default",
   "scenes",
+  "audios",
   "images",
   "galleries",
   "groups",
@@ -84,6 +86,8 @@ const TagTabs: React.FC<{
 
   const sceneCount =
     (showAllDetails ? tag.scene_count_all : tag.scene_count) ?? 0;
+  const audioCount =
+    (showAllDetails ? tag.audio_count_all : tag.audio_count) ?? 0;
   const imageCount =
     (showAllDetails ? tag.image_count_all : tag.image_count) ?? 0;
   const galleryCount =
@@ -100,7 +104,9 @@ const TagTabs: React.FC<{
   const populatedDefaultTab = useMemo(() => {
     let ret: TabKey = "scenes";
     if (sceneCount == 0) {
-      if (imageCount != 0) {
+      if (audioCount != 0) {
+        ret = "audios";
+      } else if (imageCount != 0) {
         ret = "images";
       } else if (galleryCount != 0) {
         ret = "galleries";
@@ -118,6 +124,7 @@ const TagTabs: React.FC<{
     return ret;
   }, [
     sceneCount,
+    audioCount,
     imageCount,
     galleryCount,
     sceneMarkerCount,
@@ -172,6 +179,23 @@ const TagTabs: React.FC<{
         {contentSwitch}
         <TagScenesPanel
           active={tabKey === "scenes"}
+          tag={tag}
+          showSubTagContent={showAllDetails}
+        />
+      </Tab>
+      <Tab
+        eventKey="audios"
+        title={
+          <TabTitleCounter
+            messageID="audios"
+            count={audioCount}
+            abbreviateCounter={abbreviateCounter}
+          />
+        }
+      >
+        {contentSwitch}
+        <TagAudiosPanel
+          active={tabKey === "audios"}
           tag={tag}
           showSubTagContent={showAllDetails}
         />

@@ -311,6 +311,42 @@ func (s *Manager) generateScreenshot(ctx context.Context, sceneId string, at *fl
 	return s.JobManager.Add(ctx, fmt.Sprintf("Generating screenshot for scene id %s", sceneId), j)
 }
 
+func (s *Manager) GenerateAudioWaveform(ctx context.Context, audioId string) int {
+	j := job.MakeJobExec(func(ctx context.Context, progress *job.Progress) error {
+		audioIdInt, err := strconv.Atoi(audioId)
+		if err != nil {
+			return fmt.Errorf("error parsing audio id %s: %w", audioId, err)
+		}
+
+		var audio *models.Audio
+		if err := s.Repository.WithTxn(ctx, func(ctx context.Context) error {
+			audio, err = s.Repository.Audio.Find(ctx, audioIdInt)
+			if err != nil {
+				return err
+			}
+			if audio == nil {
+				return fmt.Errorf("audio with id %s not found", audioId)
+			}
+
+			return audio.LoadPrimaryFile(ctx, s.Repository.File)
+		}); err != nil {
+			return fmt.Errorf("error finding audio for waveform generation: %w", err)
+		}
+
+		task := GenerateAudioThumbnailTask{
+			repository: s.Repository,
+			Audio:      *audio,
+			Overwrite:  true,
+		}
+
+		task.Start(ctx)
+
+		return nil
+	})
+
+	return s.JobManager.Add(ctx, fmt.Sprintf("Generating waveform for audio id %s", audioId), j)
+}
+
 type AutoTagMetadataInput struct {
 	// Paths to tag, null for all files
 	Paths []string `json:"paths"`

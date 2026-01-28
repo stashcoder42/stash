@@ -20,6 +20,7 @@ export const ScanOptions: React.FC<IScanOptions> = ({
     scanGenerateThumbnails,
     scanGenerateImagePhashes,
     scanGenerateClipPreviews,
+    scanGenerateAudioWaveforms,
     rescan,
   } = options;
 
@@ -85,6 +86,12 @@ export const ScanOptions: React.FC<IScanOptions> = ({
         checked={scanGenerateClipPreviews ?? false}
         headingID="config.tasks.generate_clip_previews_during_scan"
         onChange={(v) => setOptions({ scanGenerateClipPreviews: v })}
+      />
+      <BooleanSetting
+        id="scan-generate-audio-waveforms"
+        checked={scanGenerateAudioWaveforms ?? false}
+        headingID="config.tasks.generate_audio_waveforms_during_scan"
+        onChange={(v) => setOptions({ scanGenerateAudioWaveforms: v })}
       />
       <BooleanSetting
         id="force-rescan"

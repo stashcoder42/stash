@@ -106,4 +106,5 @@ type ConfigDisableDropdownCreate struct {
 	Studio    bool `json:"studio"`
 	Movie     bool `json:"movie"`
 	Gallery   bool `json:"gallery"`
+	Audio     bool `json:"audio"`
 }

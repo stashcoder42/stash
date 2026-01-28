@@ -23,3 +23,7 @@ func NewAudioMarkerURLBuilder(baseURL string, audioMarker *models.AudioMarker) A
 func (b AudioMarkerURLBuilder) GetStreamURL() string {
 	return b.BaseURL + "/audio/" + b.AudioID + "/audio_marker/" + b.MarkerID + "/stream"
 }
+
+func (b AudioMarkerURLBuilder) GetPreviewURL() string {
+	return b.BaseURL + "/audio/" + b.AudioID + "/audio_marker/" + b.MarkerID + "/preview"
+}

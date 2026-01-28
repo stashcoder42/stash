@@ -23,6 +23,7 @@ import {
   PerformerDetailsPanel,
 } from "./PerformerDetailsPanel";
 import { PerformerScenesPanel } from "./PerformerScenesPanel";
+import { PerformerAudiosPanel } from "./PerformerAudiosPanel";
 import { PerformerGalleriesPanel } from "./PerformerGalleriesPanel";
 import { PerformerGroupsPanel } from "./PerformerGroupsPanel";
 import { PerformerImagesPanel } from "./PerformerImagesPanel";
@@ -64,6 +65,7 @@ interface IPerformerParams {
 const validTabs = [
   "default",
   "scenes",
+  "audios",
   "galleries",
   "images",
   "groups",
@@ -83,7 +85,9 @@ const PerformerTabs: React.FC<{
   const populatedDefaultTab = useMemo(() => {
     let ret: TabKey = "scenes";
     if (performer.scene_count == 0) {
-      if (performer.gallery_count != 0) {
+      if (performer.audio_count != 0) {
+        ret = "audios";
+      } else if (performer.gallery_count != 0) {
         ret = "galleries";
       } else if (performer.image_count != 0) {
         ret = "images";
@@ -104,22 +108,26 @@ const PerformerTabs: React.FC<{
 
   useEffect(() => {
     Mousetrap.bind("c", () => setTabKey("scenes"));
+    Mousetrap.bind("a", () => setTabKey("audios"));
     Mousetrap.bind("g", () => setTabKey("galleries"));
     Mousetrap.bind("m", () => setTabKey("groups"));
 
     return () => {
       Mousetrap.unbind("c");
+      Mousetrap.unbind("a");
       Mousetrap.unbind("g");
       Mousetrap.unbind("m");
     };
   });
+
+  const effectiveTabKey = tabKey ?? populatedDefaultTab;
 
   return (
     <Tabs
       id="performer-tabs"
       mountOnEnter
       unmountOnExit
-      activeKey={tabKey}
+      activeKey={effectiveTabKey}
       onSelect={setTabKey}
     >
       <Tab
@@ -133,7 +141,23 @@ const PerformerTabs: React.FC<{
         }
       >
         <PerformerScenesPanel
-          active={tabKey === "scenes"}
+          active={effectiveTabKey === "scenes"}
+          performer={performer}
+        />
+      </Tab>
+
+      <Tab
+        eventKey="audios"
+        title={
+          <TabTitleCounter
+            messageID="audios"
+            count={performer.audio_count}
+            abbreviateCounter={abbreviateCounter}
+          />
+        }
+      >
+        <PerformerAudiosPanel
+          active={effectiveTabKey === "audios"}
           performer={performer}
         />
       </Tab>
@@ -149,7 +173,7 @@ const PerformerTabs: React.FC<{
         }
       >
         <PerformerGalleriesPanel
-          active={tabKey === "galleries"}
+          active={effectiveTabKey === "galleries"}
           performer={performer}
         />
       </Tab>
@@ -165,7 +189,7 @@ const PerformerTabs: React.FC<{
         }
       >
         <PerformerImagesPanel
-          active={tabKey === "images"}
+          active={effectiveTabKey === "images"}
           performer={performer}
         />
       </Tab>
@@ -181,7 +205,7 @@ const PerformerTabs: React.FC<{
         }
       >
         <PerformerGroupsPanel
-          active={tabKey === "groups"}
+          active={effectiveTabKey === "groups"}
           performer={performer}
         />
       </Tab>
@@ -197,7 +221,7 @@ const PerformerTabs: React.FC<{
         }
       >
         <PerformerAppearsWithPanel
-          active={tabKey === "appearswith"}
+          active={effectiveTabKey === "appearswith"}
           performer={performer}
         />
       </Tab>

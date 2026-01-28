@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/stashapp/stash/pkg/fsutil"
 	"github.com/stashapp/stash/pkg/logger"
@@ -36,6 +37,7 @@ func (t *GenerateAudioThumbnailTask) Start(ctx context.Context) {
 	}
 
 	if !required {
+		logger.Infof("Skipping waveform generation for audio id=%d (already exists)", t.Audio.ID)
 		return
 	}
 
@@ -44,15 +46,19 @@ func (t *GenerateAudioThumbnailTask) Start(ctx context.Context) {
 		return
 	}
 
-	logger.Debugf("Creating waveform for %s", t.Audio.Path)
+	logger.Infof("Generating waveform for audio id=%d path=%s", t.Audio.ID, t.Audio.Path)
+
+	startTime := time.Now()
 
 	// Generate waveform using FFmpeg showwavespic filter
 	waveformData, err := t.generateWaveform(ctx, primaryFile.Base().Path)
 	if err != nil {
-		logger.Errorf("Error generating waveform: %v", err)
+		logger.Errorf("Error generating waveform for audio id=%d: %v", t.Audio.ID, err)
 		logErrorOutput(err)
 		return
 	}
+
+	duration := time.Since(startTime)
 
 	// Store waveform as the audio's cover/thumbnail in the database
 	if err := r.WithTxn(ctx, func(ctx context.Context) error {
@@ -73,7 +79,10 @@ func (t *GenerateAudioThumbnailTask) Start(ctx context.Context) {
 		return nil
 	}); err != nil && ctx.Err() == nil {
 		logger.Error(err.Error())
+		return
 	}
+
+	logger.Infof("Waveform generated for audio id=%d (size=%d bytes, duration=%.3fs)", t.Audio.ID, len(waveformData), duration.Seconds())
 }
 
 func (t *GenerateAudioThumbnailTask) generateWaveform(ctx context.Context, inputPath string) ([]byte, error) {
