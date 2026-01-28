@@ -100,6 +100,8 @@ func loadUrlCandidates(c Definition, ty ScrapeContentType) []*ByURLDefinition {
 		return c.GalleryByURL
 	case ScrapeContentTypeImage:
 		return c.ImageByURL
+	case ScrapeContentTypeAudio:
+		return c.AudioByURL
 	}
 
 	panic("loadUrlCandidates: unreachable")

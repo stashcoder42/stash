@@ -14,8 +14,6 @@ type AudioMarkerFilterType struct {
 	Tags *HierarchicalMultiCriterionInput `json:"tags"`
 	// Filter to only include audio markers attached to an audio with these tags
 	AudioTags *HierarchicalMultiCriterionInput `json:"audio_tags"`
-	// Filter to only include audio markers with these performers
-	Performers *MultiCriterionInput `json:"performers"`
 	// Filter by tag count
 	TagCount *IntCriterionInput `json:"tag_count"`
 	// Filter by duration (in seconds)
@@ -24,15 +22,7 @@ type AudioMarkerFilterType struct {
 	CreatedAt *TimestampCriterionInput `json:"created_at"`
 	// Filter by updated at
 	UpdatedAt *TimestampCriterionInput `json:"updated_at"`
-	// Filter by audio date
-	AudioDate *DateCriterionInput `json:"audio_date"`
-	// Filter by audio creation time
-	AudioCreatedAt *TimestampCriterionInput `json:"audio_created_at"`
-	// Filter by audio last update time
-	AudioUpdatedAt *TimestampCriterionInput `json:"audio_updated_at"`
 	// Filter by related audios that meet this criteria
-	AudioFilter *AudioFilterType `json:"audio_filter"`
-	// Filter by related audios that meet this criteria (deprecated)
 	AudiosFilter *AudioFilterType `json:"audios_filter"`
 	// Filter by related tags that meet this criteria
 	TagsFilter *TagFilterType `json:"tags_filter"`

@@ -19,6 +19,7 @@ type Audio struct {
 	Organized    bool    `json:"organized"`
 	ResumeTime   float64 `json:"resume_time"`
 	PlayDuration float64 `json:"play_duration"`
+	CoverBlob    *string `json:"cover_blob"`
 
 	// transient - not persisted
 	Files         RelatedFiles
@@ -58,6 +59,7 @@ type AudioPartial struct {
 	Organized     OptionalBool
 	ResumeTime    OptionalFloat64
 	PlayDuration  OptionalFloat64
+	CoverBlob     OptionalString
 	CreatedAt     OptionalTime
 	UpdatedAt     OptionalTime
 	URLs          *UpdateStrings

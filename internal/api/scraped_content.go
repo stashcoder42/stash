@@ -209,3 +209,19 @@ func marshalScrapedGroup(content scraper.ScrapedContent) (*models.ScrapedGroup, 
 
 	return m[0], nil
 }
+
+// marshalScrapedAudio will marshal a single scraped audio
+func marshalScrapedAudio(content scraper.ScrapedContent) (*models.ScrapedAudio, error) {
+	if content == nil {
+		return nil, nil
+	}
+
+	switch a := content.(type) {
+	case *models.ScrapedAudio:
+		return a, nil
+	case models.ScrapedAudio:
+		return &a, nil
+	default:
+		return nil, fmt.Errorf("%w: cannot turn ScrapedContent into ScrapedAudio", models.ErrConversion)
+	}
+}

@@ -53,6 +53,17 @@ query ListGroupScrapers {
   }
 }
 
+query ListAudioScrapers {
+  listScrapers(types: [AUDIO]) {
+    id
+    name
+    audio {
+      urls
+      supported_scrapes
+    }
+  }
+}
+
 query ScrapeSingleStudio(
   $source: ScraperSourceInput!
   $input: ScrapeSingleStudioInput!
@@ -152,6 +163,12 @@ query ScrapeImageURL($url: String!) {
 query ScrapeGroupURL($url: String!) {
   scrapeGroupURL(url: $url) {
     ...ScrapedGroupData
+  }
+}
+
+query ScrapeAudioURL($url: String!) {
+  scrapeAudioURL(url: $url) {
+    ...ScrapedAudioData
   }
 }
 

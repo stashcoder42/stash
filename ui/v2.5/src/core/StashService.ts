@@ -2867,6 +2867,15 @@ export const queryScrapeGroupURL = (url: string) =>
     fetchPolicy: "network-only",
   });
 
+export const useListAudioScrapers = () => GQL.useListAudioScrapersQuery();
+
+export const queryScrapeAudioURL = (url: string) =>
+  client.query<GQL.ScrapeAudioUrlQuery>({
+    query: GQL.ScrapeAudioUrlDocument,
+    variables: { url },
+    fetchPolicy: "network-only",
+  });
+
 export const useListGalleryScrapers = () => GQL.useListGalleryScrapersQuery();
 
 export const useListImageScrapers = () => GQL.useListImageScrapersQuery();

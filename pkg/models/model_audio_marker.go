@@ -30,7 +30,6 @@ type AudioMarkerPartial struct {
 	Seconds      OptionalFloat64
 	EndSeconds   OptionalFloat64
 	PrimaryTagID OptionalInt
-	TagIDs       *UpdateIDs
 	AudioID      OptionalInt
 	CreatedAt    OptionalTime
 	UpdatedAt    OptionalTime

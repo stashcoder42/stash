@@ -307,3 +307,34 @@ fragment ScrapedStashBoxPerformerData on StashBoxPerformerQueryResult {
     ...ScrapedScenePerformerData
   }
 }
+
+fragment ScrapedAudioData on ScrapedAudio {
+  title
+  details
+  urls
+  date
+  image
+  remote_site_id
+  duration
+
+  file {
+    size
+    duration
+    bitrate
+    audio_codec
+  }
+
+  tags {
+    ...ScrapedSceneTagData
+  }
+
+  performers {
+    ...ScrapedScenePerformerData
+  }
+
+  fingerprints {
+    hash
+    algorithm
+    duration
+  }
+}

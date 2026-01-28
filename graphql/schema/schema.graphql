@@ -94,6 +94,9 @@ type Query {
     ids: [ID!]
   ): FindAudioMarkersResultType!
 
+  "Organize audio markers by tag for a given audio ID"
+  audioMarkerTags(audio_id: ID!): [AudioMarkerTag!]!
+
   "Find a performer by ID"
   findPerformer(id: ID!): Performer
   "A function which queries Performer objects"
@@ -152,14 +155,10 @@ type Query {
 
   "Get marker strings"
   markerStrings(q: String, sort: String): [MarkerStringsResultType]!
-  "Get audio marker strings"
-  audioMarkerStrings(q: String, sort: String): [MarkerStringsResultType]!
   "Get stats"
   stats: StatsResultType!
   "Organize scene markers by tag for a given scene ID"
   sceneMarkerTags(scene_id: ID!): [SceneMarkerTag!]!
-  "Organize audio markers by tag for a given audio ID"
-  audioMarkerTags(audio_id: ID!): [AudioMarkerTag!]!
 
   logs: [LogEntry!]!
 
@@ -242,6 +241,8 @@ type Query {
     @deprecated(reason: "Use scrapeGroupURL instead")
   "Scrapes a complete group record based on a URL"
   scrapeGroupURL(url: String!): ScrapedGroup
+  "Scrapes a complete audio record based on a URL"
+  scrapeAudioURL(url: String!): ScrapedAudio
 
   # Plugins
   "List loaded plugins"
@@ -281,8 +282,6 @@ type Query {
   allScenes: [Scene!]! @deprecated(reason: "Use findScenes instead")
   allSceneMarkers: [SceneMarker!]!
     @deprecated(reason: "Use findSceneMarkers instead")
-  allAudioMarkers: [AudioMarker!]!
-    @deprecated(reason: "Use findAudioMarkers instead")
   allImages: [Image!]! @deprecated(reason: "Use findImages instead")
   allGalleries: [Gallery!]! @deprecated(reason: "Use findGalleries instead")
 
@@ -401,11 +400,7 @@ type Mutation {
   "Saves the activity (resume_time and play_duration) for an audio"
   audioSaveActivity(id: ID!, resume_time: Float, play_duration: Float): Boolean!
   "Resets the activity (resume_time and play_duration) for an audio"
-  audioResetActivity(
-    id: ID!
-    reset_resume: Boolean
-    reset_duration: Boolean
-  ): Boolean!
+  audioResetActivity(id: ID!): Boolean!
 
   "Adds play history entries to an audio. Returns the updated history"
   audioAddPlay(id: ID!, times: [Timestamp!]): HistoryMutationResult!
@@ -423,7 +418,6 @@ type Mutation {
 
   audioMarkerCreate(input: AudioMarkerCreateInput!): AudioMarker
   audioMarkerUpdate(input: AudioMarkerUpdateInput!): AudioMarker
-  bulkAudioMarkerUpdate(input: BulkAudioMarkerUpdateInput!): [AudioMarker!]
   audioMarkerDestroy(id: ID!): Boolean!
   audioMarkersDestroy(ids: [ID!]!): Boolean!
 

@@ -45,28 +45,6 @@ func (r *queryResolver) FindAudioMarkers(ctx context.Context, audioMarkerFilter 
 	return ret, nil
 }
 
-func (r *queryResolver) AllAudioMarkers(ctx context.Context) (ret []*models.AudioMarker, err error) {
-	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
-		ret, err = r.repository.AudioMarker.All(ctx)
-		return err
-	}); err != nil {
-		return nil, err
-	}
-
-	return ret, nil
-}
-
-func (r *queryResolver) AudioMarkerStrings(ctx context.Context, q *string, sort *string) (ret []*models.MarkerStringsResultType, err error) {
-	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
-		ret, err = r.repository.AudioMarker.GetMarkerStrings(ctx, q, sort)
-		return err
-	}); err != nil {
-		return nil, err
-	}
-
-	return ret, nil
-}
-
 // Get audio marker tags which show up under the audio player.
 func (r *queryResolver) AudioMarkerTags(ctx context.Context, audioID string) ([]*AudioMarkerTag, error) {
 	id, err := strconv.Atoi(audioID)

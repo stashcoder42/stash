@@ -64,6 +64,12 @@ func (c *postScraper) postScrape(ctx context.Context, content ScrapedContent) (_
 		}
 	case models.ScrapedGroup:
 		return c.postScrapeGroup(ctx, v, related)
+	case *models.ScrapedAudio:
+		if v != nil {
+			return c.postScrapeAudio(ctx, *v)
+		}
+	case models.ScrapedAudio:
+		return c.postScrapeAudio(ctx, v)
 	}
 
 	// If nothing matches, pass the content through
@@ -502,6 +508,29 @@ func (c *postScraper) postScrapeImage(ctx context.Context, image models.ScrapedI
 	}
 
 	return image, nil
+}
+
+func (c *postScraper) postScrapeAudio(ctx context.Context, audio models.ScrapedAudio) (_ ScrapedContent, err error) {
+	r := c.repository
+	tqb := r.TagFinder
+
+	if err = c.postScrapeRelatedPerformers(ctx, audio.Performers); err != nil {
+		return nil, err
+	}
+
+	tags, err := postProcessTags(ctx, tqb, audio.Tags)
+	if err != nil {
+		return nil, err
+	}
+
+	audio.Tags = c.filterTags(tags)
+
+	// post-process - set the image if applicable
+	if err := setAudioImage(ctx, c.client, &audio, c.globalConfig); err != nil {
+		logger.Warnf("Could not set audio image: %v", err)
+	}
+
+	return audio, nil
 }
 
 // postScrapeSingle handles post-processing of a single scraped content item.

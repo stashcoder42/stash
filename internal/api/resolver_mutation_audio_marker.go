@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 
-	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/plugin/hook"
+	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/sliceutil"
 	"github.com/stashapp/stash/pkg/sliceutil/stringslice"
 )
+
+// AudioMarker mutations
 
 func (r *mutationResolver) getAudioMarker(ctx context.Context, id int) (ret *models.AudioMarker, err error) {
 	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
@@ -21,6 +22,13 @@ func (r *mutationResolver) getAudioMarker(ctx context.Context, id int) (ret *mod
 	}
 
 	return ret, nil
+}
+
+func validateAudioMarkerEndSeconds(seconds, endSeconds float64) error {
+	if endSeconds < seconds {
+		return fmt.Errorf("end_seconds (%f) must be greater than or equal to seconds (%f)", endSeconds, seconds)
+	}
+	return nil
 }
 
 func (r *mutationResolver) AudioMarkerCreate(ctx context.Context, input AudioMarkerCreateInput) (*models.AudioMarker, error) {
@@ -37,7 +45,7 @@ func (r *mutationResolver) AudioMarkerCreate(ctx context.Context, input AudioMar
 	// Populate a new audio marker from the input
 	newMarker := models.NewAudioMarker()
 
-	newMarker.Title = strings.TrimSpace(input.Title)
+	newMarker.Title = input.Title
 	newMarker.Seconds = input.Seconds
 	newMarker.PrimaryTagID = primaryTagID
 	newMarker.AudioID = audioID
@@ -72,13 +80,6 @@ func (r *mutationResolver) AudioMarkerCreate(ctx context.Context, input AudioMar
 
 	r.hookExecutor.ExecutePostHooks(ctx, newMarker.ID, hook.AudioMarkerCreatePost, input, nil)
 	return r.getAudioMarker(ctx, newMarker.ID)
-}
-
-func validateAudioMarkerEndSeconds(seconds, endSeconds float64) error {
-	if endSeconds < seconds {
-		return fmt.Errorf("end_seconds (%f) must be greater than or equal to seconds (%f)", endSeconds, seconds)
-	}
-	return nil
 }
 
 func (r *mutationResolver) AudioMarkerUpdate(ctx context.Context, input AudioMarkerUpdateInput) (*models.AudioMarker, error) {
@@ -119,7 +120,7 @@ func (r *mutationResolver) AudioMarkerUpdate(ctx context.Context, input AudioMar
 	if err := r.withTxn(ctx, func(ctx context.Context) error {
 		qb := r.repository.AudioMarker
 
-		// check to see if timestamp was changed
+		// check to see if marker exists
 		existingMarker, err := qb.Find(ctx, markerID)
 		if err != nil {
 			return err
@@ -169,123 +170,6 @@ func (r *mutationResolver) AudioMarkerUpdate(ctx context.Context, input AudioMar
 
 	r.hookExecutor.ExecutePostHooks(ctx, markerID, hook.AudioMarkerUpdatePost, input, translator.getFields())
 	return r.getAudioMarker(ctx, markerID)
-}
-
-func (r *mutationResolver) BulkAudioMarkerUpdate(ctx context.Context, input BulkAudioMarkerUpdateInput) ([]*models.AudioMarker, error) {
-	ids, err := stringslice.StringSliceToIntSlice(input.Ids)
-	if err != nil {
-		return nil, fmt.Errorf("converting ids: %w", err)
-	}
-
-	translator := changesetTranslator{
-		inputMap: getUpdateInputMap(ctx),
-	}
-
-	// Populate marker from the input
-	partial := models.NewAudioMarkerPartial()
-
-	partial.Title = translator.optionalString(input.Title, "title")
-
-	partial.PrimaryTagID, err = translator.optionalIntFromString(input.PrimaryTagID, "primary_tag_id")
-	if err != nil {
-		return nil, fmt.Errorf("converting primary tag id: %w", err)
-	}
-
-	partial.TagIDs, err = translator.updateIdsBulk(input.TagIds, "tag_ids")
-	if err != nil {
-		return nil, fmt.Errorf("converting tag ids: %w", err)
-	}
-
-	ret := []*models.AudioMarker{}
-
-	// Start the transaction and save the markers
-	if err := r.withTxn(ctx, func(ctx context.Context) error {
-		qb := r.repository.AudioMarker
-
-		for _, id := range ids {
-			l := partial
-
-			if err := adjustAudioMarkerPartialForTagExclusion(ctx, r.repository.AudioMarker, id, &l); err != nil {
-				return err
-			}
-
-			updated, err := qb.UpdatePartial(ctx, id, l)
-			if err != nil {
-				return err
-			}
-
-			ret = append(ret, updated)
-		}
-
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-
-	// execute post hooks outside of txn
-	var newRet []*models.AudioMarker
-	for _, m := range ret {
-		r.hookExecutor.ExecutePostHooks(ctx, m.ID, hook.AudioMarkerUpdatePost, input, translator.getFields())
-
-		m, err = r.getAudioMarker(ctx, m.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		newRet = append(newRet, m)
-	}
-
-	return newRet, nil
-}
-
-// adjustAudioMarkerPartialForTagExclusion adjusts the AudioMarkerPartial to exclude the primary tag from tag updates.
-func adjustAudioMarkerPartialForTagExclusion(ctx context.Context, r models.AudioMarkerReader, id int, partial *models.AudioMarkerPartial) error {
-	if partial.TagIDs == nil && !partial.PrimaryTagID.Set {
-		return nil
-	}
-
-	// exclude primary tag from tag updates
-	var primaryTagID int
-	if partial.PrimaryTagID.Set {
-		primaryTagID = partial.PrimaryTagID.Value
-	} else {
-		existing, err := r.Find(ctx, id)
-		if err != nil {
-			return fmt.Errorf("finding existing primary tag id: %w", err)
-		}
-
-		primaryTagID = existing.PrimaryTagID
-	}
-
-	existingTagIDs, err := r.GetTagIDs(ctx, id)
-	if err != nil {
-		return fmt.Errorf("getting existing tag ids: %w", err)
-	}
-
-	tagIDAttr := partial.TagIDs
-
-	if tagIDAttr == nil {
-		tagIDAttr = &models.UpdateIDs{
-			IDs:  existingTagIDs,
-			Mode: models.RelationshipUpdateModeSet,
-		}
-	}
-
-	newTagIDs := tagIDAttr.Apply(existingTagIDs)
-	// Remove primary tag from newTagIDs if present
-	newTagIDs = sliceutil.Exclude(newTagIDs, []int{primaryTagID})
-
-	if len(existingTagIDs) != len(newTagIDs) {
-		partial.TagIDs = &models.UpdateIDs{
-			IDs:  newTagIDs,
-			Mode: models.RelationshipUpdateModeSet,
-		}
-	} else {
-		// no change to tags required
-		partial.TagIDs = nil
-	}
-
-	return nil
 }
 
 func (r *mutationResolver) AudioMarkerDestroy(ctx context.Context, id string) (bool, error) {

@@ -491,7 +491,7 @@ func (r *mutationResolver) AudioSaveActivity(ctx context.Context, id string, res
 	return ret, nil
 }
 
-func (r *mutationResolver) AudioResetActivity(ctx context.Context, id string, resetResume *bool, resetDuration *bool) (ret bool, err error) {
+func (r *mutationResolver) AudioResetActivity(ctx context.Context, id string) (ret bool, err error) {
 	audioID, err := strconv.Atoi(id)
 	if err != nil {
 		return false, fmt.Errorf("converting id: %w", err)
@@ -500,7 +500,7 @@ func (r *mutationResolver) AudioResetActivity(ctx context.Context, id string, re
 	if err := r.withTxn(ctx, func(ctx context.Context) error {
 		qb := r.repository.Audio
 
-		ret, err = qb.ResetActivity(ctx, audioID, utils.IsTrue(resetResume), utils.IsTrue(resetDuration))
+		ret, err = qb.ResetActivity(ctx, audioID, true, true)
 		return err
 	}); err != nil {
 		return false, err
@@ -691,7 +691,6 @@ func (r *mutationResolver) AudioMerge(ctx context.Context, input AudioMergeInput
 	}
 
 	var values *models.AudioPartial
-	var coverImageData []byte
 
 	if input.Values != nil {
 		translator := changesetTranslator{
@@ -701,14 +700,6 @@ func (r *mutationResolver) AudioMerge(ctx context.Context, input AudioMergeInput
 		values, err = audioPartialFromInput(*input.Values, translator)
 		if err != nil {
 			return nil, err
-		}
-
-		if input.Values.CoverImage != nil {
-			var err error
-			coverImageData, err = utils.ProcessImageInput(ctx, *input.Values.CoverImage)
-			if err != nil {
-				return nil, fmt.Errorf("processing cover image: %w", err)
-			}
 		}
 	} else {
 		v := models.NewAudioPartial()
@@ -743,13 +734,6 @@ func (r *mutationResolver) AudioMerge(ctx context.Context, input AudioMergeInput
 		}
 		if ret == nil {
 			return fmt.Errorf("audio with id %d not found", destID)
-		}
-
-		// update cover image if provided
-		if len(coverImageData) > 0 {
-			if err := r.repository.Audio.UpdateCover(ctx, destID, coverImageData); err != nil {
-				return fmt.Errorf("updating cover image: %w", err)
-			}
 		}
 
 		return nil

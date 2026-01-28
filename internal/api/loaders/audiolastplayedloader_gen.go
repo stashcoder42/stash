@@ -5,7 +5,6 @@ package loaders
 import (
 	"sync"
 	"time"
-
 )
 
 // AudioLastPlayedLoaderConfig captures the config to create a new AudioLastPlayedLoader

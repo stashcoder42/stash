@@ -40,19 +40,7 @@ input AudioMarkerUpdateInput {
   tag_ids: [ID!]
 }
 
-input BulkAudioMarkerUpdateInput {
-  ids: [ID!]
-  title: String
-  primary_tag_id: ID
-  tag_ids: BulkUpdateIds
-}
-
 type FindAudioMarkersResultType {
   count: Int!
-  audio_markers: [AudioMarker!]!
-}
-
-type AudioMarkerTag {
-  tag: Tag!
   audio_markers: [AudioMarker!]!
 }

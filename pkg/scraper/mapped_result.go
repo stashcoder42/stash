@@ -276,3 +276,13 @@ func (r mappedResults) scrapedGroups() []*models.ScrapedGroup {
 
 	return ret
 }
+
+func (r mappedResult) scrapedAudio() *models.ScrapedAudio {
+	ret := &models.ScrapedAudio{
+		Title:   r.stringPtr("Title"),
+		Details: r.stringPtr("Details"),
+		URLs:    r.stringSlice("URLs"),
+		Date:    r.stringPtr("Date"),
+	}
+	return ret
+}

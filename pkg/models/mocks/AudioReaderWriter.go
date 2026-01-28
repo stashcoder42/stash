@@ -539,29 +539,6 @@ func (_m *AudioReaderWriter) FindMany(ctx context.Context, ids []int) ([]*models
 	return r0, r1
 }
 
-// FindByIDs provides a mock function with given fields: ctx, ids
-func (_m *AudioReaderWriter) FindByIDs(ctx context.Context, ids []int) ([]*models.Audio, error) {
-	ret := _m.Called(ctx, ids)
-
-	var r0 []*models.Audio
-	if rf, ok := ret.Get(0).(func(context.Context, []int) []*models.Audio); ok {
-		r0 = rf(ctx, ids)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*models.Audio)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []int) error); ok {
-		r1 = rf(ctx, ids)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetAllOCount provides a mock function with given fields: ctx
 func (_m *AudioReaderWriter) GetAllOCount(ctx context.Context) (int, error) {
 	ret := _m.Called(ctx)

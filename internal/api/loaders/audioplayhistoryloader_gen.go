@@ -5,7 +5,6 @@ package loaders
 import (
 	"sync"
 	"time"
-
 )
 
 // AudioPlayHistoryLoaderConfig captures the config to create a new AudioPlayHistoryLoader

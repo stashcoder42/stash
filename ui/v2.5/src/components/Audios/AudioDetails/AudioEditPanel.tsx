@@ -22,6 +22,12 @@ import {
 } from "src/components/Performers/PerformerSelect";
 import { formikUtils } from "src/utils/form";
 import { useTagsEdit } from "src/hooks/tagsEdit";
+import { useListAudioScrapers, queryScrapeAudioURL } from "src/core/StashService";
+import { lazyComponent } from "src/utils/lazyComponent";
+
+const AudioScrapeDialog = lazyComponent(
+  () => import("./AudioScrapeDialog")
+);
 
 interface IProps {
   audio: Partial<GQL.AudioDataFragment>;
@@ -44,6 +50,9 @@ export const AudioEditPanel: React.FC<IProps> = ({
   const Toast = useToast();
 
   const [performers, setPerformers] = useState<Performer[]>([]);
+  const [scrapedAudio, setScrapedAudio] = useState<GQL.ScrapedAudio | null>();
+
+  const Scrapers = useListAudioScrapers();
 
   useEffect(() => {
     setPerformers(audio.performers ?? []);
@@ -84,7 +93,7 @@ export const AudioEditPanel: React.FC<IProps> = ({
     onSubmit: (values) => onSave(schema.cast(values)),
   });
 
-  const { tags, tagsControl } = useTagsEdit(
+  const { tags, updateTagsStateFromScraper, tagsControl } = useTagsEdit(
     audio.tags,
     (ids) => formik.setFieldValue("tag_ids", ids)
   );
@@ -241,18 +250,113 @@ export const AudioEditPanel: React.FC<IProps> = ({
     return renderInputField("details", "textarea", "details", props);
   }
 
-  // Stub function for URL scraping - scraping not yet implemented
-  function onScrapeAudioURL(_url: string) {
-    // Scraping will be implemented in audio/4-scraping branch
+  async function onScrapeAudioURL(url: string) {
+    if (!url) {
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const result = await queryScrapeAudioURL(url);
+      if (!result.data || !result.data.scrapeAudioURL) {
+        return;
+      }
+      setScrapedAudio(result.data.scrapeAudioURL);
+    } catch (e) {
+      Toast.error(e);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
-  // Stub function for URL scrapability check
-  function urlScrapable(_scrapedUrl: string): boolean {
-    return false;
+  function urlScrapable(scrapedUrl: string): boolean {
+    return (Scrapers?.data?.listScrapers ?? []).some((s) =>
+      (s?.audio?.urls ?? []).some((u) => scrapedUrl.includes(u))
+    );
+  }
+
+  function onScrapeDialogClosed(audioData?: GQL.ScrapedAudioDataFragment) {
+    if (audioData) {
+      updateAudioFromScrapedAudio(audioData);
+    }
+    setScrapedAudio(undefined);
+  }
+
+  function updateAudioFromScrapedAudio(
+    updatedAudio: GQL.ScrapedAudioDataFragment
+  ) {
+    if (updatedAudio.title) {
+      formik.setFieldValue("title", updatedAudio.title);
+    }
+
+    if (updatedAudio.details) {
+      formik.setFieldValue("details", updatedAudio.details);
+    }
+
+    if (updatedAudio.date) {
+      formik.setFieldValue("date", updatedAudio.date);
+    }
+
+    if (updatedAudio.urls) {
+      formik.setFieldValue("urls", updatedAudio.urls);
+    }
+
+    // update performers - only those with stored_id
+    if (updatedAudio.performers?.length) {
+      const idPerfs = updatedAudio.performers.filter((p) => {
+        return p.stored_id !== undefined && p.stored_id !== null;
+      });
+
+      if (idPerfs.length > 0) {
+        onSetPerformers(
+          idPerfs.map((p) => {
+            return {
+              id: p.stored_id!,
+              name: p.name ?? "",
+              alias_list: [],
+              favorite: false,
+              disambiguation: p.disambiguation ?? "",
+            };
+          })
+        );
+      }
+    }
+
+    updateTagsStateFromScraper(updatedAudio.tags ?? undefined);
+
+    if (updatedAudio.image) {
+      // image is a base64 string
+      formik.setFieldValue("cover_image", updatedAudio.image);
+    }
+  }
+
+  function maybeRenderScrapeDialog() {
+    if (!scrapedAudio) {
+      return;
+    }
+
+    const currentAudio = {
+      id: audio.id,
+      ...formik.values,
+    };
+
+    if (!currentAudio.cover_image) {
+      currentAudio.cover_image = audio.paths?.cover;
+    }
+
+    return (
+      <AudioScrapeDialog
+        audio={currentAudio}
+        audioTags={tags}
+        audioPerformers={performers}
+        scraped={scrapedAudio}
+        onClose={(s) => onScrapeDialogClosed(s)}
+      />
+    );
   }
 
   return (
     <div id="audio-edit-details">
+      {maybeRenderScrapeDialog()}
       <Prompt
         when={formik.dirty}
         message={intl.formatMessage({ id: "dialogs.unsaved_changes" })}

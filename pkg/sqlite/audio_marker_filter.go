@@ -55,14 +55,6 @@ func (qb *audioMarkerFilterHandler) joinAudios(f *filterBuilder) {
 	audioMarkerRepository.audios.innerJoin(f, "", "audio_markers.audio_id")
 }
 
-func (qb *audioMarkerFilterHandler) getAudioFilter() *models.AudioFilterType {
-	// prefer AudioFilter over deprecated AudiosFilter
-	if qb.audioMarkerFilter.AudioFilter != nil {
-		return qb.audioMarkerFilter.AudioFilter
-	}
-	return qb.audioMarkerFilter.AudiosFilter
-}
-
 func (qb *audioMarkerFilterHandler) criterionHandler() criterionHandler {
 	audioMarkerFilter := qb.audioMarkerFilter
 	return compoundHandler{
@@ -73,18 +65,14 @@ func (qb *audioMarkerFilterHandler) criterionHandler() criterionHandler {
 		qb.audiosCriterionHandler(audioMarkerFilter.Audios),
 		qb.tagsCriterionHandler(audioMarkerFilter.Tags),
 		qb.audioTagsCriterionHandler(audioMarkerFilter.AudioTags),
-		qb.performersCriterionHandler(audioMarkerFilter.Performers),
 		qb.tagCountCriterionHandler(audioMarkerFilter.TagCount),
 		&timestampCriterionHandler{audioMarkerFilter.CreatedAt, "audio_markers.created_at", nil},
 		&timestampCriterionHandler{audioMarkerFilter.UpdatedAt, "audio_markers.updated_at", nil},
-		&dateCriterionHandler{audioMarkerFilter.AudioDate, "audios.date", qb.joinAudios},
-		&timestampCriterionHandler{audioMarkerFilter.AudioCreatedAt, "audios.created_at", qb.joinAudios},
-		&timestampCriterionHandler{audioMarkerFilter.AudioUpdatedAt, "audios.updated_at", qb.joinAudios},
 
 		&relatedFilterHandler{
 			relatedIDCol:   "audios.id",
 			relatedRepo:    audioRepository.repository,
-			relatedHandler: &audioFilterHandler{qb.getAudioFilter()},
+			relatedHandler: &audioFilterHandler{audioMarkerFilter.AudiosFilter},
 			joinFn: func(f *filterBuilder) {
 				qb.joinAudios(f)
 			},
@@ -219,30 +207,5 @@ func (qb *audioMarkerFilterHandler) audioTagsCriterionHandler(tags *models.Hiera
 
 			h.handler(tags).handle(ctx, f)
 		}
-	}
-}
-
-func (qb *audioMarkerFilterHandler) performersCriterionHandler(performers *models.MultiCriterionInput) criterionHandlerFunc {
-	h := joinedMultiCriterionHandlerBuilder{
-		primaryTable: audioTable,
-		joinTable:    audioPerformersTable,
-		joinAs:       "performers_join",
-		primaryFK:    audioIDColumn,
-		foreignFK:    performerIDColumn,
-
-		addJoinTable: func(f *filterBuilder) {
-			f.addLeftJoin(audioPerformersTable, "performers_join", "performers_join.audio_id = audio_markers.audio_id")
-		},
-	}
-
-	handler := h.handler(performers)
-	return func(ctx context.Context, f *filterBuilder) {
-		if performers == nil {
-			return
-		}
-
-		// Make sure audios is included, otherwise excludes filter fails
-		qb.joinAudios(f)
-		handler(ctx, f)
 	}
 }

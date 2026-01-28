@@ -58,6 +58,9 @@ type Definition struct {
 	// Configuration for querying a group by a URL
 	GroupByURL []*ByURLDefinition `yaml:"groupByURL"`
 
+	// Configuration for querying an audio by a URL
+	AudioByURL []*scrapeByURLConfig `yaml:"audioByURL"`
+
 	// Scraper debugging options
 	DebugOptions *scraperDebugOptions `yaml:"debug"`
 
@@ -114,6 +117,12 @@ func (c Definition) validate() error {
 	}
 
 	for _, s := range append(c.MovieByURL, c.GroupByURL...) {
+		if err := s.validate(); err != nil {
+			return err
+		}
+	}
+
+	for _, s := range c.AudioByURL {
 		if err := s.validate(); err != nil {
 			return err
 		}
@@ -342,6 +351,18 @@ func (c Definition) spec() Scraper {
 		ret.Group = &group
 	}
 
+	audio := ScraperSpec{}
+	if len(c.AudioByURL) > 0 {
+		audio.SupportedScrapes = append(audio.SupportedScrapes, ScrapeTypeURL)
+		for _, v := range c.AudioByURL {
+			audio.Urls = append(audio.Urls, v.URL...)
+		}
+	}
+
+	if len(audio.SupportedScrapes) > 0 {
+		ret.Audio = &audio
+	}
+
 	return ret
 }
 
@@ -357,6 +378,8 @@ func (c Definition) supports(ty ScrapeContentType) bool {
 		return c.ImageByFragment != nil || len(c.ImageByURL) > 0
 	case ScrapeContentTypeMovie, ScrapeContentTypeGroup:
 		return len(c.MovieByURL) > 0 || len(c.GroupByURL) > 0
+	case ScrapeContentTypeAudio:
+		return len(c.AudioByURL) > 0
 	}
 
 	panic("Unhandled ScrapeContentType")
@@ -395,6 +418,12 @@ func (c Definition) matchesURL(url string, ty ScrapeContentType) bool {
 			}
 		}
 		for _, scraper := range c.MovieByURL {
+			if scraper.matchesURL(url) {
+				return true
+			}
+		}
+	case ScrapeContentTypeAudio:
+		for _, scraper := range c.AudioByURL {
 			if scraper.matchesURL(url) {
 				return true
 			}

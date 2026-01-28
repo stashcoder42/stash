@@ -255,28 +255,31 @@ input SceneMarkerFilterType {
 }
 
 input AudioMarkerFilterType {
+  AND: AudioMarkerFilterType
+  OR: AudioMarkerFilterType
+  NOT: AudioMarkerFilterType
+
+  "Filter by audio marker id"
+  id: IntCriterionInput
+  "Filter by title"
+  title: StringCriterionInput
+  "Filter by start/end time"
+  seconds: FloatCriterionInput
+  "Filter by audio"
+  audios: MultiCriterionInput
   "Filter to only include audio markers with these tags"
   tags: HierarchicalMultiCriterionInput
-  "Filter to only include audio markers attached to an audio with these tags"
-  audio_tags: HierarchicalMultiCriterionInput
-  "Filter to only include audio markers with these performers"
-  performers: MultiCriterionInput
-  "Filter to only include audio markers from these audios"
-  audios: MultiCriterionInput
-  "Filter by duration (in seconds)"
-  duration: FloatCriterionInput
+  "Filter by tag count"
+  tag_count: IntCriterionInput
   "Filter by creation time"
   created_at: TimestampCriterionInput
   "Filter by last update time"
   updated_at: TimestampCriterionInput
-  "Filter by audio date"
-  audio_date: DateCriterionInput
-  "Filter by audio creation time"
-  audio_created_at: TimestampCriterionInput
-  "Filter by audio last update time"
-  audio_updated_at: TimestampCriterionInput
+
   "Filter by related audios that meet this criteria"
-  audio_filter: AudioFilterType
+  audios_filter: AudioFilterType
+  "Filter by related tags that meet this criteria"
+  tags_filter: TagFilterType
 }
 
 input SceneFilterType {

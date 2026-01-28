@@ -962,14 +962,14 @@ func (qb *TagStore) Merge(ctx context.Context, source []int, destination int) er
 	args = append(args, srcArgs...)
 
 	tagTables := map[string]string{
-		scenesTagsTable:        sceneIDColumn,
-		"scene_markers_tags":   "scene_marker_id",
-		"audio_markers_tags":   "audio_marker_id",
-		galleriesTagsTable:     galleryIDColumn,
-		imagesTagsTable:        imageIDColumn,
-		"performers_tags":      "performer_id",
-		"studios_tags":         "studio_id",
-		groupsTagsTable:        "group_id",
+		scenesTagsTable:       sceneIDColumn,
+		"scene_markers_tags":  "scene_marker_id",
+		"audio_markers_tags":  "audio_marker_id",
+		galleriesTagsTable:    galleryIDColumn,
+		imagesTagsTable:       imageIDColumn,
+		"performers_tags":     "performer_id",
+		"studios_tags":        "studio_id",
+		groupsTagsTable:       "group_id",
 	}
 
 	args = append(args, destination)

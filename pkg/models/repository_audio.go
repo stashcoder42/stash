@@ -7,12 +7,8 @@ import (
 
 // AudioGetter provides methods to get audio by ID.
 type AudioGetter interface {
-	// TODO - rename this to Find and remove existing method
 	FindMany(ctx context.Context, ids []int) ([]*Audio, error)
 	Find(ctx context.Context, id int) (*Audio, error)
-	// FindByIDs works the same way as FindMany, but it ignores any audios not found
-	// Audios are not guaranteed to be in the same order as the input
-	FindByIDs(ctx context.Context, ids []int) ([]*Audio, error)
 }
 
 // AudioFinder provides methods to find audio.

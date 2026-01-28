@@ -264,13 +264,7 @@ func (qb *AudioStore) Create(ctx context.Context, newObject *models.Audio, fileI
 		}
 	}
 
-	updated, err := qb.find(ctx, id)
-	if err != nil {
-		return fmt.Errorf("finding after create: %w", err)
-	}
-
-	*newObject = *updated
-
+	newObject.ID = id
 	return nil
 }
 
@@ -339,26 +333,10 @@ func (qb *AudioStore) Update(ctx context.Context, updatedObject *models.Audio) e
 		}
 	}
 
-	if updatedObject.Files.Loaded() {
-		fileIDs := make([]models.FileID, len(updatedObject.Files.List()))
-		for i, f := range updatedObject.Files.List() {
-			fileIDs[i] = f.Base().ID
-		}
-
-		if err := audioFilesTableMgr.replaceJoins(ctx, updatedObject.ID, fileIDs); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
 func (qb *AudioStore) Destroy(ctx context.Context, id int) error {
-	// must handle cover blob manually
-	if err := qb.destroyCover(ctx, id); err != nil {
-		return err
-	}
-
 	return qb.tableMgr.destroyExisting(ctx, []int{id})
 }
 
@@ -370,50 +348,27 @@ func (qb *AudioStore) Find(ctx context.Context, id int) (*models.Audio, error) {
 	return ret, err
 }
 
-// FindByIDs finds multiple audios by their IDs.
-// No check is made to see if the audios exist, and the order of the returned audios
-// is not guaranteed to be the same as the order of the input IDs.
-func (qb *AudioStore) FindByIDs(ctx context.Context, ids []int) ([]*models.Audio, error) {
-	audios := make([]*models.Audio, 0, len(ids))
-
-	table := qb.table()
-	if err := batchExec(ids, defaultBatchSize, func(batch []int) error {
-		q := qb.selectDataset().Prepared(true).Where(table.Col(idColumn).In(batch))
-		unsorted, err := qb.getMany(ctx, q)
-		if err != nil {
-			return err
-		}
-
-		audios = append(audios, unsorted...)
-
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-
-	return audios, nil
-}
-
 func (qb *AudioStore) FindMany(ctx context.Context, ids []int) ([]*models.Audio, error) {
-	audios := make([]*models.Audio, len(ids))
-
-	unsorted, err := qb.FindByIDs(ctx, ids)
+	q := qb.selectDataset().Where(qb.tableMgr.table.Col(idColumn).In(ids))
+	unsorted, err := qb.getMany(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
+	ret := make([]*models.Audio, len(ids))
+
 	for _, s := range unsorted {
 		i := slices.Index(ids, s.ID)
-		audios[i] = s
+		ret[i] = s
 	}
 
-	for i := range audios {
-		if audios[i] == nil {
+	for i := range ret {
+		if ret[i] == nil {
 			return nil, fmt.Errorf("audio with id %d not found", ids[i])
 		}
 	}
 
-	return audios, nil
+	return ret, nil
 }
 
 func (qb *AudioStore) find(ctx context.Context, id int) (*models.Audio, error) {
@@ -1034,8 +989,4 @@ func (qb *AudioStore) HasCover(ctx context.Context, audioID int) (bool, error) {
 
 func (qb *AudioStore) UpdateCover(ctx context.Context, audioID int, image []byte) error {
 	return qb.UpdateImage(ctx, audioID, audioCoverBlobColumn, image)
-}
-
-func (qb *AudioStore) destroyCover(ctx context.Context, audioID int) error {
-	return qb.DestroyImage(ctx, audioID, audioCoverBlobColumn)
 }

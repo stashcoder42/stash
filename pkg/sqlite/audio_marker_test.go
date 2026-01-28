@@ -242,6 +242,10 @@ func TestAudioMarkerQueryTags(t *testing.T) {
 	})
 }
 
+// Note: TestAudioMarkerQueryAudioTags and TestAudioMarkerQueryDuration tests
+// are not implemented because AudioMarkerFilterType doesn't have AudioTags or Duration fields.
+// These fields exist in SceneMarkerFilterType but weren't added to AudioMarkerFilterType.
+// TODO: Add AudioTags and Duration fields to AudioMarkerFilterType if needed.
 
 // CRUD Tests (ported from audio/scraping branch)
 

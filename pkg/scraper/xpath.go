@@ -81,6 +81,12 @@ func (s *xpathURLScraper) scrapeByURL(ctx context.Context, url string, ty Scrape
 			return nil, err
 		}
 		return ret, nil
+	case ScrapeContentTypeAudio:
+		ret, err := scraper.scrapeAudio(ctx, q)
+		if err != nil || ret == nil {
+			return nil, err
+		}
+		return ret, nil
 	}
 
 	return nil, ErrNotSupported
