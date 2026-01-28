@@ -155,6 +155,7 @@ func newCleanFilter(c *config.Config) *cleanFilter {
 			generatedPath:     c.GetGeneratedPath(),
 			videoExcludeRegex: generateRegexps(c.GetExcludes()),
 			imageExcludeRegex: generateRegexps(c.GetImageExcludes()),
+			audioExcludeRegex: generateRegexps(c.GetAudioExcludes()),
 			stashIgnoreFilter: file.NewStashIgnoreFilter(),
 		},
 	}
@@ -200,8 +201,12 @@ func (f *cleanFilter) Accept(ctx context.Context, path string, info fs.FileInfo,
 func (f *cleanFilter) shouldCleanFolder(path string, s *config.StashConfig) bool {
 	// only delete folders where it is excluded from everything
 	pathExcludeTest := path + string(filepath.Separator)
-	if (s.ExcludeVideo || matchFileRegex(pathExcludeTest, f.videoExcludeRegex)) && (s.ExcludeImage || matchFileRegex(pathExcludeTest, f.imageExcludeRegex)) {
-		logger.Infof("Folder is excluded from both video and image. Marking to clean: \"%s\"", path)
+	videoExcluded := s.ExcludeVideo || matchFileRegex(pathExcludeTest, f.videoExcludeRegex)
+	imageExcluded := s.ExcludeImage || matchFileRegex(pathExcludeTest, f.imageExcludeRegex)
+	audioExcluded := s.ExcludeAudio || matchFileRegex(pathExcludeTest, f.audioExcludeRegex)
+
+	if videoExcluded && imageExcluded && audioExcluded {
+		logger.Infof("Folder is excluded from video, image, and audio. Marking to clean: \"%s\"", path)
 		return true
 	}
 
@@ -216,6 +221,8 @@ func (f *cleanFilter) shouldCleanFile(path string, info fs.FileInfo, stash *conf
 		return f.shouldCleanVideoFile(path, stash)
 	case useAsImage(path):
 		return f.shouldCleanImage(path, stash)
+	case useAsAudio(path):
+		return f.shouldCleanAudioFile(path, stash)
 	default:
 		logger.Infof("File extension does not match any media extensions. Marking to clean: \"%s\"", path)
 		return true
@@ -258,6 +265,20 @@ func (f *cleanFilter) shouldCleanImage(path string, stash *config.StashConfig) b
 
 	if matchFileRegex(path, f.imageExcludeRegex) {
 		logger.Infof("File matched regex. Marking to clean: \"%s\"", path)
+		return true
+	}
+
+	return false
+}
+
+func (f *cleanFilter) shouldCleanAudioFile(path string, stash *config.StashConfig) bool {
+	if stash.ExcludeAudio {
+		logger.Infof("File in stash library that excludes audio. Marking to clean: \"%s\"", path)
+		return true
+	}
+
+	if matchFileRegex(path, f.audioExcludeRegex) {
+		logger.Infof("File matched audio exclusion regex. Marking to clean: \"%s\"", path)
 		return true
 	}
 

@@ -78,6 +78,15 @@ type Query {
     filter: FindFilterType
   ): FindImagesResultType!
 
+  "Find an audio by ID"
+  findAudio(id: ID, checksum: String): Audio
+  "A function which queries Audio objects"
+  findAudios(
+    audio_filter: AudioFilterType
+    ids: [ID!]
+    filter: FindFilterType
+  ): FindAudiosResultType!
+
   "Find a performer by ID"
   findPerformer(id: ID!): Performer
   "A function which queries Performer objects"
@@ -222,6 +231,8 @@ type Query {
     @deprecated(reason: "Use scrapeGroupURL instead")
   "Scrapes a complete group record based on a URL"
   scrapeGroupURL(url: String!): ScrapedGroup
+  "Scrapes a complete audio record based on a URL"
+  scrapeAudioURL(url: String!): ScrapedAudio
 
   # Plugins
   "List loaded plugins"
@@ -352,6 +363,49 @@ type Mutation {
   imageDecrementO(id: ID!): Int!
   "Resets the o-counter for a image to 0. Returns the new value"
   imageResetO(id: ID!): Int!
+
+  audioCreate(input: AudioCreateInput!): Audio
+  audioUpdate(input: AudioUpdateInput!): Audio
+  audiosUpdate(input: [AudioUpdateInput!]!): [Audio]
+  bulkAudioUpdate(input: BulkAudioUpdateInput!): [Audio!]
+  audioDestroy(input: AudioDestroyInput!): Boolean!
+  audiosDestroy(input: AudiosDestroyInput!): Boolean!
+
+  "Increments the o-counter for an audio. Returns the new value"
+  audioIncrementO(id: ID!): Int!
+  "Decrements the o-counter for an audio. Returns the new value"
+  audioDecrementO(id: ID!): Int!
+  "Resets the o-counter for an audio to 0. Returns the new value"
+  audioResetO(id: ID!): Int!
+  "Adds o-date entries to an audio. Returns the updated history"
+  audioAddO(id: ID!, times: [Timestamp!]): HistoryMutationResult!
+  "Removes o-date entries from an audio. Returns the updated history"
+  audioDeleteO(id: ID!, times: [Timestamp!]): HistoryMutationResult!
+
+  "Increments the play count for an audio. Returns the new play count value"
+  audioIncrementPlayCount(id: ID!): Int!
+  "Resets the play count for an audio. Returns the new play count value"
+  audioResetPlayCount(id: ID!): Int!
+
+  "Saves the activity (resume_time and play_duration) for an audio"
+  audioSaveActivity(id: ID!, resume_time: Float, play_duration: Float): Boolean!
+  "Resets the activity (resume_time and play_duration) for an audio"
+  audioResetActivity(
+    id: ID!
+    reset_resume: Boolean
+    reset_duration: Boolean
+  ): Boolean!
+
+  "Adds play history entries to an audio. Returns the updated history"
+  audioAddPlay(id: ID!, times: [Timestamp!]): HistoryMutationResult!
+  "Removes play history entries from an audio. Returns the updated history"
+  audioDeletePlay(id: ID!, times: [Timestamp!]): HistoryMutationResult!
+
+  "Merges audios into one audio"
+  audioMerge(input: AudioMergeInput!): Audio
+
+  "Assigns a file to an audio"
+  audioAssignFile(input: AssignAudioFileInput!): Boolean!
 
   galleryCreate(input: GalleryCreateInput!): Gallery
   galleryUpdate(input: GalleryUpdateInput!): Gallery

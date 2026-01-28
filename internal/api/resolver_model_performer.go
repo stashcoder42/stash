@@ -215,6 +215,17 @@ func (r *performerResolver) GroupCount(ctx context.Context, obj *models.Performe
 	return ret, nil
 }
 
+func (r *performerResolver) AudioCount(ctx context.Context, obj *models.Performer) (ret int, err error) {
+	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
+		ret, err = r.repository.Audio.CountByPerformerID(ctx, obj.ID)
+		return err
+	}); err != nil {
+		return 0, err
+	}
+
+	return ret, nil
+}
+
 // deprecated
 func (r *performerResolver) MovieCount(ctx context.Context, obj *models.Performer) (ret int, err error) {
 	return r.GroupCount(ctx, obj)

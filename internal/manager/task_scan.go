@@ -14,6 +14,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/remeh/sizedwaitgroup"
 	"github.com/stashapp/stash/internal/manager/config"
+	"github.com/stashapp/stash/pkg/audio"
 	"github.com/stashapp/stash/pkg/file"
 	"github.com/stashapp/stash/pkg/file/video"
 	"github.com/stashapp/stash/pkg/fsutil"
@@ -452,6 +453,7 @@ type handlerRequiredFilter struct {
 	txnManager    txn.Manager
 	SceneFinder   sceneFinder
 	ImageFinder   fileCounter
+	AudioFinder   fileCounter
 	GalleryFinder galleryFinder
 
 	FolderCache *lru.LRU[bool]
@@ -467,6 +469,7 @@ func newHandlerRequiredFilter(c *config.Config, repo models.Repository) *handler
 		txnManager:               repo.TxnManager,
 		SceneFinder:              repo.Scene,
 		ImageFinder:              repo.Image,
+		AudioFinder:              repo.Audio,
 		GalleryFinder:            repo.Gallery,
 		FolderCache:              lru.New[bool](processes * 2),
 		videoFileNamingAlgorithm: c.GetVideoFileNamingAlgorithm(),
@@ -477,6 +480,7 @@ func (f *handlerRequiredFilter) Accept(ctx context.Context, ff models.File) bool
 	path := ff.Base().Path
 	isVideoFile := useAsVideo(path)
 	isImageFile := useAsImage(path)
+	isAudioFile := useAsAudio(path)
 	isZipFile := fsutil.MatchExtension(path, f.zipExt)
 
 	var counter fileCounter
@@ -487,6 +491,8 @@ func (f *handlerRequiredFilter) Accept(ctx context.Context, ff models.File) bool
 		counter = f.SceneFinder
 	case isImageFile:
 		counter = f.ImageFinder
+	case isAudioFile:
+		counter = f.AudioFinder
 	case isZipFile:
 		counter = f.GalleryFinder
 	}
@@ -553,6 +559,7 @@ type scanFilter struct {
 	generatedPath     string
 	videoExcludeRegex []*regexp.Regexp
 	imageExcludeRegex []*regexp.Regexp
+	audioExcludeRegex []*regexp.Regexp
 	minModTime        time.Time
 	stashIgnoreFilter *file.StashIgnoreFilter
 }
@@ -565,6 +572,7 @@ func newScanFilter(c *config.Config, repo models.Repository, minModTime time.Tim
 		generatedPath:     c.GetGeneratedPath(),
 		videoExcludeRegex: generateRegexps(c.GetExcludes()),
 		imageExcludeRegex: generateRegexps(c.GetImageExcludes()),
+		audioExcludeRegex: generateRegexps(c.GetAudioExcludes()),
 		minModTime:        minModTime,
 		stashIgnoreFilter: file.NewStashIgnoreFilter(),
 	}
@@ -595,9 +603,10 @@ func (f *scanFilter) Accept(ctx context.Context, path string, info fs.FileInfo, 
 
 	isVideoFile := useAsVideo(path)
 	isImageFile := useAsImage(path)
+	isAudioFile := useAsAudio(path)
 	isZipFile := fsutil.MatchExtension(path, f.zipExt)
 
-	if !info.IsDir() && !isVideoFile && !isImageFile && !isZipFile {
+	if !info.IsDir() && !isVideoFile && !isImageFile && !isAudioFile && !isZipFile {
 		logger.Debugf("Skipping %s as it does not match any known file extensions", path)
 		return false
 	}
@@ -611,8 +620,13 @@ func (f *scanFilter) Accept(ctx context.Context, path string, info fs.FileInfo, 
 	// shortcut: skip the directory entirely if it matches both exclusion patterns
 	// add a trailing separator so that it correctly matches against patterns like path/.*
 	pathExcludeTest := path + string(filepath.Separator)
-	if (matchFileRegex(pathExcludeTest, f.videoExcludeRegex)) && (s.ExcludeImage || matchFileRegex(pathExcludeTest, f.imageExcludeRegex)) {
-		logger.Debugf("Skipping directory %s as it matches video and image exclusion patterns", path)
+	videoExcluded := matchFileRegex(pathExcludeTest, f.videoExcludeRegex)
+	imageExcluded := s.ExcludeImage || matchFileRegex(pathExcludeTest, f.imageExcludeRegex)
+	audioExcluded := s.ExcludeAudio || matchFileRegex(pathExcludeTest, f.audioExcludeRegex)
+
+	// if all media types are excluded, skip the directory entirely
+	if videoExcluded && imageExcluded && audioExcluded {
+		logger.Debugf("Skipping directory %s as it matches video, image, and audio exclusion patterns", path)
 		return false
 	}
 
@@ -621,6 +635,9 @@ func (f *scanFilter) Accept(ctx context.Context, path string, info fs.FileInfo, 
 		return false
 	} else if (isImageFile || isZipFile) && (s.ExcludeImage || matchFileRegex(path, f.imageExcludeRegex)) {
 		logger.Debugf("Skipping %s as it matches image exclusion patterns", path)
+		return false
+	} else if isAudioFile && (s.ExcludeAudio || matchFileRegex(path, f.audioExcludeRegex)) {
+		logger.Debugf("Skipping %s as it matches audio exclusion patterns", path)
 		return false
 	}
 
@@ -644,6 +661,10 @@ func videoFileFilter(ctx context.Context, f models.File) bool {
 
 func imageFileFilter(ctx context.Context, f models.File) bool {
 	return useAsImage(f.Base().Path)
+}
+
+func audioFileFilter(ctx context.Context, f models.File) bool {
+	return useAsAudio(f.Base().Path)
 }
 
 func galleryFileFilter(ctx context.Context, f models.File) bool {
@@ -677,6 +698,22 @@ func getScanHandlers(options ScanMetadataInput, taskQueue *job.TaskQueue, progre
 				},
 				PluginCache: pluginCache,
 				Paths:       instance.Paths,
+			},
+		},
+		&file.FilteredHandler{
+			Filter: file.FilterFunc(audioFileFilter),
+			Handler: &audio.ScanHandler{
+				CreatorUpdater: r.Audio,
+				ScanGenerator: &audioGenerators{
+					input:              options,
+					taskQueue:          taskQueue,
+					progress:           progress,
+					paths:              mgr.Paths,
+					sequentialScanning: c.GetSequentialScanning(),
+				},
+				FileNamingAlgorithm: c.GetVideoFileNamingAlgorithm(),
+				PluginCache:         pluginCache,
+				Paths:               mgr.Paths,
 			},
 		},
 		&file.FilteredHandler{
@@ -782,6 +819,52 @@ func (g *imageGenerators) Generate(ctx context.Context, i *models.Image, f model
 			phashFn(ctx)
 		} else {
 			g.taskQueue.Add(fmt.Sprintf("Generating phash for %s", path), phashFn)
+		}
+	}
+
+	return nil
+}
+
+type audioGenerators struct {
+	input     ScanMetadataInput
+	taskQueue *job.TaskQueue
+	progress  *job.Progress
+
+	paths              *paths.Paths
+	sequentialScanning bool
+}
+
+func (g *audioGenerators) Generate(ctx context.Context, a *models.Audio, f *models.AudioFile) error {
+	const overwrite = false
+
+	progress := g.progress
+	t := g.input
+	path := f.Path
+
+	mgr := GetInstance()
+
+	// this is a bit of a hack: the task requires files to be loaded, but
+	// we don't really need to since we already have the file
+	aa := *a
+	aa.Files = models.NewRelatedFiles([]models.File{f})
+	aa.Path = path // ensure Path is set for the task
+
+	if t.ScanGenerateAudioWaveforms {
+		progress.AddTotal(1)
+		waveformFn := func(ctx context.Context) {
+			taskWaveform := GenerateAudioThumbnailTask{
+				repository: mgr.Repository,
+				Audio:      aa,
+				Overwrite:  overwrite,
+			}
+			taskWaveform.Start(ctx)
+			progress.Increment()
+		}
+
+		if g.sequentialScanning {
+			waveformFn(ctx)
+		} else {
+			g.taskQueue.Add(fmt.Sprintf("Generating waveform for %s", path), waveformFn)
 		}
 	}
 

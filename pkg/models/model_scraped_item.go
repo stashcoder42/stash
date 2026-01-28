@@ -746,3 +746,26 @@ type ScrapedGalleryInput struct {
 	// deprecated
 	URL *string `json:"url"`
 }
+
+type ScrapedAudio struct {
+	Title        *string                `json:"title"`          // Audio track title
+	Details      *string                `json:"details"`        // Description/notes about the audio
+	URLs         []string               `json:"urls"`           // Source URLs where this audio was found
+	Date         *string                `json:"date"`           // Release date of the audio
+	Image        *string                `json:"image"`          // Cover art/thumbnail (base64 encoded)
+	File         *AudioFileType         `json:"file"`           // Audio file metadata
+	Tags         []*ScrapedTag          `json:"tags"`           // Genre, mood, or other descriptive tags
+	Performers   []*ScrapedPerformer    `json:"performers"`     // Artists, musicians, speakers
+	RemoteSiteID *string                `json:"remote_site_id"` // External site's ID for this audio
+	Duration     *int                   `json:"duration"`       // Audio length in seconds
+	Fingerprints []*StashBoxFingerprint `json:"fingerprints"`   // Audio fingerprints for matching
+}
+
+func (ScrapedAudio) IsScrapedContent() {}
+
+type ScrapedAudioInput struct {
+	Title   *string  `json:"title"`   // Audio track title
+	Details *string  `json:"details"` // Description/notes about the audio
+	URLs    []string `json:"urls"`    // Source URLs where this audio was found
+	Date    *string  `json:"date"`    // Release date of the audio
+}

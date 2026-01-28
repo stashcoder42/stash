@@ -48,3 +48,15 @@ type ImagesDestroyInput struct {
 	Checksum string `json:"checksum"`
 	Path     string `json:"path"`
 }
+
+type AudioDestroyInput struct {
+	models.AudioDestroyInput
+	Checksum string `json:"checksum"`
+	Path     string `json:"path"`
+}
+
+type AudiosDestroyInput struct {
+	models.AudiosDestroyInput
+	Checksum string `json:"checksum"`
+	Path     string `json:"path"`
+}

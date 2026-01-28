@@ -78,3 +78,15 @@ func (r *videoFileResolver) ZipFile(ctx context.Context, obj *VideoFile) (*Basic
 func (r *basicFileResolver) ZipFile(ctx context.Context, obj *BasicFile) (*BasicFile, error) {
 	return zipFileResolver(ctx, obj.ZipFileID)
 }
+
+func (r *audioFileResolver) Fingerprint(ctx context.Context, obj *AudioFile, type_ string) (*string, error) {
+	return fingerprintResolver(obj.AudioFile.Fingerprints, type_)
+}
+
+func (r *audioFileResolver) ParentFolder(ctx context.Context, obj *AudioFile) (*models.Folder, error) {
+	return loaders.From(ctx).FolderByID.Load(obj.ParentFolderID)
+}
+
+func (r *audioFileResolver) ZipFile(ctx context.Context, obj *AudioFile) (*BasicFile, error) {
+	return zipFileResolver(ctx, obj.ZipFileID)
+}

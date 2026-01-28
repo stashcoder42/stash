@@ -14,6 +14,7 @@ type TxnManager interface {
 type Repository struct {
 	TxnManager TxnManager
 
+	Audio          AudioReaderWriter
 	Blob           BlobReader
 	File           FileReaderWriter
 	Folder         FolderReaderWriter

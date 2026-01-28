@@ -228,3 +228,13 @@ type ImageFileFilterInput struct {
 	Resolution  *ResolutionCriterionInput  `json:"resolution,omitempty"`
 	Orientation *OrientationCriterionInput `json:"orientation,omitempty"`
 }
+
+type AudioFileFilterInput struct {
+	Format     *StringCriterionInput `json:"format,omitempty"`
+	Bitrate    *IntCriterionInput    `json:"bitrate,omitempty"`
+	AudioCodec *StringCriterionInput `json:"audio_codec,omitempty"`
+	SampleRate *IntCriterionInput    `json:"sample_rate,omitempty"`
+	Channels   *IntCriterionInput    `json:"channels,omitempty"`
+	// in seconds
+	Duration *IntCriterionInput `json:"duration,omitempty"`
+}

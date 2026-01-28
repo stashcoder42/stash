@@ -9,6 +9,7 @@ enum ScrapeType {
 
 "Type of the content a scraper generates"
 enum ScrapeContentType {
+  AUDIO
   GALLERY
   IMAGE
   MOVIE
@@ -27,6 +28,7 @@ union ScrapedContent =
   | ScrapedMovie
   | ScrapedGroup
   | ScrapedPerformer
+  | ScrapedAudio
 
 type ScraperSpec {
   "URLs matching these can be scraped with"
@@ -49,6 +51,8 @@ type Scraper {
   movie: ScraperSpec @deprecated(reason: "use group")
   "Details for group scraper"
   group: ScraperSpec
+  "Details for audio scraper"
+  audio: ScraperSpec
 }
 
 type ScrapedStudio {
@@ -160,6 +164,26 @@ input ScrapedImageInput {
   details: String
   urls: [String!]
   date: String
+}
+
+type ScrapedAudio {
+  title: String # Audio track title
+  details: String # Description/notes about the audio
+  urls: [String!] # Source URLs where this audio was found
+  date: String # Release date of the audio
+  "This should be a base64 encoded data URL"
+  image: String # Cover art/thumbnail
+  file: AudioFileType # Resolver - actual audio file info
+  tags: [ScrapedTag!] # Genre, mood, or other descriptive tags
+  performers: [ScrapedPerformer!] # Artists, musicians, speakers
+  duration: Int # Audio length in seconds
+}
+
+input ScrapedAudioInput {
+  title: String # Audio track title
+  details: String # Description/notes about the audio
+  urls: [String!] # Source URLs where this audio was found
+  date: String # Release date of the audio
 }
 
 input ScraperSourceInput {

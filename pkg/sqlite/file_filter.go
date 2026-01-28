@@ -67,6 +67,9 @@ func (qb *fileFilterHandler) criterionHandler() criterionHandler {
 		&imageFileFilterHandler{
 			filter: fileFilter.ImageFileFilter,
 		},
+		&audioFileFilterHandler{
+			filter: fileFilter.AudioFileFilter,
+		},
 
 		pathCriterionHandler(fileFilter.Path, "folders.path", "files.basename", nil),
 		stringCriterionHandler(fileFilter.Basename, "files.basename"),
@@ -79,6 +82,7 @@ func (qb *fileFilterHandler) criterionHandler() criterionHandler {
 		qb.sceneCountCriterionHandler(fileFilter.SceneCount),
 		qb.imageCountCriterionHandler(fileFilter.ImageCount),
 		qb.galleryCountCriterionHandler(fileFilter.GalleryCount),
+		qb.audioCountCriterionHandler(fileFilter.AudioCount),
 
 		qb.hashesCriterionHandler(fileFilter.Hashes),
 
@@ -108,6 +112,14 @@ func (qb *fileFilterHandler) criterionHandler() criterionHandler {
 			relatedHandler: &galleryFilterHandler{fileFilter.GalleriesFilter},
 			joinFn: func(f *filterBuilder) {
 				fileRepository.galleries.innerJoin(f, "", "files.id")
+			},
+		},
+		&relatedFilterHandler{
+			relatedIDCol:   "audios_files.audio_id",
+			relatedRepo:    audioRepository.repository,
+			relatedHandler: &audioFilterHandler{fileFilter.AudiosFilter},
+			joinFn: func(f *filterBuilder) {
+				fileRepository.audios.innerJoin(f, "", "files.id")
 			},
 		},
 	}
@@ -199,6 +211,16 @@ func (qb *fileFilterHandler) galleryCountCriterionHandler(c *models.IntCriterion
 	h := countCriterionHandlerBuilder{
 		primaryTable: fileTable,
 		joinTable:    galleriesFilesTable,
+		primaryFK:    fileIDColumn,
+	}
+
+	return h.handler(c)
+}
+
+func (qb *fileFilterHandler) audioCountCriterionHandler(c *models.IntCriterionInput) criterionHandlerFunc {
+	h := countCriterionHandlerBuilder{
+		primaryTable: fileTable,
+		joinTable:    audioFilesTable,
 		primaryFK:    fileIDColumn,
 	}
 
@@ -363,4 +385,32 @@ func (qb *imageFileFilterHandler) criterionHandler() criterionHandler {
 
 func (qb *imageFileFilterHandler) addImageFilesTable(f *filterBuilder) {
 	f.addLeftJoin(imageFileTable, "", "image_files.file_id = files.id")
+}
+
+type audioFileFilterHandler struct {
+	filter *models.AudioFileFilterInput
+}
+
+func (qb *audioFileFilterHandler) handle(ctx context.Context, f *filterBuilder) {
+	ff := qb.filter
+	if ff == nil {
+		return
+	}
+	f.handleCriterion(ctx, qb.criterionHandler())
+}
+
+func (qb *audioFileFilterHandler) criterionHandler() criterionHandler {
+	ff := qb.filter
+	return compoundHandler{
+		joinedStringCriterionHandler(ff.Format, "audio_files.format", qb.addAudioFilesTable),
+		joinedStringCriterionHandler(ff.AudioCodec, "audio_files.audio_codec", qb.addAudioFilesTable),
+		intCriterionHandler(ff.Bitrate, "audio_files.bitrate", qb.addAudioFilesTable),
+		intCriterionHandler(ff.SampleRate, "audio_files.sample_rate", qb.addAudioFilesTable),
+		intCriterionHandler(ff.Channels, "audio_files.channels", qb.addAudioFilesTable),
+		floatIntCriterionHandler(ff.Duration, "audio_files.duration", qb.addAudioFilesTable),
+	}
+}
+
+func (qb *audioFileFilterHandler) addAudioFilesTable(f *filterBuilder) {
+	f.addLeftJoin(audioFileTable, "", "audio_files.file_id = files.id")
 }

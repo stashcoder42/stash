@@ -290,6 +290,24 @@ const (
 )
 
 const (
+	audioIdxWithPerformer = iota
+	audioIdx1WithPerformer
+	audioIdx2WithPerformer
+	audioIdxWithTwoPerformers
+	audioIdxWithThreePerformers
+	audioIdxWithTag
+	audioIdxWithTwoTags
+	audioIdxWithThreeTags
+	audioIdxWithPerformerTag
+	audioIdxWithTwoPerformerTag
+	audioIdxWithPerformerTwoTags
+	// new indexes above
+	lastAudioIdx
+
+	totalAudios = lastAudioIdx + 3
+)
+
+const (
 	chapterIdxWithGallery = iota
 	totalChapters
 )
@@ -318,6 +336,7 @@ var (
 	sceneFileIDs   []models.FileID
 	imageFileIDs   []models.FileID
 	galleryFileIDs []models.FileID
+	audioFileIDs   []models.FileID
 	chapterIDs     []int
 
 	sceneIDs       []int
@@ -328,6 +347,7 @@ var (
 	tagIDs         []int
 	studioIDs      []int
 	markerIDs      []int
+	audioIDs       []int
 	savedFilterIDs []int
 
 	folderPaths []string
@@ -517,6 +537,28 @@ var (
 		galleryIdxWithTag:       {tagIdxWithGallery},
 		galleryIdxWithTwoTags:   {tagIdx1WithGallery, tagIdx2WithGallery},
 		galleryIdxWithThreeTags: {tagIdx1WithGallery, tagIdx2WithGallery, tagIdx3WithGallery},
+	}
+)
+
+var (
+	audioPerformers = linkMap{
+		audioIdxWithPerformer:        {performerIdxWithScene},
+		audioIdx1WithPerformer:       {performerIdx1WithScene},
+		audioIdx2WithPerformer:       {performerIdx2WithScene},
+		audioIdxWithTwoPerformers:    {performerIdx1WithScene, performerIdx2WithScene},
+		audioIdxWithThreePerformers:  {performerIdx1WithScene, performerIdx2WithScene, performerIdx3WithScene},
+		audioIdxWithPerformerTag:     {performerIdxWithTag},
+		audioIdxWithTwoPerformerTag:  {performerIdxWithTag, performerIdx2WithTag},
+		audioIdxWithPerformerTwoTags: {performerIdxWithTwoTags},
+	}
+
+	audioTags = linkMap{
+		audioIdxWithTag:              {tagIdxWithScene},
+		audioIdxWithTwoTags:          {tagIdx1WithScene, tagIdx2WithScene},
+		audioIdxWithThreeTags:        {tagIdx1WithScene, tagIdx2WithScene, tagIdx3WithScene},
+		audioIdxWithPerformerTag:     {tagIdxWithPerformer},
+		audioIdxWithTwoPerformerTag:  {tagIdx1WithPerformer, tagIdx2WithPerformer},
+		audioIdxWithPerformerTwoTags: {tagIdx1WithPerformer, tagIdx2WithPerformer},
 	}
 )
 
@@ -734,6 +776,10 @@ func populateDB() error {
 
 		if err := createImages(ctx, totalImages); err != nil {
 			return fmt.Errorf("error creating images: %s", err.Error())
+		}
+
+		if err := createAudios(ctx, totalAudios); err != nil {
+			return fmt.Errorf("error creating audios: %s", err.Error())
 		}
 
 		if err := addTagImage(ctx, db.Tag, tagIdxWithCoverImage); err != nil {
@@ -1349,6 +1395,109 @@ func createImages(ctx context.Context, n int) error {
 		}
 
 		imageIDs = append(imageIDs, image.ID)
+	}
+
+	return nil
+}
+
+func getAudioStringValue(index int, field string) string {
+	return getPrefixedStringValue("audio", index, field)
+}
+
+func getAudioNullStringPtr(index int, field string) *string {
+	return getStringPtrFromNullString(getPrefixedNullStringValue("audio", index, field))
+}
+
+func getAudioEmptyString(index int, field string) string {
+	v := getAudioNullStringPtr(index, field)
+	if v == nil {
+		return ""
+	}
+
+	return *v
+}
+
+func getAudioBasename(index int) string {
+	return getAudioStringValue(index, pathField)
+}
+
+func getAudioPlayDuration(index int) float64 {
+	if index%5 == 0 {
+		return 0
+	}
+
+	return float64(index%5) * 67.8
+}
+
+func getAudioResumeTime(index int) float64 {
+	if index%5 == 0 {
+		return 0
+	}
+
+	return float64(index%5) * 0.8
+}
+
+func makeAudioFile(i int) *models.AudioFile {
+	return &models.AudioFile{
+		BaseFile: &models.BaseFile{
+			Path:           getFilePath(folderIdxWithFiles, getAudioBasename(i)),
+			Basename:       getAudioBasename(i),
+			ParentFolderID: folderIDs[folderIdxWithFiles],
+			Fingerprints: []models.Fingerprint{
+				{
+					Type:        models.FingerprintTypeMD5,
+					Fingerprint: getAudioStringValue(i, checksumField),
+				},
+			},
+		},
+		Format:     getAudioStringValue(i, "Format"),
+		Duration:   getFileDuration(i),
+		AudioCodec: getAudioStringValue(i, "AudioCodec"),
+		Bitrate:    int64(i * 100),
+		SampleRate: 44100 + (i * 1000),
+		Channels:   2,
+	}
+}
+
+func makeAudio(i int) *models.Audio {
+	title := getAudioStringValue(i, titleField)
+
+	pids := indexesToIDs(performerIDs, audioPerformers[i])
+	tids := indexesToIDs(tagIDs, audioTags[i])
+
+	rating := getRating(i)
+
+	return &models.Audio{
+		Title:        title,
+		URLs:         models.NewRelatedStrings([]string{getAudioEmptyString(i, urlField)}),
+		Date:         getObjectDate(i),
+		Details:      getAudioStringValue(i, "Details"),
+		Rating:       getIntPtr(rating),
+		PlayDuration: getAudioPlayDuration(i),
+		ResumeTime:   getAudioResumeTime(i),
+		PerformerIDs: models.NewRelatedIDs(pids),
+		TagIDs:       models.NewRelatedIDs(tids),
+	}
+}
+
+func createAudios(ctx context.Context, n int) error {
+	aqb := db.Audio
+	fqb := db.File
+
+	for i := 0; i < n; i++ {
+		f := makeAudioFile(i)
+		if err := fqb.Create(ctx, f); err != nil {
+			return fmt.Errorf("creating audio file: %w", err)
+		}
+		audioFileIDs = append(audioFileIDs, f.ID)
+
+		audio := makeAudio(i)
+
+		if err := aqb.Create(ctx, audio, []models.FileID{f.ID}); err != nil {
+			return fmt.Errorf("Error creating audio %v+: %s", audio, err.Error())
+		}
+
+		audioIDs = append(audioIDs, audio.ID)
 	}
 
 	return nil

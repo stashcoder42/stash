@@ -57,9 +57,11 @@ const (
 
 	Exclude      = "exclude"
 	ImageExclude = "image_exclude"
+	AudioExclude = "audio_exclude"
 
 	VideoExtensions            = "video_extensions"
 	ImageExtensions            = "image_extensions"
+	AudioExtensions            = "audio_extensions"
 	GalleryExtensions          = "gallery_extensions"
 	CreateGalleriesFromFolders = "create_galleries_from_folders"
 
@@ -312,8 +314,9 @@ const (
 var (
 	defaultVideoExtensions   = []string{"m4v", "mp4", "mov", "wmv", "avi", "mpg", "mpeg", "rmvb", "rm", "flv", "asf", "mkv", "webm", "f4v"}
 	defaultImageExtensions   = []string{"png", "jpg", "jpeg", "gif", "webp", "avif"}
+	defaultAudioExtensions   = []string{"mp3", "flac", "wav", "aac", "ogg", "m4a", "wma"}
 	defaultGalleryExtensions = []string{"zip", "cbz"}
-	defaultMenuItems         = []string{"scenes", "images", "groups", "markers", "galleries", "performers", "studios", "tags"}
+	defaultMenuItems         = []string{"scenes", "audios", "images", "groups", "markers", "galleries", "performers", "studios", "tags"}
 )
 
 type MissingConfigError struct {
@@ -778,6 +781,10 @@ func (i *Config) GetImageExcludes() []string {
 	return i.getStringSlice(ImageExclude)
 }
 
+func (i *Config) GetAudioExcludes() []string {
+	return i.getStringSlice(AudioExclude)
+}
+
 func (i *Config) GetVideoExtensions() []string {
 	ret := i.getStringSlice(VideoExtensions)
 	if len(ret) == 0 {
@@ -798,6 +805,14 @@ func (i *Config) GetGalleryExtensions() []string {
 	ret := i.getStringSlice(GalleryExtensions)
 	if len(ret) == 0 {
 		ret = defaultGalleryExtensions
+	}
+	return ret
+}
+
+func (i *Config) GetAudioExtensions() []string {
+	ret := i.getStringSlice(AudioExtensions)
+	if len(ret) == 0 {
+		ret = defaultAudioExtensions
 	}
 	return ret
 }

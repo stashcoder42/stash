@@ -10,6 +10,7 @@ import (
 
 	"github.com/stashapp/stash/internal/manager/config"
 	"github.com/stashapp/stash/pkg/file"
+	file_audio "github.com/stashapp/stash/pkg/file/audio"
 	file_image "github.com/stashapp/stash/pkg/file/image"
 	"github.com/stashapp/stash/pkg/file/video"
 	"github.com/stashapp/stash/pkg/fsutil"
@@ -35,6 +36,15 @@ func useAsImage(pathname string) bool {
 	return isImage(pathname)
 }
 
+func useAsAudio(pathname string) bool {
+	stash := config.StashConfigs.GetStashFromDirPath(instance.Config.GetStashPaths(), pathname)
+
+	if stash != nil && stash.ExcludeAudio {
+		return false
+	}
+	return isAudio(pathname)
+}
+
 func isZip(pathname string) bool {
 	gExt := config.GetInstance().GetGalleryExtensions()
 	return fsutil.MatchExtension(pathname, gExt)
@@ -48,6 +58,11 @@ func isVideo(pathname string) bool {
 func isImage(pathname string) bool {
 	imgExt := config.GetInstance().GetImageExtensions()
 	return fsutil.MatchExtension(pathname, imgExt)
+}
+
+func isAudio(pathname string) bool {
+	audioExt := config.GetInstance().GetAudioExtensions()
+	return fsutil.MatchExtension(pathname, audioExt)
 }
 
 func getScanPaths(inputPaths []string) []*config.StashConfig {
@@ -138,6 +153,12 @@ func (s *Manager) Scan(ctx context.Context, input ScanMetadataInput) (int, error
 					FFProbe: s.FFProbe,
 				},
 				Filter: file.FilterFunc(imageFileFilter),
+			},
+			&file.FilteredDecorator{
+				Decorator: &file_audio.Decorator{
+					FFProbe: s.FFProbe,
+				},
+				Filter: file.FilterFunc(audioFileFilter),
 			},
 		},
 		FingerprintCalculator: &fingerprintCalculator{s.Config},
