@@ -1,0 +1,49 @@
+"Mode for file watcher scan behavior"
+enum WatcherScanMode {
+  "File watcher does not trigger scans"
+  DISABLED
+  "File watcher triggers scan only"
+  SCAN
+  "File watcher triggers scan followed by identify"
+  SCAN_AND_IDENTIFY
+}
+
+"File watcher status"
+type WatcherStatus {
+  "Whether the watcher is currently running"
+  running: Boolean!
+  "Root paths being watched"
+  watchedPaths: [String!]!
+  "Total number of directories being watched (including subdirectories)"
+  watchCount: Int!
+  "Number of file events pending processing"
+  pendingEvents: Int!
+  "Total number of file events processed since service start"
+  processedEvents: Int!
+  "Number of scans triggered since service start"
+  triggeredScans: Int!
+  "Number of cleans triggered since service start"
+  triggeredCleans: Int!
+  "Last error message, if any"
+  lastError: String
+}
+
+"Configuration for the file watcher"
+input ConfigWatcherInput {
+  "Scan mode for the file watcher"
+  scanMode: WatcherScanMode
+  "Debounce delay in milliseconds before triggering scan"
+  debounceMs: Int
+  "Trigger clean when files are removed (detects moves via fingerprint matching)"
+  cleanOnRemove: Boolean
+}
+
+"File watcher configuration result"
+type ConfigWatcherResult {
+  "Scan mode for the file watcher"
+  scanMode: WatcherScanMode!
+  "Debounce delay in milliseconds"
+  debounceMs: Int!
+  "Whether to trigger clean on file removal"
+  cleanOnRemove: Boolean!
+}

@@ -2763,6 +2763,11 @@ export const useAddTempDLNAIP = () => GQL.useAddTempDlnaipMutation();
 
 export const useRemoveTempDLNAIP = () => GQL.useRemoveTempDlnaipMutation();
 
+export const useConfigureWatcher = () =>
+  GQL.useConfigureWatcherMutation({
+    update: updateConfiguration,
+  });
+
 export const mutateStopJob = (jobID: string) =>
   client.mutate<GQL.StopJobMutation>({
     mutation: GQL.StopJobDocument,

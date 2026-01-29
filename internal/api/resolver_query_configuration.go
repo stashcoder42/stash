@@ -65,7 +65,18 @@ func makeConfigResult() *ConfigResult {
 		Dlna:      makeConfigDLNAResult(),
 		Scraping:  makeConfigScrapingResult(),
 		Defaults:  makeConfigDefaultsResult(),
+		Watcher:   makeConfigWatcherResult(),
 		UI:        makeConfigUIResult(),
+	}
+}
+
+func makeConfigWatcherResult() *ConfigWatcherResult {
+	cfg := config.GetInstance()
+
+	return &ConfigWatcherResult{
+		ScanMode:      cfg.GetWatcherScanMode(),
+		DebounceMs:    cfg.GetWatcherDebounceMs(),
+		CleanOnRemove: cfg.GetWatcherCleanOnRemove(),
 	}
 }
 
