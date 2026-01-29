@@ -484,6 +484,11 @@ var (
 		},
 		dateColumn: goqu.T(audiosODatesTable).Col(audioODateColumn),
 	}
+
+	audioMarkerTableMgr = &table{
+		table:    goqu.T(audioMarkerTable),
+		idColumn: goqu.T(audioMarkerTable).Col(idColumn),
+	}
 )
 
 var (

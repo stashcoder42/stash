@@ -22,6 +22,7 @@ type Audio {
   paths: AudioPathsType!
   tags: [Tag!]!
   performers: [Performer!]!
+  audio_markers: [AudioMarker!]!
 
   # Return valid stream paths
   audioStreams: [AudioStreamEndpoint!]!

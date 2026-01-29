@@ -522,6 +522,30 @@ func (qb *TagStore) FindBySceneMarkerID(ctx context.Context, sceneMarkerID int) 
 	return qb.queryTags(ctx, query, args)
 }
 
+func (qb *TagStore) FindByAudioID(ctx context.Context, audioID int) ([]*models.Tag, error) {
+	query := `
+		SELECT tags.* FROM tags
+		LEFT JOIN audios_tags as audios_join on audios_join.tag_id = tags.id
+		WHERE audios_join.audio_id = ?
+		GROUP BY tags.id
+	`
+	query += qb.getDefaultTagSort()
+	args := []interface{}{audioID}
+	return qb.queryTags(ctx, query, args)
+}
+
+func (qb *TagStore) FindByAudioMarkerID(ctx context.Context, audioMarkerID int) ([]*models.Tag, error) {
+	query := `
+		SELECT tags.* FROM tags
+		LEFT JOIN audio_markers_tags as audio_markers_join on audio_markers_join.tag_id = tags.id
+		WHERE audio_markers_join.audio_marker_id = ?
+		GROUP BY tags.id
+	`
+	query += qb.getDefaultTagSort()
+	args := []interface{}{audioMarkerID}
+	return qb.queryTags(ctx, query, args)
+}
+
 func (qb *TagStore) FindByStudioID(ctx context.Context, studioID int) ([]*models.Tag, error) {
 	query := `
 		SELECT tags.* FROM tags
@@ -938,13 +962,14 @@ func (qb *TagStore) Merge(ctx context.Context, source []int, destination int) er
 	args = append(args, srcArgs...)
 
 	tagTables := map[string]string{
-		scenesTagsTable:      sceneIDColumn,
-		"scene_markers_tags": "scene_marker_id",
-		galleriesTagsTable:   galleryIDColumn,
-		imagesTagsTable:      imageIDColumn,
-		"performers_tags":    "performer_id",
-		"studios_tags":       "studio_id",
-		groupsTagsTable:      "group_id",
+		scenesTagsTable:        sceneIDColumn,
+		"scene_markers_tags":   "scene_marker_id",
+		"audio_markers_tags":   "audio_marker_id",
+		galleriesTagsTable:     galleryIDColumn,
+		imagesTagsTable:        imageIDColumn,
+		"performers_tags":      "performer_id",
+		"studios_tags":         "studio_id",
+		groupsTagsTable:        "group_id",
 	}
 
 	args = append(args, destination)
@@ -968,6 +993,11 @@ AND NOT EXISTS(SELECT 1 FROM `+table+` o WHERE o.`+idColumn+` = `+table+`.`+idCo
 	}
 
 	_, err := dbWrapper.Exec(ctx, "UPDATE "+sceneMarkerTable+" SET primary_tag_id = ? WHERE primary_tag_id IN "+inBinding, args...)
+	if err != nil {
+		return err
+	}
+
+	_, err = dbWrapper.Exec(ctx, "UPDATE "+audioMarkerTable+" SET primary_tag_id = ? WHERE primary_tag_id IN "+inBinding, args...)
 	if err != nil {
 		return err
 	}

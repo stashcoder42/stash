@@ -562,6 +562,7 @@ func (_m *AudioReaderWriter) FindByIDs(ctx context.Context, ids []int) ([]*model
 	return r0, r1
 }
 
+
 // GetAllOCount provides a mock function with given fields: ctx
 func (_m *AudioReaderWriter) GetAllOCount(ctx context.Context) (int, error) {
 	ret := _m.Called(ctx)

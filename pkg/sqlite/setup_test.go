@@ -301,10 +301,21 @@ const (
 	audioIdxWithPerformerTag
 	audioIdxWithTwoPerformerTag
 	audioIdxWithPerformerTwoTags
+	audioIdxWithMarkers      // audio that has audio markers
+	audioIdxWithMarkerAndTag // audio with markers AND tags
 	// new indexes above
 	lastAudioIdx
 
 	totalAudios = lastAudioIdx + 3
+)
+
+const (
+	audioMarkerIdxWithAudio = iota
+	audioMarkerIdxWithTag
+	audioMarkerIdxWithAudioTag
+	audioMarkerIdxWithDuration
+	audioMarkerIdx2WithDuration
+	totalAudioMarkers
 )
 
 const (
@@ -348,6 +359,7 @@ var (
 	studioIDs      []int
 	markerIDs      []int
 	audioIDs       []int
+	audioMarkerIDs []int
 	savedFilterIDs []int
 
 	folderPaths []string
@@ -559,6 +571,24 @@ var (
 		audioIdxWithPerformerTag:     {tagIdxWithPerformer},
 		audioIdxWithTwoPerformerTag:  {tagIdx1WithPerformer, tagIdx2WithPerformer},
 		audioIdxWithPerformerTwoTags: {tagIdx1WithPerformer, tagIdx2WithPerformer},
+		audioIdxWithMarkerAndTag:     {tagIdx3WithScene},
+	}
+)
+
+type audioMarkerSpec struct {
+	audioIdx      int
+	primaryTagIdx int
+	tagIdxs       []int
+}
+
+var (
+	// indexed by audio marker
+	audioMarkerSpecs = []audioMarkerSpec{
+		{audioIdxWithMarkers, tagIdxWithPrimaryMarkers, nil},
+		{audioIdxWithMarkers, tagIdxWithPrimaryMarkers, []int{tagIdxWithMarkers}},
+		{audioIdxWithMarkers, tagIdxWithPrimaryMarkers, []int{tagIdx2WithMarkers}},
+		{audioIdxWithMarkers, tagIdxWithPrimaryMarkers, []int{tagIdxWithMarkers, tagIdx2WithMarkers}},
+		{audioIdxWithMarkerAndTag, tagIdxWithPrimaryMarkers, nil},
 	}
 )
 
@@ -814,6 +844,11 @@ func populateDB() error {
 		for _, cs := range chapterSpecs {
 			if err := createChapter(ctx, db.GalleryChapter, cs); err != nil {
 				return fmt.Errorf("error creating gallery chapter: %s", err.Error())
+			}
+		}
+		for _, ams := range audioMarkerSpecs {
+			if err := createAudioMarker(ctx, db.AudioMarker, ams); err != nil {
+				return fmt.Errorf("error creating audio marker: %s", err.Error())
 			}
 		}
 
@@ -1498,6 +1533,45 @@ func createAudios(ctx context.Context, n int) error {
 		}
 
 		audioIDs = append(audioIDs, audio.ID)
+	}
+
+	return nil
+}
+
+func getAudioMarkerEndSeconds(index int) *float64 {
+	if index != audioMarkerIdxWithDuration && index != audioMarkerIdx2WithDuration {
+		return nil
+	}
+	ret := float64(index)
+	return &ret
+}
+
+func createAudioMarker(ctx context.Context, mqb models.AudioMarkerReaderWriter, spec audioMarkerSpec) error {
+	markerIdx := len(audioMarkerIDs)
+	marker := models.AudioMarker{
+		AudioID:      audioIDs[spec.audioIdx],
+		PrimaryTagID: tagIDs[spec.primaryTagIdx],
+		EndSeconds:   getAudioMarkerEndSeconds(markerIdx),
+	}
+
+	err := mqb.Create(ctx, &marker)
+
+	if err != nil {
+		return fmt.Errorf("error creating audio marker %v+: %w", marker, err)
+	}
+
+	audioMarkerIDs = append(audioMarkerIDs, marker.ID)
+
+	if len(spec.tagIdxs) > 0 {
+		newTagIDs := []int{}
+
+		for _, tagIdx := range spec.tagIdxs {
+			newTagIDs = append(newTagIDs, tagIDs[tagIdx])
+		}
+
+		if err := mqb.UpdateTags(ctx, marker.ID, newTagIDs); err != nil {
+			return fmt.Errorf("error creating audio marker/tag join: %w", err)
+		}
 	}
 
 	return nil

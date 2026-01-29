@@ -243,3 +243,14 @@ func (r *audioResolver) AudioStreams(ctx context.Context, obj *models.Audio) ([]
 
 	return apiEndpoints, nil
 }
+
+func (r *audioResolver) AudioMarkers(ctx context.Context, obj *models.Audio) (ret []*models.AudioMarker, err error) {
+	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
+		ret, err = r.repository.AudioMarker.FindByAudioID(ctx, obj.ID)
+		return err
+	}); err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}

@@ -1,0 +1,56 @@
+type AudioMarker {
+  id: ID!
+  audio: Audio!
+  title: String!
+  "The required start time of the marker (in seconds). Supports decimals."
+  seconds: Float!
+  "The optional end time of the marker (in seconds). Supports decimals."
+  end_seconds: Float
+  primary_tag: Tag!
+  tags: [Tag!]!
+  created_at: Time!
+  updated_at: Time!
+
+  "The path to stream this marker"
+  stream: String! # Resolver
+}
+
+input AudioMarkerCreateInput {
+  title: String!
+  "The required start time of the marker (in seconds). Supports decimals."
+  seconds: Float!
+  "The optional end time of the marker (in seconds). Supports decimals."
+  end_seconds: Float
+  audio_id: ID!
+  primary_tag_id: ID!
+  tag_ids: [ID!]
+}
+
+input AudioMarkerUpdateInput {
+  id: ID!
+  title: String
+  "The start time of the marker (in seconds). Supports decimals."
+  seconds: Float
+  "The end time of the marker (in seconds). Supports decimals."
+  end_seconds: Float
+  audio_id: ID
+  primary_tag_id: ID
+  tag_ids: [ID!]
+}
+
+input BulkAudioMarkerUpdateInput {
+  ids: [ID!]
+  title: String
+  primary_tag_id: ID
+  tag_ids: BulkUpdateIds
+}
+
+type FindAudioMarkersResultType {
+  count: Int!
+  audio_markers: [AudioMarker!]!
+}
+
+type AudioMarkerTag {
+  tag: Tag!
+  audio_markers: [AudioMarker!]!
+}

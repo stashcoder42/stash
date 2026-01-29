@@ -87,6 +87,13 @@ type Query {
     filter: FindFilterType
   ): FindAudiosResultType!
 
+  "A function which queries AudioMarker objects"
+  findAudioMarkers(
+    audio_marker_filter: AudioMarkerFilterType
+    filter: FindFilterType
+    ids: [ID!]
+  ): FindAudioMarkersResultType!
+
   "Find a performer by ID"
   findPerformer(id: ID!): Performer
   "A function which queries Performer objects"
@@ -145,10 +152,14 @@ type Query {
 
   "Get marker strings"
   markerStrings(q: String, sort: String): [MarkerStringsResultType]!
+  "Get audio marker strings"
+  audioMarkerStrings(q: String, sort: String): [MarkerStringsResultType]!
   "Get stats"
   stats: StatsResultType!
   "Organize scene markers by tag for a given scene ID"
   sceneMarkerTags(scene_id: ID!): [SceneMarkerTag!]!
+  "Organize audio markers by tag for a given audio ID"
+  audioMarkerTags(audio_id: ID!): [AudioMarkerTag!]!
 
   logs: [LogEntry!]!
 
@@ -272,6 +283,8 @@ type Query {
   allScenes: [Scene!]! @deprecated(reason: "Use findScenes instead")
   allSceneMarkers: [SceneMarker!]!
     @deprecated(reason: "Use findSceneMarkers instead")
+  allAudioMarkers: [AudioMarker!]!
+    @deprecated(reason: "Use findAudioMarkers instead")
   allImages: [Image!]! @deprecated(reason: "Use findImages instead")
   allGalleries: [Gallery!]! @deprecated(reason: "Use findGalleries instead")
 
@@ -406,6 +419,12 @@ type Mutation {
 
   "Assigns a file to an audio"
   audioAssignFile(input: AssignAudioFileInput!): Boolean!
+
+  audioMarkerCreate(input: AudioMarkerCreateInput!): AudioMarker
+  audioMarkerUpdate(input: AudioMarkerUpdateInput!): AudioMarker
+  bulkAudioMarkerUpdate(input: BulkAudioMarkerUpdateInput!): [AudioMarker!]
+  audioMarkerDestroy(id: ID!): Boolean!
+  audioMarkersDestroy(ids: [ID!]!): Boolean!
 
   galleryCreate(input: GalleryCreateInput!): Gallery
   galleryUpdate(input: GalleryUpdateInput!): Gallery

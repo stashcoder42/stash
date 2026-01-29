@@ -22,6 +22,8 @@ type TagFinder interface {
 	FindByPerformerID(ctx context.Context, performerID int) ([]*Tag, error)
 	FindByGroupID(ctx context.Context, groupID int) ([]*Tag, error)
 	FindBySceneMarkerID(ctx context.Context, sceneMarkerID int) ([]*Tag, error)
+	FindByAudioID(ctx context.Context, audioID int) ([]*Tag, error)
+	FindByAudioMarkerID(ctx context.Context, audioMarkerID int) ([]*Tag, error)
 	FindByStudioID(ctx context.Context, studioID int) ([]*Tag, error)
 	FindByName(ctx context.Context, name string, nocase bool) (*Tag, error)
 	FindByNames(ctx context.Context, names []string, nocase bool) ([]*Tag, error)

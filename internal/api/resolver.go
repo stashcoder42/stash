@@ -73,6 +73,9 @@ func (r *Resolver) SceneMarker() SceneMarkerResolver {
 func (r *Resolver) Audio() AudioResolver {
 	return &audioResolver{r}
 }
+func (r *Resolver) AudioMarker() AudioMarkerResolver {
+	return &audioMarkerResolver{r}
+}
 func (r *Resolver) AudioCreateInput() AudioCreateInputResolver {
 	return &audioCreateInputResolver{r}
 }
@@ -132,6 +135,7 @@ type sceneResolver struct{ *Resolver }
 type sceneMarkerResolver struct{ *Resolver }
 type imageResolver struct{ *Resolver }
 type audioResolver struct{ *Resolver }
+type audioMarkerResolver struct{ *Resolver }
 type audioCreateInputResolver struct{ *Resolver }
 type audioFileResolver struct{ *Resolver }
 type studioResolver struct{ *Resolver }

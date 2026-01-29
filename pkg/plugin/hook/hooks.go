@@ -10,6 +10,10 @@ const (
 	SceneMarkerUpdatePost  TriggerEnum = "SceneMarker.Update.Post"
 	SceneMarkerDestroyPost TriggerEnum = "SceneMarker.Destroy.Post"
 
+	AudioMarkerCreatePost  TriggerEnum = "AudioMarker.Create.Post"
+	AudioMarkerUpdatePost  TriggerEnum = "AudioMarker.Update.Post"
+	AudioMarkerDestroyPost TriggerEnum = "AudioMarker.Destroy.Post"
+
 	SceneCreatePost  TriggerEnum = "Scene.Create.Post"
 	SceneUpdatePost  TriggerEnum = "Scene.Update.Post"
 	SceneDestroyPost TriggerEnum = "Scene.Destroy.Post"
@@ -59,6 +63,10 @@ var AllHookTriggerEnum = []TriggerEnum{
 	SceneMarkerUpdatePost,
 	SceneMarkerDestroyPost,
 
+	AudioMarkerCreatePost,
+	AudioMarkerUpdatePost,
+	AudioMarkerDestroyPost,
+
 	SceneCreatePost,
 	SceneUpdatePost,
 	SceneDestroyPost,
@@ -103,6 +111,10 @@ func (e TriggerEnum) IsValid() bool {
 	case SceneMarkerCreatePost,
 		SceneMarkerUpdatePost,
 		SceneMarkerDestroyPost,
+
+		AudioMarkerCreatePost,
+		AudioMarkerUpdatePost,
+		AudioMarkerDestroyPost,
 
 		SceneCreatePost,
 		SceneUpdatePost,
