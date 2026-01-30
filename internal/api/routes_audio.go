@@ -1,13 +1,16 @@
 package api
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/stashapp/stash/internal/manager"
+	"github.com/stashapp/stash/pkg/file/video"
 	"github.com/stashapp/stash/pkg/logger"
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/utils"
@@ -19,10 +22,15 @@ type AudioFinder interface {
 	GetCover(ctx context.Context, audioID int) ([]byte, error)
 }
 
+type AudioCaptionFinder interface {
+	GetAudioCaptions(ctx context.Context, fileID models.FileID) ([]*models.VideoCaption, error)
+}
+
 type audioRoutes struct {
 	routes
 	audioFinder       AudioFinder
 	audioMarkerFinder models.AudioMarkerFinder
+	captionFinder     AudioCaptionFinder
 	fileGetter        models.FileGetter
 }
 
@@ -36,6 +44,7 @@ func (rs audioRoutes) Routes() chi.Router {
 		r.Get("/stream", rs.StreamDirect)
 		r.Get("/cover", rs.Cover)
 		r.Get("/thumbnail", rs.Thumbnail)
+		r.Get("/caption", rs.CaptionLang)
 
 		// audio marker routes
 		r.Get("/audio_marker/{audioMarkerId}/stream", rs.AudioMarkerStream)
@@ -208,4 +217,65 @@ func (rs audioRoutes) AudioMarkerPreview(w http.ResponseWriter, r *http.Request)
 	}
 
 	utils.ServeImage(w, r, cover)
+}
+
+func (rs audioRoutes) Caption(w http.ResponseWriter, r *http.Request, lang string, ext string) {
+	audio := r.Context().Value(audioKey).(*models.Audio)
+
+	var captions []*models.VideoCaption
+	readTxnErr := rs.withReadTxn(r, func(ctx context.Context) error {
+		var err error
+		primaryFile := audio.Files.Primary()
+		if primaryFile == nil {
+			return nil
+		}
+
+		captions, err = rs.captionFinder.GetAudioCaptions(ctx, primaryFile.Base().ID)
+
+		return err
+	})
+	if errors.Is(readTxnErr, context.Canceled) {
+		return
+	}
+	if readTxnErr != nil {
+		logger.Warnf("read transaction error on fetch audio captions: %v", readTxnErr)
+		http.Error(w, readTxnErr.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	for _, caption := range captions {
+		if lang != caption.LanguageCode || ext != caption.CaptionType {
+			continue
+		}
+
+		sub, err := video.ReadSubs(caption.Path(audio.Path))
+		if err != nil {
+			logger.Warnf("error while reading subs: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var buf bytes.Buffer
+
+		err = sub.WriteToWebVTT(&buf)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/vtt")
+		utils.ServeStaticContent(w, r, buf.Bytes())
+		return
+	}
+}
+
+func (rs audioRoutes) CaptionLang(w http.ResponseWriter, r *http.Request) {
+	// serve caption based on lang query param, if provided
+	if err := r.ParseForm(); err != nil {
+		logger.Warnf("[caption] error parsing query form: %v", err)
+	}
+
+	l := r.Form.Get("lang")
+	ext := r.Form.Get("type")
+	rs.Caption(w, r, l, ext)
 }

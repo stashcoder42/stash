@@ -374,6 +374,7 @@ func (s *Server) getAudioRoutes() chi.Router {
 		routes:            routes{txnManager: repo.TxnManager},
 		audioFinder:       repo.Audio,
 		audioMarkerFinder: repo.AudioMarker,
+		captionFinder:     repo.File,
 		fileGetter:        repo.File,
 	}.Routes()
 }

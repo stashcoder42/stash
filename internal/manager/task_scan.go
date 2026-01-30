@@ -16,6 +16,7 @@ import (
 	"github.com/stashapp/stash/internal/manager/config"
 	"github.com/stashapp/stash/pkg/audio"
 	"github.com/stashapp/stash/pkg/file"
+	fileaudio "github.com/stashapp/stash/pkg/file/audio"
 	"github.com/stashapp/stash/pkg/file/video"
 	"github.com/stashapp/stash/pkg/fsutil"
 	"github.com/stashapp/stash/pkg/gallery"
@@ -450,11 +451,12 @@ type sceneFinder interface {
 // handlerRequiredFilter returns true if a File's handler needs to be executed despite the file not being updated.
 type handlerRequiredFilter struct {
 	extensionConfig
-	txnManager    txn.Manager
-	SceneFinder   sceneFinder
-	ImageFinder   fileCounter
-	AudioFinder   fileCounter
-	GalleryFinder galleryFinder
+	txnManager          txn.Manager
+	SceneFinder         sceneFinder
+	ImageFinder         fileCounter
+	AudioFinder         fileCounter
+	GalleryFinder       galleryFinder
+	AudioCaptionUpdater fileaudio.CaptionUpdater
 
 	FolderCache *lru.LRU[bool]
 
@@ -471,6 +473,7 @@ func newHandlerRequiredFilter(c *config.Config, repo models.Repository) *handler
 		ImageFinder:              repo.Image,
 		AudioFinder:              repo.Audio,
 		GalleryFinder:            repo.Gallery,
+		AudioCaptionUpdater:      repo.File,
 		FolderCache:              lru.New[bool](processes * 2),
 		videoFileNamingAlgorithm: c.GetVideoFileNamingAlgorithm(),
 	}
@@ -548,12 +551,23 @@ func (f *handlerRequiredFilter) Accept(ctx context.Context, ff models.File) bool
 		}
 	}
 
+	// clean audio captions for unchanged audio files
+	if isAudioFile {
+		audioFile, _ := ff.(*models.AudioFile)
+		if audioFile != nil {
+			if err := fileaudio.CleanCaptions(ctx, audioFile, f.txnManager, f.AudioCaptionUpdater); err != nil {
+				logger.Errorf("Error cleaning audio captions: %v", err)
+			}
+		}
+	}
+
 	return false
 }
 
 type scanFilter struct {
 	extensionConfig
-	txnManager txn.Manager
+	txnManager          txn.Manager
+	AudioCaptionUpdater fileaudio.CaptionUpdater
 
 	stashPaths        config.StashConfigs
 	generatedPath     string
@@ -566,15 +580,16 @@ type scanFilter struct {
 
 func newScanFilter(c *config.Config, repo models.Repository, minModTime time.Time) *scanFilter {
 	return &scanFilter{
-		extensionConfig:   newExtensionConfig(c),
-		txnManager:        repo.TxnManager,
-		stashPaths:        c.GetStashPaths(),
-		generatedPath:     c.GetGeneratedPath(),
-		videoExcludeRegex: generateRegexps(c.GetExcludes()),
-		imageExcludeRegex: generateRegexps(c.GetImageExcludes()),
-		audioExcludeRegex: generateRegexps(c.GetAudioExcludes()),
-		minModTime:        minModTime,
-		stashIgnoreFilter: file.NewStashIgnoreFilter(),
+		extensionConfig:     newExtensionConfig(c),
+		txnManager:          repo.TxnManager,
+		AudioCaptionUpdater: repo.File,
+		stashPaths:          c.GetStashPaths(),
+		generatedPath:       c.GetGeneratedPath(),
+		videoExcludeRegex:   generateRegexps(c.GetExcludes()),
+		imageExcludeRegex:   generateRegexps(c.GetImageExcludes()),
+		audioExcludeRegex:   generateRegexps(c.GetAudioExcludes()),
+		minModTime:          minModTime,
+		stashIgnoreFilter:   file.NewStashIgnoreFilter(),
 	}
 }
 

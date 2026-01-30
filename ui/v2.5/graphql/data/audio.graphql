@@ -31,6 +31,10 @@ fragment AudioData on Audio {
   play_history
   o_history
   o_counter
+  captions {
+    language_code
+    caption_type
+  }
   created_at
   updated_at
 
@@ -38,6 +42,7 @@ fragment AudioData on Audio {
     stream
     preview
     cover
+    caption
   }
 
   audioStreams {
@@ -79,11 +84,16 @@ fragment SlimAudioData on Audio {
   play_history
   o_history
   o_counter
+  captions {
+    language_code
+    caption_type
+  }
 
   paths {
     stream
     preview
     cover
+    caption
   }
 
   audioStreams {

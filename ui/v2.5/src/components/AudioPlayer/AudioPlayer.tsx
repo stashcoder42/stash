@@ -34,6 +34,7 @@ import chromecast from "@silvermine/videojs-chromecast";
 import abLoopPlugin from "videojs-abloop";
 import ScreenUtils from "src/utils/screen";
 import { PatchComponent } from "src/patch";
+import { languageMap } from "src/utils/caption";
 
 // register videojs plugins with error handling
 try {
@@ -512,6 +513,63 @@ export const AudioPlayer: React.FC<IAudioPlayerProps> = PatchComponent(
         }
       }
     }, [audio, file, getPlayer, fileDuration]);
+
+    // Load captions when audio changes
+    useEffect(() => {
+      const player = getPlayer();
+      if (!player) return;
+
+      // Remove existing text tracks
+      const remoteTracks = player.remoteTextTracks();
+      while (remoteTracks && remoteTracks.length > 0) {
+        player.removeRemoteTextTrack(remoteTracks[0] as HTMLTrackElement);
+      }
+
+      if (!audio.captions || audio.captions.length === 0 || !audio.paths.caption)
+        return;
+
+      function getDefaultLanguageCode() {
+        let languageCode = window.navigator.language;
+
+        if (languageCode.indexOf("-") !== -1) {
+          languageCode = languageCode.split("-")[0];
+        }
+
+        if (languageCode.indexOf("_") !== -1) {
+          languageCode = languageCode.split("_")[0];
+        }
+
+        return languageCode;
+      }
+
+      const defaultLang = getDefaultLanguageCode();
+      let hasDefault = false;
+
+      for (const caption of audio.captions) {
+        const lang = caption.language_code;
+        let label = lang;
+        if (languageMap.has(lang)) {
+          label = languageMap.get(lang)!;
+        }
+
+        label = label + " (" + caption.caption_type + ")";
+        const setAsDefault = !hasDefault && defaultLang === lang;
+        if (setAsDefault) {
+          hasDefault = true;
+        }
+
+        player.addRemoteTextTrack(
+          {
+            kind: "captions",
+            language: lang,
+            label: label,
+            src: `${audio.paths.caption}?lang=${lang}&type=${caption.caption_type}`,
+            default: setAsDefault,
+          },
+          false
+        );
+      }
+    }, [audio, getPlayer]);
 
     const loadMarkers = useCallback(() => {
       const player = getPlayer();

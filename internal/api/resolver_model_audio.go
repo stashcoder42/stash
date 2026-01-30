@@ -53,6 +53,7 @@ func (r *audioResolver) Paths(ctx context.Context, obj *models.Audio) (*AudioPat
 
 	streamURL := builder.GetStreamURL("").String()
 	thumbnailURL := builder.GetThumbnailURL()
+	captionBasePath := builder.GetCaptionURL()
 
 	// Check if audio has a cover before including the cover URL
 	var coverURL *string
@@ -74,6 +75,7 @@ func (r *audioResolver) Paths(ctx context.Context, obj *models.Audio) (*AudioPat
 		Stream:  &streamURL,
 		Cover:   coverURL,
 		Preview: &thumbnailURL,
+		Caption: &captionBasePath,
 	}, nil
 }
 
@@ -253,4 +255,27 @@ func (r *audioResolver) AudioMarkers(ctx context.Context, obj *models.Audio) (re
 	}
 
 	return ret, nil
+}
+
+func (r *audioResolver) Captions(ctx context.Context, obj *models.Audio) (ret []*models.VideoCaption, err error) {
+	// Load primary file if not already loaded
+	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
+		return obj.LoadPrimaryFile(ctx, r.repository.File)
+	}); err != nil {
+		return nil, err
+	}
+
+	primaryFile := obj.Files.Primary()
+	if primaryFile == nil {
+		return nil, nil
+	}
+
+	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
+		ret, err = r.repository.File.GetAudioCaptions(ctx, primaryFile.Base().ID)
+		return err
+	}); err != nil {
+		return nil, err
+	}
+
+	return ret, err
 }

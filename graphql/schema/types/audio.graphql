@@ -15,6 +15,7 @@ type Audio {
   o_history: [Time!]!
   o_counter: Int
   organized: Boolean!
+  captions: [VideoCaption!]
   created_at: Time!
   updated_at: Time!
 
@@ -42,6 +43,7 @@ type AudioPathsType {
   stream: String
   preview: String
   cover: String
+  caption: String
 }
 
 input AudioCreateInput {

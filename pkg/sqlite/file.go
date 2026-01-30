@@ -25,6 +25,7 @@ const (
 	fileIDColumn   = "file_id"
 
 	videoCaptionsTable    = "video_captions"
+	audioCaptionsTable    = "audio_captions"
 	captionCodeColumn     = "language_code"
 	captionFilenameColumn = "filename"
 	captionTypeColumn     = "caption_type"
@@ -1150,4 +1151,21 @@ func (qb *FileStore) GetCaptions(ctx context.Context, fileID models.FileID) ([]*
 
 func (qb *FileStore) UpdateCaptions(ctx context.Context, fileID models.FileID, captions []*models.VideoCaption) error {
 	return qb.captionRepository().replace(ctx, fileID, captions)
+}
+
+func (qb *FileStore) audioCaptionRepository() *captionRepository {
+	return &captionRepository{
+		repository: repository{
+			tableName: audioCaptionsTable,
+			idColumn:  fileIDColumn,
+		},
+	}
+}
+
+func (qb *FileStore) GetAudioCaptions(ctx context.Context, fileID models.FileID) ([]*models.VideoCaption, error) {
+	return qb.audioCaptionRepository().get(ctx, fileID)
+}
+
+func (qb *FileStore) UpdateAudioCaptions(ctx context.Context, fileID models.FileID, captions []*models.VideoCaption) error {
+	return qb.audioCaptionRepository().replace(ctx, fileID, captions)
 }
