@@ -311,8 +311,10 @@ func (s *Service) processEvents() {
 func (s *Service) handleEvent(event fsnotify.Event) {
 	atomic.AddInt64(&s.processedEvents, 1)
 
-	// Log all events at INFO level for debugging
-	logger.Infof("[watcher] Event: %s %s", event.Op, event.Name)
+	// Log events at INFO level (skip WRITE - too noisy during file transfers)
+	if event.Op&fsnotify.Write == 0 {
+		logger.Infof("[watcher] Event: %s %s", event.Op, event.Name)
+	}
 
 	// Handle new directories - add them to the watch list
 	if event.Op&fsnotify.Create != 0 {
