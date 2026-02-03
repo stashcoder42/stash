@@ -301,16 +301,26 @@ func (s *Service) processEvents() {
 func (s *Service) handleEvent(event fsnotify.Event) {
 	atomic.AddInt64(&s.processedEvents, 1)
 
+	// Log all events at INFO level for debugging
+	logger.Infof("[watcher] Event: %s %s", event.Op, event.Name)
+
 	// Handle new directories - add them to the watch list
 	if event.Op&fsnotify.Create != 0 {
 		info, err := os.Stat(event.Name)
 		if err == nil && info.IsDir() {
+			logger.Infof("[watcher] New directory created, adding to watch list: %s", event.Name)
 			s.mutex.Lock()
 			if err := s.addWatchRecursive(event.Name); err != nil {
 				logger.Warnf("[watcher] Failed to watch new directory %s: %v", event.Name, err)
 			}
 			s.mutex.Unlock()
 		}
+	}
+
+	// Handle renamed items - the event.Name is the OLD path before rename
+	// fsnotify does not provide the new path; we rely on a Create event for the new location
+	if event.Op&fsnotify.Rename != 0 {
+		logger.Infof("[watcher] Rename event (old path): %s", event.Name)
 	}
 
 	// Handle removed directories - remove from watch list
@@ -329,6 +339,7 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 	// Route to appropriate batcher based on event type
 	if event.Op&(fsnotify.Create|fsnotify.Write) != 0 {
 		s.batcher.Add(event.Name)
+		logger.Infof("[watcher] Queued media file for scan: %s", event.Name)
 	} else if event.Op&fsnotify.Remove != 0 && s.config.GetWatcherCleanOnRemove() {
 		s.removeBatcher.Add(event.Name)
 	}
