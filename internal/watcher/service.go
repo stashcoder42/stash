@@ -57,6 +57,7 @@ type Service struct {
 	watcher       *fsnotify.Watcher
 	batcher       *EventBatcher
 	removeBatcher *EventBatcher
+	renameTracker *RenameTracker
 
 	running bool
 	mutex   sync.Mutex
@@ -80,6 +81,10 @@ func NewService(cfg Config, trigger ScanTrigger) *Service {
 	return &Service{
 		config:      cfg,
 		scanTrigger: trigger,
+		// Initialize rename tracker with default timing
+		// pairWindow: 100ms to pair RENAME+CREATE events
+		// mappingTTL: 10s default, will be updated in Start() based on debounce config
+		renameTracker: NewRenameTracker(100*time.Millisecond, 10*time.Second),
 	}
 }
 
@@ -105,6 +110,11 @@ func (s *Service) Start() error {
 	debounceDelay := time.Duration(s.config.GetWatcherDebounceMs()) * time.Millisecond
 	s.batcher = NewEventBatcher(debounceDelay, s.processBatch)
 	s.removeBatcher = NewEventBatcher(debounceDelay, s.processRemovalBatch)
+
+	// Initialize rename tracker
+	// pairWindow: 100ms to pair RENAME+CREATE events (they arrive consecutively)
+	// mappingTTL: 2x debounce delay to ensure mappings are available when batch fires
+	s.renameTracker = NewRenameTracker(100*time.Millisecond, debounceDelay*2)
 
 	// Reset statistics
 	s.watchCount = 0
@@ -314,6 +324,9 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 				logger.Warnf("[watcher] Failed to watch new directory %s: %v", event.Name, err)
 			}
 			s.mutex.Unlock()
+
+			// Track directory create for rename pairing
+			s.renameTracker.OnDirectoryCreate(event.Name)
 		}
 	}
 
@@ -321,6 +334,10 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 	// fsnotify does not provide the new path; we rely on a Create event for the new location
 	if event.Op&fsnotify.Rename != 0 {
 		logger.Infof("[watcher] Rename event (old path): %s", event.Name)
+		// Track directory rename for pairing with subsequent CREATE
+		// Note: We can't easily check if it was a directory since it no longer exists,
+		// but tracking all renames is safe - non-matching creates just won't pair
+		s.renameTracker.OnDirectoryRename(event.Name)
 	}
 
 	// Handle removed directories - remove from watch list
@@ -363,13 +380,19 @@ func (s *Service) processBatch(paths []string) {
 		return
 	}
 
+	// Translate paths using rename tracker (handles _UNPACK_ -> final name renames)
+	translatedPaths := s.renameTracker.TranslatePaths(paths)
+
+	// Cleanup old mappings
+	s.renameTracker.Cleanup()
+
 	atomic.AddInt64(&s.triggeredScans, 1)
 
 	ctx := context.Background()
 
 	// Trigger scan
-	logger.Infof("[watcher] Triggering scan for paths: %v", paths)
-	if err := s.scanTrigger.TriggerScan(ctx, paths); err != nil {
+	logger.Infof("[watcher] Triggering scan for paths: %v", translatedPaths)
+	if err := s.scanTrigger.TriggerScan(ctx, translatedPaths); err != nil {
 		s.setError(err)
 		logger.Errorf("[watcher] Scan failed: %v", err)
 		return
@@ -377,8 +400,8 @@ func (s *Service) processBatch(paths []string) {
 
 	// Trigger identify if mode includes identification
 	if scanMode.ShouldIdentify() {
-		logger.Infof("[watcher] Triggering identify for paths: %v", paths)
-		if err := s.scanTrigger.TriggerIdentify(ctx, paths); err != nil {
+		logger.Infof("[watcher] Triggering identify for paths: %v", translatedPaths)
+		if err := s.scanTrigger.TriggerIdentify(ctx, translatedPaths); err != nil {
 			s.setError(err)
 			logger.Errorf("[watcher] Identify failed: %v", err)
 		}
