@@ -83,6 +83,30 @@ func (b *EventBatcher) PendingCount() int {
 	return len(b.pending)
 }
 
+// Remove removes a path from the pending set and resets the timer.
+// This is used when a RENAME event invalidates a queued path.
+func (b *EventBatcher) Remove(path string) {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	if b.stopped {
+		return
+	}
+
+	if _, exists := b.pending[path]; exists {
+		delete(b.pending, path)
+		// Reset timer since state changed - wait for things to settle
+		if b.timer != nil {
+			b.timer.Stop()
+		}
+		if len(b.pending) > 0 {
+			b.timer = time.AfterFunc(b.debounceDelay, b.flush)
+		} else {
+			b.timer = nil
+		}
+	}
+}
+
 // Stop stops the batcher and cancels any pending flush.
 func (b *EventBatcher) Stop() {
 	b.mutex.Lock()

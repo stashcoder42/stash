@@ -57,7 +57,6 @@ type Service struct {
 	watcher       *fsnotify.Watcher
 	batcher       *EventBatcher
 	removeBatcher *EventBatcher
-	renameTracker *RenameTracker
 
 	running bool
 	mutex   sync.Mutex
@@ -81,10 +80,6 @@ func NewService(cfg Config, trigger ScanTrigger) *Service {
 	return &Service{
 		config:      cfg,
 		scanTrigger: trigger,
-		// Initialize rename tracker with default timing
-		// pairWindow: 100ms to pair RENAME+CREATE events
-		// mappingTTL: 10s default, will be updated in Start() based on debounce config
-		renameTracker: NewRenameTracker(100*time.Millisecond, 10*time.Second),
 	}
 }
 
@@ -110,11 +105,6 @@ func (s *Service) Start() error {
 	debounceDelay := time.Duration(s.config.GetWatcherDebounceMs()) * time.Millisecond
 	s.batcher = NewEventBatcher(debounceDelay, s.processBatch)
 	s.removeBatcher = NewEventBatcher(debounceDelay, s.processRemovalBatch)
-
-	// Initialize rename tracker
-	// pairWindow: 100ms to pair RENAME+CREATE events (they arrive consecutively)
-	// mappingTTL: 2x debounce delay to ensure mappings are available when batch fires
-	s.renameTracker = NewRenameTracker(100*time.Millisecond, debounceDelay*2)
 
 	// Reset statistics
 	s.watchCount = 0
@@ -316,51 +306,58 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 		logger.Infof("[watcher] Event: %s %s", event.Op, event.Name)
 	}
 
-	// Handle new directories - add them to the watch list
-	if event.Op&fsnotify.Create != 0 {
-		info, err := os.Stat(event.Name)
-		if err == nil && info.IsDir() {
-			logger.Infof("[watcher] New directory created, adding to watch list: %s", event.Name)
-			s.mutex.Lock()
-			if err := s.addWatchRecursive(event.Name); err != nil {
-				logger.Warnf("[watcher] Failed to watch new directory %s: %v", event.Name, err)
-			}
-			s.mutex.Unlock()
-
-			// Track directory create for rename pairing
-			s.renameTracker.OnDirectoryCreate(event.Name)
-		}
-	}
-
-	// Handle renamed items - the event.Name is the OLD path before rename
-	// fsnotify does not provide the new path; we rely on a Create event for the new location
+	// Handle RENAME - remove from queue (new path will get its own CREATE)
+	// If the item is moved to a new location inside our library, we'll get a CREATE
+	// event and scan it there. If moved outside our library, we need to clean it.
 	if event.Op&fsnotify.Rename != 0 {
-		logger.Infof("[watcher] Rename event (old path): %s", event.Name)
-		// Track directory rename for pairing with subsequent CREATE
-		// Note: We can't easily check if it was a directory since it no longer exists,
-		// but tracking all renames is safe - non-matching creates just won't pair
-		s.renameTracker.OnDirectoryRename(event.Name)
-	}
-
-	// Handle removed directories - remove from watch list
-	if event.Op&fsnotify.Remove != 0 {
+		s.batcher.Remove(event.Name)
+		// Don't remove from removeBatcher - if it was queued for removal, keep it queued
+		// Add to removeBatcher if it's a media file and clean-on-remove is enabled
+		// The clean operation will handle both true deletions and moves-out-of-library
+		if s.config.GetWatcherCleanOnRemove() && s.isMediaFile(event.Name) {
+			s.removeBatcher.Add(event.Name)
+		}
+		// Also try to remove watch (may fail if already gone)
 		s.mutex.Lock()
-		// Try to remove from watcher - may fail if already removed, that's OK
 		_ = s.watcher.Remove(event.Name)
 		s.mutex.Unlock()
-	}
-
-	// Check if it's a media file we care about
-	if !s.isMediaFile(event.Name) {
 		return
 	}
 
-	// Route to appropriate batcher based on event type
-	if event.Op&(fsnotify.Create|fsnotify.Write) != 0 {
+	// Handle CREATE - queue for scanning
+	if event.Op&fsnotify.Create != 0 {
+		info, err := os.Stat(event.Name)
+		if err != nil {
+			return // File/dir already gone
+		}
+
+		if info.IsDir() {
+			// Queue directory - don't add watch yet (wait for debounce)
+			s.batcher.Add(event.Name)
+			logger.Infof("[watcher] Queued new directory for scan: %s", event.Name)
+		} else if s.isMediaFile(event.Name) {
+			// Queue individual media file
+			s.batcher.Add(event.Name)
+			logger.Infof("[watcher] Queued media file for scan: %s", event.Name)
+		}
+		return
+	}
+
+	// Handle REMOVE
+	if event.Op&fsnotify.Remove != 0 {
+		s.mutex.Lock()
+		_ = s.watcher.Remove(event.Name)
+		s.mutex.Unlock()
+
+		if s.config.GetWatcherCleanOnRemove() && s.isMediaFile(event.Name) {
+			s.removeBatcher.Add(event.Name)
+		}
+		return
+	}
+
+	// Handle WRITE (for media files only)
+	if event.Op&fsnotify.Write != 0 && s.isMediaFile(event.Name) {
 		s.batcher.Add(event.Name)
-		logger.Infof("[watcher] Queued media file for scan: %s", event.Name)
-	} else if event.Op&fsnotify.Remove != 0 && s.config.GetWatcherCleanOnRemove() {
-		s.removeBatcher.Add(event.Name)
 	}
 }
 
@@ -382,19 +379,25 @@ func (s *Service) processBatch(paths []string) {
 		return
 	}
 
-	// Translate paths using rename tracker (handles _UNPACK_ -> final name renames)
-	translatedPaths := s.renameTracker.TranslatePaths(paths)
-
-	// Cleanup old mappings
-	s.renameTracker.Cleanup()
+	// Add watches for any directories in the batch
+	s.mutex.Lock()
+	for _, path := range paths {
+		info, err := os.Stat(path)
+		if err == nil && info.IsDir() {
+			if err := s.addWatchRecursive(path); err != nil {
+				logger.Warnf("[watcher] Failed to watch directory %s: %v", path, err)
+			}
+		}
+	}
+	s.mutex.Unlock()
 
 	atomic.AddInt64(&s.triggeredScans, 1)
 
 	ctx := context.Background()
 
-	// Trigger scan
-	logger.Infof("[watcher] Triggering scan for paths: %v", translatedPaths)
-	if err := s.scanTrigger.TriggerScan(ctx, translatedPaths); err != nil {
+	// Trigger scan - works with both directories and files
+	logger.Infof("[watcher] Triggering scan for paths: %v", paths)
+	if err := s.scanTrigger.TriggerScan(ctx, paths); err != nil {
 		s.setError(err)
 		logger.Errorf("[watcher] Scan failed: %v", err)
 		return
@@ -402,8 +405,8 @@ func (s *Service) processBatch(paths []string) {
 
 	// Trigger identify if mode includes identification
 	if scanMode.ShouldIdentify() {
-		logger.Infof("[watcher] Triggering identify for paths: %v", translatedPaths)
-		if err := s.scanTrigger.TriggerIdentify(ctx, translatedPaths); err != nil {
+		logger.Infof("[watcher] Triggering identify for paths: %v", paths)
+		if err := s.scanTrigger.TriggerIdentify(ctx, paths); err != nil {
 			s.setError(err)
 			logger.Errorf("[watcher] Identify failed: %v", err)
 		}
