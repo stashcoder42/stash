@@ -9,11 +9,14 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/stashapp/stash/pkg/logger"
 	"github.com/stashapp/stash/pkg/models"
+	"gopkg.in/yaml.v2"
 )
 
 // SourcePathGetter gets the source path for a given package URL.
@@ -228,6 +231,10 @@ func (m *Manager) installPackage(pkg RemotePackage, store *Store, zr *zip.Reader
 		manifest.Files = append(manifest.Files, fn)
 	}
 
+	// Extract scraper types from YAML files
+	packageDir := store.packageDir(pkg.ID)
+	manifest.ScraperTypes = ExtractScraperTypes(manifest.Files, packageDir)
+
 	if err := store.writeManifest(pkg.ID, manifest); err != nil {
 		return fmt.Errorf("writing manifest: %w", err)
 	}
@@ -265,6 +272,103 @@ func (m *Manager) deletePackageFiles(ctx context.Context, store *Store, id strin
 
 	if err := store.deleteManifest(id); err != nil {
 		return fmt.Errorf("deleting manifest: %w", err)
+	}
+
+	return nil
+}
+
+// scraperConfig is a minimal struct for parsing scraper YAML files
+// to extract supported content types.
+type scraperConfig struct {
+	PerformerByName     interface{} `yaml:"performerByName"`
+	PerformerByFragment interface{} `yaml:"performerByFragment"`
+	PerformerByURL      interface{} `yaml:"performerByURL"`
+	SceneByFragment     interface{} `yaml:"sceneByFragment"`
+	SceneByName         interface{} `yaml:"sceneByName"`
+	SceneByURL          interface{} `yaml:"sceneByURL"`
+	GalleryByFragment   interface{} `yaml:"galleryByFragment"`
+	GalleryByURL        interface{} `yaml:"galleryByURL"`
+	ImageByFragment     interface{} `yaml:"imageByFragment"`
+	ImageByURL          interface{} `yaml:"imageByURL"`
+	MovieByURL          interface{} `yaml:"movieByURL"`
+	GroupByURL          interface{} `yaml:"groupByURL"`
+	AudioByURL          interface{} `yaml:"audioByURL"`
+}
+
+func (c *scraperConfig) toScraperTypes() *ScraperTypes {
+	types := &ScraperTypes{}
+
+	// Performer
+	if c.PerformerByName != nil || c.PerformerByFragment != nil || !isEmptySlice(c.PerformerByURL) {
+		types.Performer = true
+	}
+
+	// Scene
+	if c.SceneByFragment != nil || c.SceneByName != nil || !isEmptySlice(c.SceneByURL) {
+		types.Scene = true
+	}
+
+	// Gallery
+	if c.GalleryByFragment != nil || !isEmptySlice(c.GalleryByURL) {
+		types.Gallery = true
+	}
+
+	// Image
+	if c.ImageByFragment != nil || !isEmptySlice(c.ImageByURL) {
+		types.Image = true
+	}
+
+	// Group (also check movieByURL for backwards compatibility)
+	if !isEmptySlice(c.MovieByURL) || !isEmptySlice(c.GroupByURL) {
+		types.Group = true
+	}
+
+	// Audio
+	if !isEmptySlice(c.AudioByURL) {
+		types.Audio = true
+	}
+
+	// Return nil if no types are supported
+	if !types.Scene && !types.Gallery && !types.Image && !types.Performer && !types.Group && !types.Audio {
+		return nil
+	}
+
+	return types
+}
+
+func isEmptySlice(v interface{}) bool {
+	if v == nil {
+		return true
+	}
+	// Check if it's a slice
+	if slice, ok := v.([]interface{}); ok {
+		return len(slice) == 0
+	}
+	return false
+}
+
+// ExtractScraperTypes parses YAML files in the package to extract scraper types.
+func ExtractScraperTypes(files []string, packageDir string) *ScraperTypes {
+	for _, f := range files {
+		if !strings.HasSuffix(f, ".yml") && !strings.HasSuffix(f, ".yaml") {
+			continue
+		}
+
+		filePath := filepath.Join(packageDir, f)
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			continue
+		}
+
+		var cfg scraperConfig
+		if err := yaml.Unmarshal(data, &cfg); err != nil {
+			continue
+		}
+
+		types := cfg.toScraperTypes()
+		if types != nil {
+			return types
+		}
 	}
 
 	return nil

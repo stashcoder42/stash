@@ -53,6 +53,18 @@ func manifestToPackage(p pkg.Manifest) *Package {
 		ret.Metadata = make(map[string]interface{})
 	}
 
+	// Map scraper types if present
+	if p.ScraperTypes != nil {
+		ret.ScraperTypes = &ScraperTypes{
+			Scene:     p.ScraperTypes.Scene,
+			Gallery:   p.ScraperTypes.Gallery,
+			Image:     p.ScraperTypes.Image,
+			Performer: p.ScraperTypes.Performer,
+			Group:     p.ScraperTypes.Group,
+			Audio:     p.ScraperTypes.Audio,
+		}
+	}
+
 	return ret
 }
 

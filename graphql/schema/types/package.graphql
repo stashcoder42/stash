@@ -3,6 +3,16 @@ enum PackageType {
   Plugin
 }
 
+"Indicates which content types a scraper package supports"
+type ScraperTypes {
+  scene: Boolean!
+  gallery: Boolean!
+  image: Boolean!
+  performer: Boolean!
+  group: Boolean!
+  audio: Boolean!
+}
+
 type Package {
   package_id: String!
   name: String!
@@ -16,6 +26,9 @@ type Package {
   source_package: Package
 
   metadata: Map!
+
+  "Content types supported by this scraper package. Only applicable for scraper packages."
+  scraper_types: ScraperTypes
 }
 
 input PackageSpecInput {

@@ -156,3 +156,8 @@ func (r *Store) deleteManifest(packageID string) error {
 func (r *Store) deletePackageDir(packageID string) error {
 	return os.Remove(r.packageDir(packageID))
 }
+
+// PackageDir returns the directory path for the given package ID.
+func (r *Store) PackageDir(packageID string) string {
+	return r.packageDir(packageID)
+}

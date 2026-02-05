@@ -59,7 +59,7 @@ type Definition struct {
 	GroupByURL []*ByURLDefinition `yaml:"groupByURL"`
 
 	// Configuration for querying an audio by a URL
-	AudioByURL []*scrapeByURLConfig `yaml:"audioByURL"`
+	AudioByURL []*ByURLDefinition `yaml:"audioByURL"`
 
 	// Scraper debugging options
 	DebugOptions *scraperDebugOptions `yaml:"debug"`

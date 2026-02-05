@@ -1344,6 +1344,7 @@
     "required_by": "Required by {packages}",
     "selected_only": "Selected only",
     "show_all": "Show all",
+    "types": "Types",
     "source": {
       "local_path": {
         "description": "Relative path to store packages for this source. Note that changing this requires the packages to be moved manually.",

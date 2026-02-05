@@ -5,4 +5,12 @@ fragment PackageData on Package {
   date
   metadata
   sourceURL
+  scraper_types {
+    scene
+    gallery
+    image
+    performer
+    group
+    audio
+  }
 }

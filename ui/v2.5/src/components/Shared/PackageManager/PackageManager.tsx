@@ -72,6 +72,29 @@ function hasUpgrade(pkg: InstalledPackage) {
   return upgradeDate > pkgDate;
 }
 
+function displayScraperTypes(
+  intl: IntlShape,
+  scraperTypes: GQL.ScraperTypes | null | undefined
+) {
+  if (!scraperTypes) return null;
+
+  const labels: string[] = [];
+  if (scraperTypes.scene)
+    labels.push(intl.formatMessage({ id: "scene" }));
+  if (scraperTypes.gallery)
+    labels.push(intl.formatMessage({ id: "gallery" }));
+  if (scraperTypes.image)
+    labels.push(intl.formatMessage({ id: "image" }));
+  if (scraperTypes.performer)
+    labels.push(intl.formatMessage({ id: "performer" }));
+  if (scraperTypes.group)
+    labels.push(intl.formatMessage({ id: "group" }));
+  if (scraperTypes.audio)
+    labels.push(intl.formatMessage({ id: "audio" }));
+
+  return labels.join(", ");
+}
+
 const InstalledPackageRow: React.FC<{
   loading?: boolean;
   pkg: InstalledPackage;
@@ -86,6 +109,10 @@ const InstalledPackageRow: React.FC<{
     return hasUpgrade(pkg);
   }, [updatesLoaded, pkg]);
 
+  const typeLabels = useMemo(() => {
+    return displayScraperTypes(intl, pkg.scraper_types);
+  }, [intl, pkg.scraper_types]);
+
   return (
     <tr className={cx({ "package-update-available": updateAvailable })}>
       <td>
@@ -98,6 +125,9 @@ const InstalledPackageRow: React.FC<{
       <td>
         <span className="package-name">{pkg.name}</span>
         <span className="package-id">{pkg.package_id}</span>
+      </td>
+      <td>
+        <span className="package-types">{typeLabels}</span>
       </td>
       <td>
         <span className="package-version">
@@ -225,6 +255,9 @@ const InstalledPackagesList: React.FC<{
             </th>
             <th>
               <FormattedMessage id="package_manager.package" />
+            </th>
+            <th>
+              <FormattedMessage id="package_manager.types" />
             </th>
             <th>
               <FormattedMessage id="package_manager.installed_version" />
