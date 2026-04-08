@@ -27,7 +27,28 @@ type Config interface {
 	GetVideoExtensions() []string
 	GetImageExtensions() []string
 	GetGalleryExtensions() []string
+	GetAudioExtensions() []string
 }
+
+// FsWatcher abstracts the fsnotify.Watcher for testing.
+type FsWatcher interface {
+	Add(name string) error
+	Remove(name string) error
+	Close() error
+	EventsChan() <-chan fsnotify.Event
+	ErrorsChan() <-chan error
+}
+
+// fsnotifyWatcher wraps *fsnotify.Watcher to implement FsWatcher.
+type fsnotifyWatcher struct {
+	w *fsnotify.Watcher
+}
+
+func (f *fsnotifyWatcher) Add(name string) error              { return f.w.Add(name) }
+func (f *fsnotifyWatcher) Remove(name string) error           { return f.w.Remove(name) }
+func (f *fsnotifyWatcher) Close() error                       { return f.w.Close() }
+func (f *fsnotifyWatcher) EventsChan() <-chan fsnotify.Event   { return f.w.Events }
+func (f *fsnotifyWatcher) ErrorsChan() <-chan error            { return f.w.Errors }
 
 // ScanTrigger interface for triggering scans and identification.
 type ScanTrigger interface {
@@ -54,7 +75,7 @@ type Service struct {
 	config      Config
 	scanTrigger ScanTrigger
 
-	watcher       *fsnotify.Watcher
+	watcher       FsWatcher
 	batcher       *EventBatcher
 	removeBatcher *EventBatcher
 
@@ -92,12 +113,12 @@ func (s *Service) Start() error {
 		return nil
 	}
 
-	watcher, err := fsnotify.NewWatcher()
+	w, err := fsnotify.NewWatcher()
 	if err != nil {
 		s.setError(err)
 		return err
 	}
-	s.watcher = watcher
+	s.watcher = &fsnotifyWatcher{w: w}
 
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 
@@ -282,12 +303,12 @@ func (s *Service) processEvents() {
 		select {
 		case <-s.ctx.Done():
 			return
-		case event, ok := <-s.watcher.Events:
+		case event, ok := <-s.watcher.EventsChan():
 			if !ok {
 				return
 			}
 			s.handleEvent(event)
-		case err, ok := <-s.watcher.Errors:
+		case err, ok := <-s.watcher.ErrorsChan():
 			if !ok {
 				return
 			}
@@ -328,7 +349,8 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 	if event.Op&fsnotify.Create != 0 {
 		info, err := os.Stat(event.Name)
 		if err != nil {
-			return // File/dir already gone
+			logger.Warnf("[watcher] CREATE event but stat failed (file already gone?): %s: %v", event.Name, err)
+			return
 		}
 
 		if info.IsDir() {
@@ -339,6 +361,8 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 			// Queue individual media file
 			s.batcher.Add(event.Name)
 			logger.Infof("[watcher] Queued media file for scan: %s", event.Name)
+		} else {
+			logger.Debugf("[watcher] Ignoring non-media file: %s", event.Name)
 		}
 		return
 	}
@@ -356,8 +380,12 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 	}
 
 	// Handle WRITE (for media files only)
-	if event.Op&fsnotify.Write != 0 && s.isMediaFile(event.Name) {
-		s.batcher.Add(event.Name)
+	if event.Op&fsnotify.Write != 0 {
+		if s.isMediaFile(event.Name) {
+			s.batcher.Add(event.Name)
+		} else {
+			logger.Debugf("[watcher] Ignoring WRITE for non-media file: %s", event.Name)
+		}
 	}
 }
 
@@ -365,7 +393,8 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 func (s *Service) isMediaFile(path string) bool {
 	return fsutil.MatchExtension(path, s.config.GetVideoExtensions()) ||
 		fsutil.MatchExtension(path, s.config.GetImageExtensions()) ||
-		fsutil.MatchExtension(path, s.config.GetGalleryExtensions())
+		fsutil.MatchExtension(path, s.config.GetGalleryExtensions()) ||
+		fsutil.MatchExtension(path, s.config.GetAudioExtensions())
 }
 
 // processBatch handles a batch of file paths after debouncing.
