@@ -1,0 +1,16 @@
+services:
+  stash:
+    image: stash/build
+    container_name: stash-watcher-test
+    ports:
+      - "9999:9999"
+    environment:
+      - STASH_CONFIG_FILE=/root/.stash/config.yml
+    volumes:
+      - ./config.yml:/root/.stash/config.yml:ro
+      - ./simulate-sabnzbd.sh:/usr/local/bin/simulate-sabnzbd.sh:ro
+      - ./entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
+    # /data lives on container overlay FS (NOT a host volume)
+    # so inotify events propagate correctly on Linux.
+    # macOS Docker Desktop doesn't reliably pass inotify through bind mounts.
+    entrypoint: ["/bin/sh", "/usr/local/bin/entrypoint.sh"]

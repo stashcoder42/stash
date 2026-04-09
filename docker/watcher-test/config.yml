@@ -1,0 +1,21 @@
+host: 0.0.0.0
+port: 9999
+database: /root/.stash/stash-go.sqlite
+generated: /generated/
+cache: /cache/
+blobs_path: /root/.stash/blobs
+blobs_storage: FILESYSTEM
+loglevel: Trace
+nobrowser: true
+dangerous_allow_public_without_auth: "true"
+
+stash:
+  - path: /data/library
+    excludevideo: false
+    excludeimage: false
+    excludeaudio: false
+
+watcher:
+  scan_mode: SCAN
+  debounce_ms: 5000
+  clean_on_remove: true
