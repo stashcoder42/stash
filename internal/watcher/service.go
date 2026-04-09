@@ -78,6 +78,7 @@ type Service struct {
 	watcher       FsWatcher
 	batcher       *EventBatcher
 	removeBatcher *EventBatcher
+	dirTracker    *DirActivityTracker
 
 	running bool
 	mutex   sync.Mutex
@@ -122,10 +123,14 @@ func (s *Service) Start() error {
 
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 
-	// Initialize batchers
+	// Initialize batchers and directory tracker
 	debounceDelay := time.Duration(s.config.GetWatcherDebounceMs()) * time.Millisecond
 	s.batcher = NewEventBatcher(debounceDelay, s.processBatch)
 	s.removeBatcher = NewEventBatcher(debounceDelay, s.processRemovalBatch)
+	s.dirTracker = NewDirActivityTracker(debounceDelay, func(path string) {
+		// When a directory goes quiet, forward it to the scan batcher
+		s.batcher.Add(path)
+	})
 
 	// Reset statistics
 	s.watchCount = 0
@@ -167,6 +172,9 @@ func (s *Service) Stop() {
 	}
 	if s.removeBatcher != nil {
 		s.removeBatcher.Stop()
+	}
+	if s.dirTracker != nil {
+		s.dirTracker.Stop()
 	}
 	if s.watcher != nil {
 		s.watcher.Close()
@@ -332,10 +340,10 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 	// event and scan it there. If moved outside our library, we need to clean it.
 	if event.Op&fsnotify.Rename != 0 {
 		s.batcher.Remove(event.Name)
-		// Don't remove from removeBatcher - if it was queued for removal, keep it queued
-		// Add to removeBatcher if it's a media file and clean-on-remove is enabled
-		// The clean operation will handle both true deletions and moves-out-of-library
-		if s.config.GetWatcherCleanOnRemove() && s.isMediaFile(event.Name) {
+		s.dirTracker.Remove(event.Name)
+		// Add to removeBatcher for both media files AND directories when clean-on-remove
+		// is enabled. Directories contain media that needs cleanup when moved/deleted.
+		if s.config.GetWatcherCleanOnRemove() {
 			s.removeBatcher.Add(event.Name)
 		}
 		// Also try to remove watch (may fail if already gone)
@@ -354,14 +362,32 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 		}
 
 		if info.IsDir() {
-			// Queue directory - don't add watch yet (wait for debounce)
-			s.batcher.Add(event.Name)
-			logger.Infof("[watcher] Queued new directory for scan: %s", event.Name)
+			// Add inotify watch immediately so we capture events for files
+			// created inside this directory (e.g., during archive extraction)
+			s.mutex.Lock()
+			if err := s.addWatchRecursive(event.Name); err != nil {
+				logger.Warnf("[watcher] Failed to watch new directory %s: %v", event.Name, err)
+			}
+			s.mutex.Unlock()
+			// Track directory for quiescence — scan is deferred until activity settles
+			s.dirTracker.TrackDir(event.Name)
+			logger.Infof("[watcher] Watching new directory, waiting for activity to settle: %s", event.Name)
 		} else if s.isMediaFile(event.Name) {
-			// Queue individual media file
-			s.batcher.Add(event.Name)
-			logger.Infof("[watcher] Queued media file for scan: %s", event.Name)
+			// Check if this file is inside a tracked directory
+			if trackedDir := s.dirTracker.TrackedDir(event.Name); trackedDir != "" {
+				// Activity inside a tracked dir — reset its quiesce timer
+				s.dirTracker.NoteActivity(trackedDir)
+				logger.Debugf("[watcher] Activity in tracked dir %s: %s", trackedDir, event.Name)
+			} else {
+				// Standalone file — queue for scan directly
+				s.batcher.Add(event.Name)
+				logger.Infof("[watcher] Queued media file for scan: %s", event.Name)
+			}
 		} else {
+			// Non-media file — still counts as activity if inside a tracked dir
+			if trackedDir := s.dirTracker.TrackedDir(event.Name); trackedDir != "" {
+				s.dirTracker.NoteActivity(trackedDir)
+			}
 			logger.Debugf("[watcher] Ignoring non-media file: %s", event.Name)
 		}
 		return
@@ -373,7 +399,8 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 		_ = s.watcher.Remove(event.Name)
 		s.mutex.Unlock()
 
-		if s.config.GetWatcherCleanOnRemove() && s.isMediaFile(event.Name) {
+		// Trigger clean for both media files and directories
+		if s.config.GetWatcherCleanOnRemove() {
 			s.removeBatcher.Add(event.Name)
 		}
 		return
@@ -382,8 +409,17 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 	// Handle WRITE (for media files only)
 	if event.Op&fsnotify.Write != 0 {
 		if s.isMediaFile(event.Name) {
-			s.batcher.Add(event.Name)
+			// Check if this file is inside a tracked directory
+			if trackedDir := s.dirTracker.TrackedDir(event.Name); trackedDir != "" {
+				s.dirTracker.NoteActivity(trackedDir)
+			} else {
+				s.batcher.Add(event.Name)
+			}
 		} else {
+			// Non-media WRITE still counts as activity for tracked dirs
+			if trackedDir := s.dirTracker.TrackedDir(event.Name); trackedDir != "" {
+				s.dirTracker.NoteActivity(trackedDir)
+			}
 			logger.Debugf("[watcher] Ignoring WRITE for non-media file: %s", event.Name)
 		}
 	}
@@ -407,18 +443,6 @@ func (s *Service) processBatch(paths []string) {
 	if !scanMode.ShouldScan() {
 		return
 	}
-
-	// Add watches for any directories in the batch
-	s.mutex.Lock()
-	for _, path := range paths {
-		info, err := os.Stat(path)
-		if err == nil && info.IsDir() {
-			if err := s.addWatchRecursive(path); err != nil {
-				logger.Warnf("[watcher] Failed to watch directory %s: %v", path, err)
-			}
-		}
-	}
-	s.mutex.Unlock()
 
 	atomic.AddInt64(&s.triggeredScans, 1)
 

@@ -810,6 +810,13 @@ func (i *Config) GetGalleryExtensions() []string {
 	return ret
 }
 
+// GetAudioExtensions returns configured audio file extensions.
+// Returns empty when audio support is not present — the audio feature branch
+// overrides this with real defaults.
+func (i *Config) GetAudioExtensions() []string {
+	return nil
+}
+
 func (i *Config) GetCreateGalleriesFromFolders() bool {
 	return i.getBool(CreateGalleriesFromFolders)
 }

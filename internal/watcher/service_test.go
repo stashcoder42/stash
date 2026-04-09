@@ -63,6 +63,9 @@ func newTestService(cfg *mockConfig, trigger *mockScanTrigger) (*Service, *mockF
 	debounce := time.Duration(cfg.GetWatcherDebounceMs()) * time.Millisecond
 	s.batcher = NewEventBatcher(debounce, s.processBatch)
 	s.removeBatcher = NewEventBatcher(debounce, s.processRemovalBatch)
+	s.dirTracker = NewDirActivityTracker(debounce, func(path string) {
+		s.batcher.Add(path)
+	})
 	return s, mw
 }
 
@@ -399,6 +402,7 @@ func TestHandleEvent_RenameRemovesFromBatcherAndCountsEvent(t *testing.T) {
 	s, _ := newTestService(cfg, trigger)
 	defer s.batcher.Stop()
 	defer s.removeBatcher.Stop()
+	defer s.dirTracker.Stop()
 
 	// Pre-queue a path, then rename it — should be removed from batcher
 	s.batcher.Add("/library/movies/_UNPACK_Movie")
@@ -425,6 +429,7 @@ func TestHandleEvent_CreateNonMediaFileIsIgnored(t *testing.T) {
 	s, _ := newTestService(cfg, trigger)
 	defer s.batcher.Stop()
 	defer s.removeBatcher.Stop()
+	defer s.dirTracker.Stop()
 
 	// Create a temp file that is NOT a media file
 	tmpDir := t.TempDir()
@@ -454,6 +459,7 @@ func TestHandleEvent_CreateStatFailureIsHandled(t *testing.T) {
 	s, _ := newTestService(cfg, trigger)
 	defer s.batcher.Stop()
 	defer s.removeBatcher.Stop()
+	defer s.dirTracker.Stop()
 
 	// CREATE for a path that doesn't exist (file already gone)
 	s.handleEvent(fsnotify.Event{
@@ -476,6 +482,7 @@ func TestHandleEvent_WriteNonMediaFileIsIgnored(t *testing.T) {
 	s, _ := newTestService(cfg, trigger)
 	defer s.batcher.Stop()
 	defer s.removeBatcher.Stop()
+	defer s.dirTracker.Stop()
 
 	s.handleEvent(fsnotify.Event{
 		Name: "/library/notes.txt",
@@ -497,6 +504,7 @@ func TestHandleEvent_WriteMediaFileIsQueued(t *testing.T) {
 	s, _ := newTestService(cfg, trigger)
 	defer s.batcher.Stop()
 	defer s.removeBatcher.Stop()
+	defer s.dirTracker.Stop()
 
 	s.handleEvent(fsnotify.Event{
 		Name: "/library/video.mp4",
