@@ -183,6 +183,8 @@ input PerformerFilterType {
   image_count: IntCriterionInput
   "Filter by gallery count"
   gallery_count: IntCriterionInput
+  "Filter by audio count"
+  audio_count: IntCriterionInput
   "Filter by play count"
   play_count: IntCriterionInput
   "Filter by o count"
@@ -221,6 +223,8 @@ input PerformerFilterType {
   tags_filter: TagFilterType
   "Filter by related scene markers (via scene) that meet this criteria"
   markers_filter: SceneMarkerFilterType
+  "Filter by related audios that meet this criteria"
+  audios_filter: AudioFilterType
   "Filter by creation time"
   created_at: TimestampCriterionInput
   "Filter by last update time"

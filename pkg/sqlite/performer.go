@@ -186,6 +186,7 @@ type performerRepositoryType struct {
 	scenes    joinRepository
 	images    joinRepository
 	galleries joinRepository
+	audios    joinRepository
 }
 
 var (
@@ -232,6 +233,14 @@ var (
 			},
 			fkColumn:     galleryIDColumn,
 			foreignTable: galleryTable,
+		},
+		audios: joinRepository{
+			repository: repository{
+				tableName: audioPerformersTable,
+				idColumn:  performerIDColumn,
+			},
+			fkColumn:     audioIDColumn,
+			foreignTable: audioTable,
 		},
 	}
 )

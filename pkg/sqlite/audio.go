@@ -777,6 +777,7 @@ var audioSortOptions = sortOptions{
 	"o_counter",
 	"organized",
 	"path",
+	"performer_age",
 	"performer_count",
 	"play_count",
 	"play_duration",
@@ -877,6 +878,26 @@ func (qb *AudioStore) setAudioSort(query *queryBuilder, findFilter *models.FindF
 		query.sortAndPagination += fmt.Sprintf(" ORDER BY (SELECT MAX(o_date) FROM %s AS sort WHERE sort.%s = %s.id) %s", audiosODatesTable, audioIDColumn, audioTable, getSortDirection(direction))
 	case "o_counter":
 		query.sortAndPagination += getCountSort(audioTable, audiosODatesTable, audioIDColumn, direction)
+	case "performer_age":
+		aggregation := "MIN"
+		if direction == "DESC" {
+			aggregation = "MAX"
+		}
+		fallback := "NULL"
+		if direction == "ASC" {
+			fallback = "9223372036854775807"
+		}
+		query.sortAndPagination += fmt.Sprintf(
+			" ORDER BY (SELECT COALESCE(%s(JulianDay(audios.date) - JulianDay(performers.birthdate)), %s) FROM %s as performers INNER JOIN %s AS aggregation WHERE performers.id = aggregation.%s AND aggregation.%s = %s.id) %s",
+			aggregation,
+			fallback,
+			performerTable,
+			audioPerformersTable,
+			performerIDColumn,
+			audioIDColumn,
+			audioTable,
+			getSortDirection(direction),
+		)
 	default:
 		query.sortAndPagination += getSort(sort, direction, "audios")
 	}

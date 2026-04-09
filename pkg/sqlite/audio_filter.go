@@ -210,7 +210,18 @@ func (qb *audioFilterHandler) missingCriterionHandler(isMissing *string) criteri
 			case "tags":
 				audioRepository.tags.join(f, "tags_join", "audios.id")
 				f.addWhere("tags_join.audio_id IS NULL")
+			case "cover":
+				f.addWhere("audios.cover_blob IS NULL")
+			case "url":
+				audiosURLsTableMgr.join(f, "", "audios.id")
+				f.addWhere("audio_urls.url IS NULL")
 			default:
+				if err := validateIsMissing(*isMissing, []string{
+					"date", "details", "title", "rating",
+				}); err != nil {
+					f.setError(err)
+					return
+				}
 				f.addWhere("(audios." + *isMissing + " IS NULL OR TRIM(audios." + *isMissing + ") = '')")
 			}
 		}

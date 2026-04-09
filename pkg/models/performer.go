@@ -164,6 +164,8 @@ type PerformerFilterType struct {
 	ImageCount *IntCriterionInput `json:"image_count"`
 	// Filter by gallery count
 	GalleryCount *IntCriterionInput `json:"gallery_count"`
+	// Filter by audio count
+	AudioCount *IntCriterionInput `json:"audio_count"`
 	// Filter by play count
 	PlayCount *IntCriterionInput `json:"play_count"`
 	// Filter by O count
@@ -206,6 +208,8 @@ type PerformerFilterType struct {
 	TagsFilter *TagFilterType `json:"tags_filter"`
 	// Filter by related scene markers (via scene) that meet this criteria
 	MarkersFilter *SceneMarkerFilterType `json:"markers_filter"`
+	// Filter by related audios that meet this criteria
+	AudiosFilter *AudioFilterType `json:"audios_filter"`
 	// Filter by created at
 	CreatedAt *TimestampCriterionInput `json:"created_at"`
 	// Filter by updated at
