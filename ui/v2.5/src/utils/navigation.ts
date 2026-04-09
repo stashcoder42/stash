@@ -345,6 +345,14 @@ const makeTagGroupsUrl = (tag: INamedObject) => {
   return `/groups?${makeTagFilter(GQL.FilterMode.Groups, tag)}`;
 };
 
+const makeTagAudiosUrl = (tag: INamedObject) => {
+  return `/audios?${makeTagFilter(GQL.FilterMode.Audios, tag)}`;
+};
+
+const makeTagAudioMarkersUrl = (tag: INamedObject) => {
+  return `/audios/markers?${makeTagFilter(GQL.FilterMode.AudioMarkers, tag)}`;
+};
+
 type SceneMarkerDataFragment = Pick<GQL.SceneMarker, "id" | "seconds"> & {
   scene: Pick<GQL.Scene, "id">;
 };
@@ -522,6 +530,8 @@ const NavUtils = {
   makeTagGalleriesUrl,
   makeTagImagesUrl,
   makeTagGroupsUrl,
+  makeTagAudiosUrl,
+  makeTagAudioMarkersUrl,
   makeScenesPHashMatchUrl,
   makeSceneMarkerUrl,
   makeImagesPHashMatchUrl,

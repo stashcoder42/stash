@@ -82,7 +82,7 @@ export const AudioListTable: React.FC<IAudioListTable> = ({
     return (
       <div className="tags-list">
         {audio.tags.slice(0, 3).map((tag) => (
-          <TagLink key={tag.id} tag={tag} />
+          <TagLink key={tag.id} tag={tag} linkType="audio" />
         ))}
         {audio.tags.length > 3 && (
           <span className="text-muted">+{audio.tags.length - 3} more</span>

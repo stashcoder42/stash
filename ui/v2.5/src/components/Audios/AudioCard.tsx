@@ -62,7 +62,7 @@ const AudioCardPopovers = PatchComponent(
       if (props.audio.tags.length <= 0) return;
 
       const popoverContent = props.audio.tags.map((tag) => (
-        <TagLink key={tag.id} tag={tag} />
+        <TagLink key={tag.id} tag={tag} linkType="audio" />
       ));
 
       return (

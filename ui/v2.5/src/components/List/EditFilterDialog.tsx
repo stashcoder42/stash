@@ -215,6 +215,8 @@ const FilterModeToConfigKey = {
   [FilterMode.Scenes]: "scenes",
   [FilterMode.Studios]: "studios",
   [FilterMode.Tags]: "tags",
+  [FilterMode.Audios]: "audios",
+  [FilterMode.AudioMarkers]: "audioMarkers",
 };
 
 function filterModeToConfigKey(filterMode: FilterMode) {

@@ -28,7 +28,7 @@ export const AudioDetailPanel: React.FC<IAudioDetailProps> = (props) => {
   function renderTags() {
     if (props.audio.tags.length === 0) return;
     const tags = props.audio.tags.map((tag) => (
-      <TagLink key={tag.id} tag={tag} />
+      <TagLink key={tag.id} tag={tag} linkType="audio" />
     ));
     return (
       <>

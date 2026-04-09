@@ -80,6 +80,7 @@ func (qb *tagFilterHandler) criterionHandler() criterionHandler {
 		qb.groupCountCriterionHandler(tagFilter.MovieCount),
 
 		qb.markerCountCriterionHandler(tagFilter.MarkerCount),
+		qb.audioCountCriterionHandler(tagFilter.AudioCount),
 		tagHierarchyHandler.ParentsCriterionHandler(tagFilter.Parents),
 		tagHierarchyHandler.ChildrenCriterionHandler(tagFilter.Children),
 		tagHierarchyHandler.ParentCountCriterionHandler(tagFilter.ParentCount),
@@ -173,6 +174,15 @@ func (qb *tagFilterHandler) criterionHandler() criterionHandler {
 				SELECT m.id, m.primary_tag_id FROM scene_markers m
 				)`)
 				f.addInnerJoin("markers_tags", "", "markers_tags.tag_id = tags.id")
+			},
+		},
+
+		&relatedFilterHandler{
+			relatedIDCol:   "audio_tags.audio_id",
+			relatedRepo:    audioRepository.repository,
+			relatedHandler: &audioFilterHandler{tagFilter.AudiosFilter},
+			joinFn: func(f *filterBuilder) {
+				tagRepository.audios.innerJoin(f, "", "tags.id")
 			},
 		},
 	}
@@ -289,6 +299,17 @@ func (qb *tagFilterHandler) markerCountCriterionHandler(markerCount *models.IntC
 			f.addLeftJoin("scene_markers_tags", "", "scene_markers_tags.tag_id = tags.id")
 			f.addLeftJoin("scene_markers", "", "scene_markers_tags.scene_marker_id = scene_markers.id OR scene_markers.primary_tag_id = tags.id")
 			clause, args := getIntCriterionWhereClause("count(distinct scene_markers.id)", *markerCount)
+
+			f.addHaving(clause, args...)
+		}
+	}
+}
+
+func (qb *tagFilterHandler) audioCountCriterionHandler(audioCount *models.IntCriterionInput) criterionHandlerFunc {
+	return func(ctx context.Context, f *filterBuilder) {
+		if audioCount != nil {
+			f.addLeftJoin("audio_tags", "", "audio_tags.tag_id = tags.id")
+			clause, args := getIntCriterionWhereClause("count(distinct audio_tags.audio_id)", *audioCount)
 
 			f.addHaving(clause, args...)
 		}

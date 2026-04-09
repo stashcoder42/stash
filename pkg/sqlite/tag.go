@@ -110,6 +110,7 @@ type tagRepositoryType struct {
 	groups     joinRepository
 	performers joinRepository
 	studios    joinRepository
+	audios     joinRepository
 }
 
 var (
@@ -178,6 +179,14 @@ var (
 			},
 			fkColumn:     studioIDColumn,
 			foreignTable: studioTable,
+		},
+		audios: joinRepository{
+			repository: repository{
+				tableName: audioTagsTable,
+				idColumn:  tagIDColumn,
+			},
+			fkColumn:     audioIDColumn,
+			foreignTable: audioTable,
 		},
 	}
 )

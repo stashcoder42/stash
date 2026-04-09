@@ -29,6 +29,8 @@ const FilterModeToMessageID = {
   [GQL.FilterMode.Scenes]: "scenes",
   [GQL.FilterMode.Studios]: "studios",
   [GQL.FilterMode.Tags]: "tags",
+  [GQL.FilterMode.Audios]: "audios",
+  [GQL.FilterMode.AudioMarkers]: "markers",
 };
 
 type SavedFilter = Pick<GQL.SavedFilter, "id" | "mode" | "name">;

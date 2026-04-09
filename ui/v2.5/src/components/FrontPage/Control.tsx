@@ -93,6 +93,10 @@ const RecommendationRow: React.FC<IFilter> = ({ mode, filter, header }) => {
           header={header}
         />
       );
+    case GQL.FilterMode.Audios:
+    case GQL.FilterMode.AudioMarkers:
+      // TODO: Add AudioRecommendationRow when front page audio support is implemented
+      return <></>;
     default:
       return <></>;
   }
