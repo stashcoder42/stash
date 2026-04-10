@@ -308,6 +308,14 @@ const (
 
 	// Developer options
 	ExtraBlobsPaths = "developer_options.extra_blob_paths"
+
+	// File Watcher options
+	WatcherScanModeKey   = "watcher.scan_mode"
+	WatcherDebounceMs    = "watcher.debounce_ms"
+	WatcherCleanOnRemove = "watcher.clean_on_remove"
+
+	// File Watcher defaults
+	DefaultWatcherDebounceMs = 5000
 )
 
 // slice default values
@@ -1742,6 +1750,38 @@ func (i *Config) GetVideoSortOrder() string {
 	}
 
 	return ret
+}
+
+// GetWatcherScanMode returns the scan mode for the file watcher.
+// Defaults to DISABLED.
+func (i *Config) GetWatcherScanMode() WatcherScanMode {
+	ret := WatcherScanMode(i.getString(WatcherScanModeKey))
+	if !ret.IsValid() {
+		return WatcherScanModeDisabled
+	}
+	return ret
+}
+
+// GetWatcherDebounceMs returns the debounce delay in milliseconds for the file watcher.
+// Defaults to DefaultWatcherDebounceMs (5 seconds) if not set or invalid.
+func (i *Config) GetWatcherDebounceMs() int {
+	ret := i.getInt(WatcherDebounceMs)
+	if ret <= 0 {
+		return DefaultWatcherDebounceMs
+	}
+	return ret
+}
+
+// GetWatcherCleanOnRemove returns true if database entries should be cleaned
+// when files are removed. Uses fingerprint matching to detect moves vs deletions.
+func (i *Config) GetWatcherCleanOnRemove() bool {
+	return i.getBool(WatcherCleanOnRemove)
+}
+
+// IsWatcherEffectivelyEnabled returns true if the watcher has any work to do.
+// The watcher should run if scan mode is not disabled OR cleanOnRemove is enabled.
+func (i *Config) IsWatcherEffectivelyEnabled() bool {
+	return i.GetWatcherScanMode() != WatcherScanModeDisabled || i.GetWatcherCleanOnRemove()
 }
 
 // GetLogFile returns the filename of the file to output logs to.

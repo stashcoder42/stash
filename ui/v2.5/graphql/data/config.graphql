@@ -133,6 +133,12 @@ fragment ConfigDLNAData on ConfigDLNAResult {
   videoSortOrder
 }
 
+fragment ConfigWatcherData on ConfigWatcherResult {
+  scanMode
+  debounceMs
+  cleanOnRemove
+}
+
 fragment ConfigScrapingData on ConfigScrapingResult {
   scraperUserAgent
   scraperCertCheck
@@ -232,6 +238,9 @@ fragment ConfigData on ConfigResult {
   }
   dlna {
     ...ConfigDLNAData
+  }
+  watcher {
+    ...ConfigWatcherData
   }
   scraping {
     ...ConfigScrapingData

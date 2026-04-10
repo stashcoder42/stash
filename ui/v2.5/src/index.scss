@@ -493,6 +493,11 @@ dd {
   opacity: 0.8;
 }
 
+// Select dropdowns need padding for the arrow indicator
+select.input-control {
+  padding-right: 1.7rem;
+}
+
 .text-input,
 .text-input:focus,
 .text-input[readonly],

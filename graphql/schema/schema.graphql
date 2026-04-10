@@ -277,6 +277,9 @@ type Query {
 
   dlnaStatus: DLNAStatus!
 
+  "File watcher status"
+  watcherStatus: WatcherStatus!
+
   # Get everything
 
   allScenes: [Scene!]! @deprecated(reason: "Use findScenes instead")
@@ -662,6 +665,9 @@ type Mutation {
   addTempDLNAIP(input: AddTempDLNAIPInput!): Boolean!
   "Removes an IP address from the temporary DLNA whitelist"
   removeTempDLNAIP(input: RemoveTempDLNAIPInput!): Boolean!
+
+  "Configure the file watcher"
+  configureWatcher(input: ConfigWatcherInput!): ConfigWatcherResult!
 }
 
 type Subscription {

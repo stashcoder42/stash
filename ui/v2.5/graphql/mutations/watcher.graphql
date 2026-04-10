@@ -1,0 +1,7 @@
+mutation ConfigureWatcher($input: ConfigWatcherInput!) {
+  configureWatcher(input: $input) {
+    scanMode
+    debounceMs
+    cleanOnRemove
+  }
+}

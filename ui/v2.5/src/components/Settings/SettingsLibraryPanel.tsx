@@ -3,16 +3,31 @@ import { Icon } from "../Shared/Icon";
 import { LoadingIndicator } from "../Shared/LoadingIndicator";
 import { StashSetting } from "./StashConfiguration";
 import { SettingSection } from "./SettingSection";
-import { BooleanSetting, StringListSetting, StringSetting } from "./Inputs";
+import {
+  BooleanSetting,
+  NumberSetting,
+  SelectSetting,
+  StringListSetting,
+  StringSetting,
+} from "./Inputs";
 import { useSettings } from "./context";
 import { useIntl } from "react-intl";
 import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
 import { ExternalLink } from "../Shared/ExternalLink";
+import { WatcherScanMode } from "src/core/generated-graphql";
 
 export const SettingsLibraryPanel: React.FC = () => {
   const intl = useIntl();
-  const { general, loading, error, saveGeneral, defaults, saveDefaults } =
-    useSettings();
+  const {
+    general,
+    loading,
+    error,
+    saveGeneral,
+    defaults,
+    saveDefaults,
+    watcher,
+    saveWatcher,
+  } = useSettings();
 
   function commaDelimitedToList(value: string | undefined) {
     if (value) {
@@ -185,6 +200,47 @@ export const SettingsLibraryPanel: React.FC = () => {
           onChange={(v) => {
             saveDefaults({ deleteGenerated: v });
           }}
+        />
+      </SettingSection>
+
+      <SettingSection
+        headingID="config.watcher.title"
+        subHeadingID="config.watcher.network_warning"
+      >
+        <SelectSetting
+          id="watcher-scan-mode"
+          headingID="config.watcher.scan_mode"
+          subHeadingID="config.watcher.scan_mode_desc"
+          value={watcher.scanMode ?? WatcherScanMode.Disabled}
+          onChange={(v) => saveWatcher({ scanMode: v as WatcherScanMode })}
+        >
+          <option value={WatcherScanMode.Disabled}>
+            {intl.formatMessage({ id: "config.watcher.mode.disabled" })}
+          </option>
+          <option value={WatcherScanMode.Scan}>
+            {intl.formatMessage({ id: "config.watcher.mode.scan" })}
+          </option>
+          <option value={WatcherScanMode.ScanAndIdentify}>
+            {intl.formatMessage({
+              id: "config.watcher.mode.scan_and_identify",
+            })}
+          </option>
+        </SelectSetting>
+
+        <NumberSetting
+          id="watcher-debounce-ms"
+          headingID="config.watcher.debounce_ms"
+          subHeadingID="config.watcher.debounce_ms_desc"
+          value={watcher.debounceMs ?? 5000}
+          onChange={(v) => saveWatcher({ debounceMs: v })}
+        />
+
+        <BooleanSetting
+          id="watcher-clean-on-remove"
+          headingID="config.watcher.clean_on_remove"
+          subHeadingID="config.watcher.clean_on_remove_desc"
+          checked={watcher.cleanOnRemove ?? false}
+          onChange={(v) => saveWatcher({ cleanOnRemove: v })}
         />
       </SettingSection>
     </>
