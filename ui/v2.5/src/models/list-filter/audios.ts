@@ -18,6 +18,7 @@ import { PerformerFavoriteCriterionOption } from "./criteria/favorite";
 import { StashIDCriterionOption } from "./criteria/stash-ids";
 import { RatingCriterionOption } from "./criteria/rating";
 import { PathCriterionOption } from "./criteria/path";
+import { CustomFieldsCriterionOption } from "./criteria/custom-fields";
 
 const defaultSortBy = "title";
 const sortByOptions = [
@@ -36,6 +37,11 @@ const sortByOptions = [
     {
       messageID: "o_count",
       value: "o_counter",
+    },
+    {
+      messageID: "last_o_at",
+      value: "last_o_at",
+      sfwMessageID: "last_o_at_sfw",
     },
   ]);
 
@@ -71,6 +77,7 @@ const criterionOptions = [
   createDateCriterionOption("date"),
   createMandatoryTimestampCriterionOption("created_at"),
   createMandatoryTimestampCriterionOption("updated_at"),
+  CustomFieldsCriterionOption,
 ];
 
 export const AudioListFilterOptions = new ListFilterOptions(
