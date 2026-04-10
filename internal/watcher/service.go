@@ -139,17 +139,19 @@ func (s *Service) Start() error {
 	s.triggeredCleans = 0
 	s.rootPaths = nil
 
-	// Add watches for all stash paths
-	if err := s.addWatchesForPaths(); err != nil {
-		s.watcher.Close()
-		s.setError(err)
-		return err
-	}
-
 	s.running = true
 	go s.processEvents()
 
-	logger.Infof("[watcher] Service started, watching %d directories", s.watchCount)
+	// Add watches in background so startup isn't blocked by large libraries
+	go func() {
+		if err := s.addWatchesForPaths(); err != nil {
+			logger.Warnf("[watcher] error adding watches: %v", err)
+			s.setError(err)
+			return
+		}
+		logger.Infof("[watcher] Service started, watching %d directories", s.watchCount)
+	}()
+
 	return nil
 }
 
