@@ -25,6 +25,8 @@ type Audio {
   performers: [Performer!]!
   audio_markers: [AudioMarker!]!
 
+  custom_fields: Map!
+
   # Return valid stream paths
   audioStreams: [AudioStreamEndpoint!]!
 }
@@ -67,6 +69,7 @@ input AudioCreateInput {
   # Files will be reassigned from existing audio if applicable.
   # Files must not already be primary for another audio.
   file_ids: [ID!]
+  custom_fields: Map
 }
 
 input AudioUpdateInput {
@@ -89,6 +92,7 @@ input AudioUpdateInput {
   tag_ids: [ID!]
 
   primary_file_id: ID
+  custom_fields: CustomFieldsInput
 }
 
 input BulkAudioUpdateInput {
@@ -110,6 +114,7 @@ input BulkAudioUpdateInput {
 
   performer_ids: BulkUpdateIds
   tag_ids: BulkUpdateIds
+  custom_fields: CustomFieldsInput
 }
 
 input AudioDestroyInput {

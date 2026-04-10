@@ -65,6 +65,8 @@ type AudioFilterType struct {
 	CreatedAt *TimestampCriterionInput `json:"created_at"`
 	// Filter by updated at
 	UpdatedAt *TimestampCriterionInput `json:"updated_at"`
+	// Filter by custom fields
+	CustomFields []CustomFieldCriterionInput `json:"custom_fields"`
 }
 
 type AudioQueryOptions struct {
@@ -101,7 +103,8 @@ type AudioCreateInput struct {
 	// The first id will be assigned as primary.
 	// Files will be reassigned from existing audio if applicable.
 	// Files must not already be primary for another audio.
-	FileIds []string `json:"file_ids"`
+	FileIds      []string               `json:"file_ids"`
+	CustomFields map[string]interface{} `json:"custom_fields"`
 }
 
 type AudioUpdateInput struct {
@@ -118,9 +121,10 @@ type AudioUpdateInput struct {
 	PlayCount        *int     `json:"play_count"`
 	CoverImage       *string  `json:"cover_image"`
 
-	PerformerIds  []string `json:"performer_ids"`
-	TagIds        []string `json:"tag_ids"`
-	PrimaryFileID *string  `json:"primary_file_id"`
+	PerformerIds  []string           `json:"performer_ids"`
+	TagIds        []string           `json:"tag_ids"`
+	PrimaryFileID *string            `json:"primary_file_id"`
+	CustomFields  *CustomFieldsInput `json:"custom_fields"`
 }
 
 type AudioDestroyInput struct {

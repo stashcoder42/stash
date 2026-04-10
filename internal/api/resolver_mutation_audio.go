@@ -40,6 +40,8 @@ func (r *mutationResolver) AudioCreate(ctx context.Context, input models.AudioCr
 		}
 	}
 
+	customFields := convertMapJSONNumbers(input.CustomFields)
+
 	// Create audio service instance
 	audioService := &audio.Service{
 		File:       r.repository.File,
@@ -57,6 +59,15 @@ func (r *mutationResolver) AudioCreate(ctx context.Context, input models.AudioCr
 			qb := r.repository.Audio
 			if err := qb.UpdateCover(ctx, ret.ID, coverImageData); err != nil {
 				return fmt.Errorf("updating cover image: %w", err)
+			}
+		}
+
+		// Set custom fields if provided
+		if len(customFields) > 0 {
+			if err := r.repository.Audio.SetCustomFields(ctx, ret.ID, models.CustomFieldsInput{
+				Full: customFields,
+			}); err != nil {
+				return fmt.Errorf("setting custom fields: %w", err)
 			}
 		}
 
@@ -191,6 +202,14 @@ func (r *mutationResolver) audioUpdate(ctx context.Context, input models.AudioUp
 		}
 	}
 
+	var customFields *models.CustomFieldsInput
+	if input.CustomFields != nil {
+		cfCopy := *input.CustomFields
+		customFields = &cfCopy
+		customFields.Full = convertMapJSONNumbers(customFields.Full)
+		customFields.Partial = convertMapJSONNumbers(customFields.Partial)
+	}
+
 	// Populate audio from the input
 	updatedAudio, err := audioPartialFromInput(input, translator)
 	if err != nil {
@@ -230,6 +249,12 @@ func (r *mutationResolver) audioUpdate(ctx context.Context, input models.AudioUp
 		}
 	}
 
+	if customFields != nil {
+		if err := qb.SetCustomFields(ctx, audioID, *customFields); err != nil {
+			return nil, err
+		}
+	}
+
 	return audio, nil
 }
 
@@ -241,6 +266,12 @@ func (r *mutationResolver) BulkAudioUpdate(ctx context.Context, input BulkAudioU
 
 	translator := changesetTranslator{
 		inputMap: getUpdateInputMap(ctx),
+	}
+
+	var customFields *models.CustomFieldsInput
+	if input.CustomFields != nil {
+		cf := handleUpdateCustomFields(*input.CustomFields)
+		customFields = &cf
 	}
 
 	// Start the transaction and save the audios
@@ -284,6 +315,12 @@ func (r *mutationResolver) BulkAudioUpdate(ctx context.Context, input BulkAudioU
 			audio, err := qb.UpdatePartial(ctx, audioID, updatedAudio)
 			if err != nil {
 				return err
+			}
+
+			if customFields != nil {
+				if err := qb.SetCustomFields(ctx, audioID, *customFields); err != nil {
+					return err
+				}
 			}
 
 			ret = append(ret, audio)

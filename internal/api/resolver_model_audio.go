@@ -257,6 +257,19 @@ func (r *audioResolver) AudioMarkers(ctx context.Context, obj *models.Audio) (re
 	return ret, nil
 }
 
+func (r *audioResolver) CustomFields(ctx context.Context, obj *models.Audio) (map[string]interface{}, error) {
+	m, err := loaders.From(ctx).AudioCustomFields.Load(obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if m == nil {
+		return make(map[string]interface{}), nil
+	}
+
+	return m, nil
+}
+
 func (r *audioResolver) Captions(ctx context.Context, obj *models.Audio) (ret []*models.VideoCaption, err error) {
 	// Load primary file if not already loaded
 	if err := r.withReadTxn(ctx, func(ctx context.Context) error {

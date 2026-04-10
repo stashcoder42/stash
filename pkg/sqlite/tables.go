@@ -33,10 +33,11 @@ var (
 
 	sceneMarkersTagsJoinTable = goqu.T(sceneMarkersTagsTable)
 
-	audioFilesJoinTable      = goqu.T(audioFilesTable)
-	audiosURLsJoinTable      = goqu.T(audiosURLsTable)
-	audioTagsJoinTable       = goqu.T(audioTagsTable)
-	audioPerformersJoinTable = goqu.T(audioPerformersTable)
+	audioFilesJoinTable       = goqu.T(audioFilesTable)
+	audiosURLsJoinTable       = goqu.T(audiosURLsTable)
+	audioTagsJoinTable        = goqu.T(audioTagsTable)
+	audioPerformersJoinTable  = goqu.T(audioPerformersTable)
+	audiosCustomFieldsTable   = goqu.T("audio_custom_fields")
 
 	performersAliasesJoinTable  = goqu.T(performersAliasesTable)
 	performersURLsJoinTable     = goqu.T(performerURLsTable)

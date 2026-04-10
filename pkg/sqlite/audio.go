@@ -170,6 +170,7 @@ var (
 
 type AudioStore struct {
 	blobJoinQueryBuilder
+	customFieldsStore
 
 	tableMgr *table
 	oDateManager
@@ -183,6 +184,10 @@ func NewAudioStore(r *storeRepository, blobStore *BlobStore) *AudioStore {
 		blobJoinQueryBuilder: blobJoinQueryBuilder{
 			blobStore: blobStore,
 			joinTable: audioTable,
+		},
+		customFieldsStore: customFieldsStore{
+			table: audiosCustomFieldsTable,
+			fk:    audiosCustomFieldsTable.Col(audioIDColumn),
 		},
 
 		tableMgr:        audioTableMgr,

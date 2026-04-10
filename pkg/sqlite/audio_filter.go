@@ -96,6 +96,13 @@ func (qb *audioFilterHandler) criterionHandler() criterionHandler {
 		&timestampCriterionHandler{audioFilter.CreatedAt, "audios.created_at", nil},
 		&timestampCriterionHandler{audioFilter.UpdatedAt, "audios.updated_at", nil},
 
+		&customFieldsFilterHandler{
+			table: audiosCustomFieldsTable.GetTable(),
+			fkCol: audioIDColumn,
+			c:     audioFilter.CustomFields,
+			idCol: "audios.id",
+		},
+
 		&relatedFilterHandler{
 			relatedIDCol:   "performers_join.performer_id",
 			relatedRepo:    performerRepository.repository,

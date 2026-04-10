@@ -91,7 +91,8 @@ type Loaders struct {
 	AudioOCount      *AudioOCountLoader
 	AudioPlayHistory *AudioPlayHistoryLoader
 	AudioOHistory    *AudioOHistoryLoader
-	AudioLastPlayed  *AudioLastPlayedLoader
+	AudioLastPlayed   *AudioLastPlayedLoader
+	AudioCustomFields *CustomFieldsLoader
 }
 
 type Middleware struct {
@@ -266,6 +267,11 @@ func (m Middleware) Middleware(next http.Handler) http.Handler {
 				wait:     wait,
 				maxBatch: maxBatch,
 				fetch:    m.fetchAudiosLastPlayed(ctx),
+			},
+			AudioCustomFields: &CustomFieldsLoader{
+				wait:     wait,
+				maxBatch: maxBatch,
+				fetch:    m.fetchAudioCustomFields(ctx),
 			},
 		}
 
@@ -655,6 +661,18 @@ func (m Middleware) fetchAudiosLastPlayed(ctx context.Context) func(keys []int) 
 			ret, err = m.Repository.Audio.GetManyLastViewed(ctx, keys)
 			return err
 		})
+		return ret, toErrorSlice(err)
+	}
+}
+
+func (m Middleware) fetchAudioCustomFields(ctx context.Context) func(keys []int) ([]models.CustomFieldMap, []error) {
+	return func(keys []int) (ret []models.CustomFieldMap, errs []error) {
+		err := m.Repository.WithDB(ctx, func(ctx context.Context) error {
+			var err error
+			ret, err = m.Repository.Audio.GetCustomFieldsBulk(ctx, keys)
+			return err
+		})
+
 		return ret, toErrorSlice(err)
 	}
 }

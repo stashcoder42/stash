@@ -93,6 +93,7 @@ type AudioReader interface {
 	URLLoader
 	AudioViewDateReader
 	AudioODateReader
+	CustomFieldsReader
 
 	All(ctx context.Context) ([]*Audio, error)
 	Size(ctx context.Context) (float64, error)
@@ -118,6 +119,7 @@ type AudioWriter interface {
 	AudioCreator
 	AudioUpdater
 	AudioDestroyer
+	CustomFieldsWriter
 
 	AddFileID(ctx context.Context, id int, fileID FileID) error
 	AssignFiles(ctx context.Context, audioID int, fileID []FileID) error

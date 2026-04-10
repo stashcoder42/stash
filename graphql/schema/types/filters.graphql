@@ -861,6 +861,8 @@ input AudioFilterType {
   performers_filter: PerformerFilterType
   "Filter by related tags that meet this criteria"
   tags_filter: TagFilterType
+  "Filter by custom fields"
+  custom_fields: [CustomFieldCriterionInput!]
 }
 
 input FileFilterType {
