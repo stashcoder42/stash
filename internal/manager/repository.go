@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 
+	"github.com/stashapp/stash/pkg/audio"
 	"github.com/stashapp/stash/pkg/group"
 	"github.com/stashapp/stash/pkg/image"
 	"github.com/stashapp/stash/pkg/models"
@@ -45,4 +46,8 @@ type GroupService interface {
 	AddSubGroups(ctx context.Context, groupID int, subGroups []models.GroupIDDescription, insertIndex *int) error
 	RemoveSubGroups(ctx context.Context, groupID int, subGroupIDs []int) error
 	ReorderSubGroups(ctx context.Context, groupID int, subGroupIDs []int, insertPointID int, insertAfter bool) error
+}
+
+type AudioService interface {
+	Destroy(ctx context.Context, audio *models.Audio, fileDeleter *audio.FileDeleter, deleteGenerated, deleteFile bool) error
 }

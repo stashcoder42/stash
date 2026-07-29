@@ -33,6 +33,7 @@ type GenerateMetadataInput struct {
 	InteractiveHeatmapsSpeeds bool `json:"interactiveHeatmapsSpeeds"`
 	ClipPreviews              bool `json:"clipPreviews"`
 	ImageThumbnails           bool `json:"imageThumbnails"`
+	AudioWaveforms            bool `json:"audioWaveforms"`
 	// scene ids to generate for
 	SceneIDs []string `json:"sceneIDs"`
 	// marker ids to generate for
@@ -84,6 +85,7 @@ type totalsGenerate struct {
 	interactiveHeatmapSpeeds int64
 	clipPreviews             int64
 	imageThumbnails          int64
+	audioWaveforms           int64
 
 	tasks int
 }
@@ -238,6 +240,9 @@ func (j *GenerateJob) Execute(ctx context.Context, progress *job.Progress) error
 		if j.input.ImageThumbnails {
 			logMsg += fmt.Sprintf(" %d image thumbnails", totals.imageThumbnails)
 		}
+		if j.input.AudioWaveforms {
+			logMsg += fmt.Sprintf(" %d audio waveforms", totals.audioWaveforms)
+		}
 		if logMsg == "Generating" {
 			logMsg = "Nothing selected to generate"
 		}
@@ -295,6 +300,7 @@ func (j *GenerateJob) queueTasks(ctx context.Context, g *generate.Generator, pat
 
 	j.queueScenesTasks(ctx, g, paths, queue)
 	j.queueImagesTasks(ctx, g, paths, queue)
+	j.queueAudiosTasks(ctx, queue)
 }
 
 func (j *GenerateJob) queueScenesTasks(ctx context.Context, g *generate.Generator, paths []string, queue chan<- Task) {
@@ -373,6 +379,76 @@ func (j *GenerateJob) queueImagesTasks(ctx context.Context, g *generate.Generato
 			more = false
 		} else {
 			*findFilter.Page++
+		}
+	}
+}
+
+func (j *GenerateJob) queueAudiosTasks(ctx context.Context, queue chan<- Task) {
+	if !j.input.AudioWaveforms {
+		return
+	}
+
+	const batchSize = 1000
+
+	findFilter := models.BatchFindFilter(batchSize)
+
+	r := j.repository
+
+	for more := true; more; {
+		if job.IsCancelled(ctx) {
+			return
+		}
+
+		result, err := r.Audio.Query(ctx, models.AudioQueryOptions{
+			QueryOptions: models.QueryOptions{
+				FindFilter: findFilter,
+				Count:      false,
+			},
+		})
+		if err != nil {
+			logger.Errorf("Error encountered queuing audios to generate: %s", err.Error())
+			return
+		}
+
+		audios, err := result.Resolve(ctx)
+		if err != nil {
+			logger.Errorf("Error encountered resolving audios: %s", err.Error())
+			return
+		}
+
+		for _, aa := range audios {
+			if job.IsCancelled(ctx) {
+				return
+			}
+
+			if err := aa.LoadFiles(ctx, r.Audio); err != nil {
+				logger.Errorf("Error encountered loading audio files: %s", err.Error())
+				return
+			}
+
+			j.queueAudioJob(ctx, aa, queue)
+		}
+
+		if len(audios) != batchSize {
+			more = false
+		} else {
+			*findFilter.Page++
+		}
+	}
+}
+
+func (j *GenerateJob) queueAudioJob(ctx context.Context, audio *models.Audio, queue chan<- Task) {
+	if j.input.AudioWaveforms {
+		task := &GenerateAudioThumbnailTask{
+			repository: j.repository,
+			Audio:      *audio,
+			Overwrite:  j.overwrite,
+		}
+
+		if task.required(ctx) {
+			j.totals.audioWaveforms++
+			j.totals.tasks++
+			queue <- task
 		}
 	}
 }

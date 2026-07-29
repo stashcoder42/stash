@@ -79,6 +79,16 @@ const typePolicies: TypePolicies = {
       },
     },
   },
+  Audio: {
+    fields: {
+      studio: {
+        read: readDanglingNull,
+      },
+      paths: {
+        merge: false,
+      },
+    },
+  },
   Group: {
     fields: {
       studio: {

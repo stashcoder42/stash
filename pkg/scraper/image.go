@@ -153,3 +153,20 @@ func getStashPerformerImage(ctx context.Context, stashURL string, performerID st
 func getStashSceneImage(ctx context.Context, stashURL string, sceneID string, imageGetter imageGetter) (*string, error) {
 	return imageGetter.getImage(ctx, stashURL+"/scene/"+sceneID+"/screenshot")
 }
+
+func setAudioImage(ctx context.Context, client *http.Client, a *models.ScrapedAudio, globalConfig GlobalConfig) error {
+	// don't try to get the image if it doesn't appear to be a URL
+	if a.Image == nil || !strings.HasPrefix(*a.Image, "http") {
+		// nothing to do
+		return nil
+	}
+
+	img, err := getImage(ctx, *a.Image, client, globalConfig)
+	if err != nil {
+		return err
+	}
+
+	a.Image = img
+
+	return nil
+}

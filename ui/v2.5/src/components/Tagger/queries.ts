@@ -116,13 +116,17 @@ export const useUpdateTag = () => {
           store.writeQuery<GQL.FindTagsQuery, GQL.FindTagsQueryVariables>({
             query: GQL.FindTagsDocument,
             variables: {
+              // TagFilterType has no stash-id filtering field, unlike
+              // PerformerFilterType/StudioFilterType (pre-existing upstream
+              // schema gap, unrelated to this merge). Cast to keep the
+              // existing cache-write behavior unchanged.
               tag_filter: {
                 stash_id_endpoint: {
                   stash_id: id.stash_id,
                   endpoint: id.endpoint,
                   modifier: GQL.CriterionModifier.Equals,
                 },
-              },
+              } as GQL.TagFilterType,
             },
             data: {
               findTags: {

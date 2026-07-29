@@ -328,3 +328,29 @@ func (f VideoFile) FrameRateFinite() float64 {
 	}
 	return ret
 }
+
+// AudioFile is an extension of BaseFile to represent audio files.
+type AudioFile struct {
+	*BaseFile
+	Format     string  `json:"format"`
+	Duration   float64 `json:"duration"`
+	AudioCodec string  `json:"audio_codec"`
+	Bitrate    int64   `json:"bitrate"`
+	SampleRate int     `json:"sample_rate"`
+	Channels   int     `json:"channels"`
+}
+
+func (f AudioFile) Clone() (ret File) {
+	clone := f
+	clone.BaseFile = f.BaseFile.Clone().(*BaseFile)
+	ret = &clone
+	return
+}
+
+func (f AudioFile) DurationFinite() float64 {
+	ret := f.Duration
+	if math.IsInf(ret, 0) || math.IsNaN(ret) {
+		return 0
+	}
+	return ret
+}

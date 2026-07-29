@@ -755,3 +755,27 @@ type ScrapedGalleryInput struct {
 	// deprecated
 	URL *string `json:"url"`
 }
+
+type ScrapedAudio struct {
+	Title        *string                `json:"title"`
+	Details      *string                `json:"details"`
+	URLs         []string               `json:"urls"`
+	Date         *string                `json:"date"`
+	Image        *string                `json:"image"`
+	File         *AudioFileType         `json:"file"`
+	Tags         []*ScrapedTag          `json:"tags"`
+	Performers   []*ScrapedPerformer    `json:"performers"`
+	RemoteSiteID *string                `json:"remote_site_id"`
+	Duration     *int                   `json:"duration"`
+	Fingerprints []*StashBoxFingerprint `json:"fingerprints"`
+}
+
+func (ScrapedAudio) IsScrapedContent() {}
+
+type ScrapedAudioInput struct {
+	Title        *string  `json:"title"`
+	Details      *string  `json:"details"`
+	URLs         []string `json:"urls"`
+	Date         *string  `json:"date"`
+	RemoteSiteID *string  `json:"remote_site_id"`
+}

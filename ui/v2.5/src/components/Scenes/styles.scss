@@ -14,7 +14,8 @@
   }
 }
 
-.video-section {
+.video-section,
+.audio-section {
   position: relative;
 }
 
@@ -64,12 +65,14 @@
 }
 
 @include media-breakpoint-only(lg) {
-  .scene-header-container {
+  .scene-header-container,
+  .audio-header-container {
     align-items: center;
     display: flex;
     justify-content: space-between;
 
-    .scene-header {
+    .scene-header,
+    .audio-header {
       flex: 0 0 75%;
       order: 1;
     }
@@ -81,7 +84,8 @@
   }
 }
 
-.scene-header {
+.scene-header,
+.audio-header {
   flex-basis: auto;
   font-size: 1.5rem;
   margin-top: 30px;
@@ -91,7 +95,8 @@
   }
 }
 
-.scene-subheader {
+.scene-subheader,
+.audio-subheader {
   display: flex;
   justify-content: space-between;
   margin-top: 0.5rem;
@@ -105,7 +110,8 @@
   }
 }
 
-.scene-toolbar {
+.scene-toolbar,
+.audio-toolbar {
   align-items: center;
   display: flex;
   justify-content: space-between;
@@ -114,7 +120,8 @@
   padding-bottom: 0.25rem;
   width: 100%;
 
-  .scene-toolbar-group {
+  .scene-toolbar-group,
+  .audio-toolbar-group {
     align-items: center;
     column-gap: 0.25rem;
     display: flex;
@@ -126,7 +133,8 @@
   }
 }
 
-#scene-details-container {
+#scene-details-container,
+#audio-details-container {
   .tab-content {
     min-height: 15rem;
   }
@@ -175,6 +183,7 @@ textarea.scene-description {
 }
 
 .scene-specs-overlay,
+.audio-specs-overlay,
 .scene-interactive-speed-overlay {
   bottom: 1rem;
   color: $text-color;
@@ -186,7 +195,8 @@ textarea.scene-description {
   text-shadow: 0 0 3px #000;
 }
 
-.scene-specs-overlay {
+.scene-specs-overlay,
+.audio-specs-overlay {
   right: 0.7rem;
 }
 
@@ -207,20 +217,25 @@ textarea.scene-description {
   text-transform: uppercase;
 }
 
-.scene-card {
+.scene-card,
+.audio-card {
   &-preview {
     aspect-ratio: 16/9;
   }
+}
 
+.scene-card {
   .scene-group-scene-number {
     text-align: center;
   }
 }
 
 .scene-card,
+.audio-card,
 .scene-marker-card,
 .gallery-card {
-  .scene-specs-overlay {
+  .scene-specs-overlay,
+  .audio-specs-overlay {
     transition: opacity 0.5s;
   }
 
@@ -259,12 +274,14 @@ textarea.scene-description {
 
   &:hover,
   &:active {
-    .scene-specs-overlay {
+    .scene-specs-overlay,
+    .audio-specs-overlay {
       opacity: 0;
       transition: opacity 0.5s;
     }
 
-    .scene-card-check {
+    .scene-card-check,
+    .audio-card-check {
       opacity: 0.75;
       transition: opacity 0.5s;
     }
@@ -277,6 +294,7 @@ textarea.scene-description {
 }
 
 .scene-card.card,
+.audio-card.card,
 .scene-marker-card.card {
   overflow: hidden;
   padding: 0;
@@ -290,7 +308,8 @@ textarea.scene-description {
   }
 }
 
-.scene-cover {
+.scene-cover,
+.audio-cover {
   display: block;
   margin-bottom: 10px;
   margin-top: 10px;
@@ -321,7 +340,8 @@ textarea.scene-description {
   display: none;
 }
 
-.scene-tabs {
+.scene-tabs,
+.audio-tabs {
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 4rem);
@@ -986,7 +1006,8 @@ input[type="range"].blue-slider {
   max-height: calc(100dvh - 210px);
 }
 
-.scene-list .filtered-list-toolbar {
+.scene-list .filtered-list-toolbar,
+.audio-list .filtered-list-toolbar {
   // hide play and create new buttons on xs screens
   // show these in the drop down menu instead
   @include media-breakpoint-down(xs) {
@@ -1000,7 +1021,8 @@ input[type="range"].blue-slider {
 // hide drop down menu items for play and create new
 // when the buttons are visible
 @include media-breakpoint-up(sm) {
-  .scene-list-operations-dropdown {
+  .scene-list-operations-dropdown,
+  .audio-list-operations-dropdown {
     .dropdown-item.play-item,
     .dropdown-item.create-new-item {
       display: none;

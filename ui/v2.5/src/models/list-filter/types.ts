@@ -133,6 +133,8 @@ export type CriterionType =
   | "bitrate"
   | "video_codec"
   | "audio_codec"
+  | "sample_rate"
+  | "channels"
   | "duration"
   | "filter_favorites"
   | "favorite"

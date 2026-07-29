@@ -411,6 +411,63 @@ func (s *mappedMovieScraperConfig) UnmarshalYAML(unmarshal func(interface{}) err
 	return nil
 }
 
+type mappedAudioScraperConfig struct {
+	mappedConfig
+
+	Tags       mappedConfig `yaml:"Tags"`
+	Performers mappedConfig `yaml:"Performers"`
+}
+
+type _mappedAudioScraperConfig mappedAudioScraperConfig
+
+const (
+	mappedScraperConfigAudioTags       = "Tags"
+	mappedScraperConfigAudioPerformers = "Performers"
+)
+
+func (s *mappedAudioScraperConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	// HACK - unmarshal to map first, then remove known audio sub-fields, then
+	// remarshal to yaml and pass that down to the base map
+	parentMap := make(map[string]interface{})
+	if err := unmarshal(parentMap); err != nil {
+		return err
+	}
+
+	// move the known sub-fields to a separate map
+	thisMap := make(map[string]interface{})
+
+	thisMap[mappedScraperConfigAudioTags] = parentMap[mappedScraperConfigAudioTags]
+	thisMap[mappedScraperConfigAudioPerformers] = parentMap[mappedScraperConfigAudioPerformers]
+
+	delete(parentMap, mappedScraperConfigAudioTags)
+	delete(parentMap, mappedScraperConfigAudioPerformers)
+
+	// re-unmarshal the sub-fields
+	yml, err := yaml.Marshal(thisMap)
+	if err != nil {
+		return err
+	}
+
+	// needs to be a different type to prevent infinite recursion
+	c := _mappedAudioScraperConfig{}
+	if err := yaml.Unmarshal(yml, &c); err != nil {
+		return err
+	}
+
+	*s = mappedAudioScraperConfig(c)
+
+	yml, err = yaml.Marshal(parentMap)
+	if err != nil {
+		return err
+	}
+
+	if err := yaml.Unmarshal(yml, &s.mappedConfig); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type mappedScraperAttrConfig struct {
 	Selector    string                    `yaml:"selector"`
 	Fixed       string                    `yaml:"fixed"`

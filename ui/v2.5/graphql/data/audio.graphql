@@ -1,0 +1,163 @@
+fragment AudioFileData on AudioFile {
+  id
+  path
+  size
+  mod_time
+  duration
+  audio_codec
+  format
+  bitrate
+  sample_rate
+  channels
+  fingerprints {
+    type
+    value
+  }
+}
+
+fragment AudioData on Audio {
+  id
+  title
+  rating100
+  date
+  urls
+  details
+  checksum
+  organized
+  resume_time
+  play_duration
+  play_count
+  last_played_at
+  play_history
+  o_history
+  o_counter
+  captions {
+    language_code
+    caption_type
+  }
+  created_at
+  updated_at
+
+  paths {
+    stream
+    preview
+    cover
+    caption
+  }
+
+  audioStreams {
+    url
+    mime_type
+    label
+  }
+
+  files {
+    ...AudioFileData
+  }
+
+  tags {
+    ...SlimTagData
+  }
+
+  performers {
+    ...PerformerData
+  }
+
+  audio_markers {
+    ...AudioMarkerData
+  }
+}
+
+fragment SlimAudioData on Audio {
+  id
+  title
+  rating100
+  date
+  urls
+  details
+  checksum
+  organized
+  resume_time
+  play_duration
+  play_count
+  last_played_at
+  play_history
+  o_history
+  o_counter
+  captions {
+    language_code
+    caption_type
+  }
+
+  paths {
+    stream
+    preview
+    cover
+    caption
+  }
+
+  audioStreams {
+    url
+    mime_type
+    label
+  }
+
+  files {
+    ...AudioFileData
+  }
+
+  tags {
+    id
+    name
+  }
+
+  performers {
+    id
+    name
+    gender
+    favorite
+    image_path
+  }
+}
+
+fragment SelectAudioData on Audio {
+  id
+  title
+  date
+  details
+  files {
+    path
+  }
+  paths {
+    cover
+  }
+}
+
+fragment AudioMarkerData on AudioMarker {
+  id
+  title
+  seconds
+  end_seconds
+  stream
+  preview
+  created_at
+  updated_at
+
+  audio {
+    id
+    title
+    paths {
+      cover
+    }
+  }
+
+  primary_tag {
+    id
+    name
+  }
+
+  tags {
+    id
+    name
+  }
+}

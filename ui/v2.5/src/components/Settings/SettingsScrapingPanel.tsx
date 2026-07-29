@@ -8,6 +8,7 @@ import {
   useListSceneScrapers,
   useListGalleryScrapers,
   useListImageScrapers,
+  useListAudioScrapers,
 } from "src/core/StashService";
 import { useToast } from "src/hooks/Toast";
 import TextUtils from "src/utils/text";
@@ -183,6 +184,8 @@ const ScrapersSection: React.FC = () => {
     useListImageScrapers();
   const { data: groupScrapers, loading: loadingGroups } =
     useListGroupScrapers();
+  const { data: audioScrapers, loading: loadingAudios } =
+    useListAudioScrapers();
 
   const filteredScrapers = useMemo(() => {
     const filterFn = filterScraper(filter.toLowerCase());
@@ -202,6 +205,9 @@ const ScrapersSection: React.FC = () => {
       groups: groupScrapers?.listScrapers.filter((s) =>
         filterFn(s.name, s.group?.urls)
       ),
+      audios: audioScrapers?.listScrapers.filter((s) =>
+        filterFn(s.name, s.audio?.urls)
+      ),
     };
   }, [
     performerScrapers,
@@ -209,6 +215,7 @@ const ScrapersSection: React.FC = () => {
     galleryScrapers,
     imageScrapers,
     groupScrapers,
+    audioScrapers,
     filter,
   ]);
 
@@ -225,7 +232,8 @@ const ScrapersSection: React.FC = () => {
     loadingGalleries ||
     loadingPerformers ||
     loadingGroups ||
-    loadingImages
+    loadingImages ||
+    loadingAudios
   )
     return (
       <SettingSection headingID="config.scraping.scrapers">
@@ -333,6 +341,23 @@ const ScrapersSection: React.FC = () => {
                 entityType="group"
                 supportedScrapes={scraper.group?.supported_scrapes ?? []}
                 urls={scraper.group?.urls ?? []}
+              />
+            ))}
+          </ScraperTable>
+        )}
+
+        {!!filteredScrapers.audios?.length && (
+          <ScraperTable
+            entityType="audio"
+            count={filteredScrapers.audios?.length}
+          >
+            {filteredScrapers.audios?.map((scraper) => (
+              <ScraperTableRow
+                key={scraper.id}
+                name={scraper.name}
+                entityType="audio"
+                supportedScrapes={scraper.audio?.supported_scrapes ?? []}
+                urls={scraper.audio?.urls ?? []}
               />
             ))}
           </ScraperTable>

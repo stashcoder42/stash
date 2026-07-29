@@ -10,6 +10,10 @@ const (
 	SceneMarkerUpdatePost  TriggerEnum = "SceneMarker.Update.Post"
 	SceneMarkerDestroyPost TriggerEnum = "SceneMarker.Destroy.Post"
 
+	AudioMarkerCreatePost  TriggerEnum = "AudioMarker.Create.Post"
+	AudioMarkerUpdatePost  TriggerEnum = "AudioMarker.Update.Post"
+	AudioMarkerDestroyPost TriggerEnum = "AudioMarker.Destroy.Post"
+
 	SceneCreatePost  TriggerEnum = "Scene.Create.Post"
 	SceneUpdatePost  TriggerEnum = "Scene.Update.Post"
 	SceneDestroyPost TriggerEnum = "Scene.Destroy.Post"
@@ -48,12 +52,20 @@ const (
 	TagUpdatePost  TriggerEnum = "Tag.Update.Post"
 	TagMergePost   TriggerEnum = "Tag.Merge.Post"
 	TagDestroyPost TriggerEnum = "Tag.Destroy.Post"
+
+	AudioCreatePost  TriggerEnum = "Audio.Create.Post"
+	AudioUpdatePost  TriggerEnum = "Audio.Update.Post"
+	AudioDestroyPost TriggerEnum = "Audio.Destroy.Post"
 )
 
 var AllHookTriggerEnum = []TriggerEnum{
 	SceneMarkerCreatePost,
 	SceneMarkerUpdatePost,
 	SceneMarkerDestroyPost,
+
+	AudioMarkerCreatePost,
+	AudioMarkerUpdatePost,
+	AudioMarkerDestroyPost,
 
 	SceneCreatePost,
 	SceneUpdatePost,
@@ -87,6 +99,10 @@ var AllHookTriggerEnum = []TriggerEnum{
 	TagUpdatePost,
 	TagMergePost,
 	TagDestroyPost,
+
+	AudioCreatePost,
+	AudioUpdatePost,
+	AudioDestroyPost,
 }
 
 func (e TriggerEnum) IsValid() bool {
@@ -95,6 +111,10 @@ func (e TriggerEnum) IsValid() bool {
 	case SceneMarkerCreatePost,
 		SceneMarkerUpdatePost,
 		SceneMarkerDestroyPost,
+
+		AudioMarkerCreatePost,
+		AudioMarkerUpdatePost,
+		AudioMarkerDestroyPost,
 
 		SceneCreatePost,
 		SceneUpdatePost,
@@ -126,7 +146,11 @@ func (e TriggerEnum) IsValid() bool {
 
 		TagCreatePost,
 		TagUpdatePost,
-		TagDestroyPost:
+		TagDestroyPost,
+
+		AudioCreatePost,
+		AudioUpdatePost,
+		AudioDestroyPost:
 		return true
 	}
 	return false

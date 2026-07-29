@@ -69,6 +69,7 @@ type Manager struct {
 	ImageService   ImageService
 	GalleryService GalleryService
 	GroupService   GroupService
+	AudioService   AudioService
 
 	scanSubs *subscriptionManager
 }

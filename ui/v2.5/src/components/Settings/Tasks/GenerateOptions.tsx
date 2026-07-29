@@ -151,6 +151,12 @@ export const GenerateOptions: React.FC<IGenerateOptions> = ({
             headingID="dialogs.scene_gen.interactive_heatmap_speed"
             onChange={(v) => setOptions({ interactiveHeatmapsSpeeds: v })}
           />
+          <BooleanSetting
+            id="audio-waveforms-task"
+            checked={options.audioWaveforms ?? false}
+            headingID="dialogs.scene_gen.audio_waveforms"
+            onChange={(v) => setOptions({ audioWaveforms: v })}
+          />
         </>
       )}
       {showImageOptions && (

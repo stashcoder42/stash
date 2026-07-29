@@ -54,6 +54,16 @@ func (t Time) MarshalYAML() (interface{}, error) {
 
 type PackageMetadata map[string]interface{}
 
+// ScraperTypes indicates which content types a scraper package supports.
+type ScraperTypes struct {
+	Scene     bool `yaml:"scene,omitempty" json:"scene,omitempty"`
+	Gallery   bool `yaml:"gallery,omitempty" json:"gallery,omitempty"`
+	Image     bool `yaml:"image,omitempty" json:"image,omitempty"`
+	Performer bool `yaml:"performer,omitempty" json:"performer,omitempty"`
+	Group     bool `yaml:"group,omitempty" json:"group,omitempty"`
+	Audio     bool `yaml:"audio,omitempty" json:"audio,omitempty"`
+}
+
 type PackageVersion struct {
 	Version string `yaml:"version"`
 	Date    Time   `yaml:"date"`
@@ -110,6 +120,10 @@ type Manifest struct {
 
 	RepositoryURL string   `yaml:"source_repository"`
 	Files         []string `yaml:"files"`
+
+	// ScraperTypes indicates which content types this scraper package supports.
+	// Only applicable for scraper packages.
+	ScraperTypes *ScraperTypes `yaml:"scraper_types,omitempty" json:"scraper_types,omitempty"`
 }
 
 func (m Manifest) PackageSpecInput() models.PackageSpecInput {

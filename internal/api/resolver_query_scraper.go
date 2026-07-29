@@ -132,6 +132,20 @@ func (r *queryResolver) ScrapeGroupURL(ctx context.Context, url string) (*models
 	return group, nil
 }
 
+func (r *queryResolver) ScrapeAudioURL(ctx context.Context, url string) (*models.ScrapedAudio, error) {
+	content, err := r.scraperCache().ScrapeURL(ctx, url, scraper.ScrapeContentTypeAudio)
+	if err != nil {
+		return nil, err
+	}
+
+	ret, err := marshalScrapedAudio(content)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
+
 func (r *queryResolver) ScrapeSingleScene(ctx context.Context, source scraper.Source, input ScrapeSingleSceneInput) ([]*models.ScrapedScene, error) {
 	var ret []*models.ScrapedScene
 

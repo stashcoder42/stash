@@ -214,6 +214,7 @@ func Initialize() (*Server, error) {
 
 	r.Mount("/performer", server.getPerformerRoutes())
 	r.Mount("/scene", server.getSceneRoutes())
+	r.Mount("/audio", server.getAudioRoutes())
 	r.Mount("/gallery", server.getGalleryRoutes())
 	r.Mount("/image", server.getImageRoutes())
 	r.Mount("/studio", server.getStudioRoutes())
@@ -365,6 +366,17 @@ func (s *Server) getSceneRoutes() chi.Router {
 		captionFinder:     repo.File,
 		sceneMarkerFinder: repo.SceneMarker,
 		tagFinder:         repo.Tag,
+	}.Routes()
+}
+
+func (s *Server) getAudioRoutes() chi.Router {
+	repo := s.manager.Repository
+	return audioRoutes{
+		routes:            routes{txnManager: repo.TxnManager},
+		audioFinder:       repo.Audio,
+		audioMarkerFinder: repo.AudioMarker,
+		captionFinder:     repo.File,
+		fileGetter:        repo.File,
 	}.Routes()
 }
 

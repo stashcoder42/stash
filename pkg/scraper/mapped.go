@@ -24,6 +24,7 @@ type mappedScraper struct {
 	Image     *mappedImageScraperConfig     `yaml:"image"`
 	Performer *mappedPerformerScraperConfig `yaml:"performer"`
 	Group     *mappedMovieScraperConfig     `yaml:"group"`
+	Audio     *mappedAudioScraperConfig     `yaml:"audio"`
 
 	// deprecated
 	Movie *mappedMovieScraperConfig `yaml:"movie"`
@@ -346,6 +347,46 @@ func (s mappedScraper) scrapeGroup(ctx context.Context, q mappedQuery) (*models.
 	}
 
 	if len(results) == 0 && ret.Studio == nil && len(ret.Tags) == 0 {
+		return nil, nil
+	}
+
+	return &ret, nil
+}
+
+func (s mappedScraper) scrapeAudio(ctx context.Context, q mappedQuery) (*models.ScrapedAudio, error) {
+	var ret models.ScrapedAudio
+
+	audioScraperConfig := s.Audio
+	if audioScraperConfig == nil {
+		return nil, nil
+	}
+
+	audioMap := audioScraperConfig.mappedConfig
+	audioPerformersMap := audioScraperConfig.Performers
+	audioTagsMap := audioScraperConfig.Tags
+
+	logger.Debug(`Processing audio:`)
+	results := audioMap.process(ctx, q, s.Common, urlsIsMulti)
+
+	if len(results) > 0 {
+		ret = *results[0].scrapedAudio()
+	}
+
+	// now apply the performers and tags
+	if audioPerformersMap != nil {
+		logger.Debug(`Processing audio performers:`)
+		performerResults := audioPerformersMap.process(ctx, q, s.Common, urlsIsMulti)
+		ret.Performers = performerResults.scrapedPerformers()
+	}
+
+	if audioTagsMap != nil {
+		logger.Debug(`Processing audio tags:`)
+		tagResults := audioTagsMap.process(ctx, q, s.Common, nil)
+		ret.Tags = tagResults.scrapedTags()
+	}
+
+	// if no basic fields are populated, and no relationships, then return nil
+	if len(results) == 0 && len(ret.Performers) == 0 && len(ret.Tags) == 0 {
 		return nil, nil
 	}
 

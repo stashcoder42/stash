@@ -268,6 +268,29 @@ func (_m *FileReaderWriter) FindByZipFileID(ctx context.Context, zipFileID model
 	return r0, r1
 }
 
+// GetAudioCaptions provides a mock function with given fields: ctx, fileID
+func (_m *FileReaderWriter) GetAudioCaptions(ctx context.Context, fileID models.FileID) ([]*models.VideoCaption, error) {
+	ret := _m.Called(ctx, fileID)
+
+	var r0 []*models.VideoCaption
+	if rf, ok := ret.Get(0).(func(context.Context, models.FileID) []*models.VideoCaption); ok {
+		r0 = rf(ctx, fileID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*models.VideoCaption)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, models.FileID) error); ok {
+		r1 = rf(ctx, fileID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetCaptions provides a mock function with given fields: ctx, fileID
 func (_m *FileReaderWriter) GetCaptions(ctx context.Context, fileID models.FileID) ([]*models.VideoCaption, error) {
 	ret := _m.Called(ctx, fileID)
@@ -356,6 +379,20 @@ func (_m *FileReaderWriter) Update(ctx context.Context, f models.File) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, models.File) error); ok {
 		r0 = rf(ctx, f)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateAudioCaptions provides a mock function with given fields: ctx, fileID, captions
+func (_m *FileReaderWriter) UpdateAudioCaptions(ctx context.Context, fileID models.FileID, captions []*models.VideoCaption) error {
+	ret := _m.Called(ctx, fileID, captions)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, models.FileID, []*models.VideoCaption) error); ok {
+		r0 = rf(ctx, fileID, captions)
 	} else {
 		r0 = ret.Error(0)
 	}

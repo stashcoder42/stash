@@ -15,6 +15,7 @@ enum ScrapeContentType {
   GROUP
   PERFORMER
   SCENE
+  AUDIO
 }
 
 "Scraped Content is the forming union over the different scrapers"
@@ -27,6 +28,7 @@ union ScrapedContent =
   | ScrapedMovie
   | ScrapedGroup
   | ScrapedPerformer
+  | ScrapedAudio
 
 type ScraperSpec {
   "URLs matching these can be scraped with"
@@ -49,6 +51,8 @@ type Scraper {
   movie: ScraperSpec @deprecated(reason: "use group")
   "Details for group scraper"
   group: ScraperSpec
+  "Details for audio scraper"
+  audio: ScraperSpec
 }
 
 type ScrapedStudio {
@@ -160,6 +164,33 @@ input ScrapedImageInput {
   details: String
   urls: [String!]
   date: String
+}
+
+type ScrapedAudio {
+  title: String
+  details: String
+  urls: [String!]
+  date: String
+
+  "This should be a base64 encoded data URL"
+  image: String
+
+  file: AudioFileType # Resolver
+  tags: [ScrapedTag!]
+  performers: [ScrapedPerformer!]
+
+  remote_site_id: String
+  duration: Int
+  fingerprints: [StashBoxFingerprint!]
+}
+
+input ScrapedAudioInput {
+  title: String
+  details: String
+  urls: [String!]
+  date: String
+
+  remote_site_id: String
 }
 
 input ScraperSourceInput {

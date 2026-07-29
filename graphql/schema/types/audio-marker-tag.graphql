@@ -1,0 +1,4 @@
+type AudioMarkerTag {
+  tag: Tag!
+  audio_markers: [AudioMarker!]!
+}

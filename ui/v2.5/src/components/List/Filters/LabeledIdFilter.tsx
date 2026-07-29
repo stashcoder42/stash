@@ -16,6 +16,7 @@ import {
 } from "src/models/list-filter/types";
 import { Option } from "./SidebarListFilter";
 import {
+  AudioFilterType,
   CriterionModifier,
   FilterMode,
   GalleryFilterType,
@@ -534,6 +535,8 @@ interface IFilterType {
   studio_count?: InputMaybe<CountCriterionInput>;
   marker_count?: InputMaybe<CountCriterionInput>;
   markers_filter?: InputMaybe<SceneMarkerFilterType>;
+  audios_filter?: InputMaybe<AudioFilterType>;
+  audio_count?: InputMaybe<IntCriterionInput>;
 }
 
 type CountCriterionInput = IntCriterionInput | HierarchicalCountInput;
@@ -561,7 +564,8 @@ export function setObjectFilter(
     | PerformerFilterType
     | GalleryFilterType
     | GroupFilterType
-    | StudioFilterType,
+    | StudioFilterType
+    | AudioFilterType,
   options?: ISetObjectFilterOptions
 ) {
   const empty = Object.keys(relatedFilterOutput).length === 0;
@@ -622,6 +626,14 @@ export function setObjectFilter(
         break;
       }
       out.markers_filter = relatedFilterOutput as SceneMarkerFilterType;
+      break;
+    case FilterMode.Audios:
+      // if empty, only get objects with audios
+      if (empty) {
+        out.audio_count = makeCountCriterion(options);
+        break;
+      }
+      out.audios_filter = relatedFilterOutput as AudioFilterType;
       break;
     default:
       throw new Error("Invalid filter mode");

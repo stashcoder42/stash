@@ -29,6 +29,8 @@ type TagFinder interface {
 	FindByPerformerID(ctx context.Context, performerID int) ([]*Tag, error)
 	FindByGroupID(ctx context.Context, groupID int) ([]*Tag, error)
 	FindBySceneMarkerID(ctx context.Context, sceneMarkerID int) ([]*Tag, error)
+	FindByAudioID(ctx context.Context, audioID int) ([]*Tag, error)
+	FindByAudioMarkerID(ctx context.Context, audioMarkerID int) ([]*Tag, error)
 	FindByStudioID(ctx context.Context, studioID int) ([]*Tag, error)
 	FindByStashID(ctx context.Context, stashID StashID) ([]*Tag, error)
 	FindByStashIDStatus(ctx context.Context, hasStashID bool, stashboxEndpoint string) ([]*Tag, error)

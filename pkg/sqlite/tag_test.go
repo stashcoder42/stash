@@ -69,6 +69,58 @@ func TestTagFindByGroupID(t *testing.T) {
 	})
 }
 
+func TestTagFindByAudioMarkerID(t *testing.T) {
+	withTxn(func(ctx context.Context) error {
+		tqb := db.Tag
+
+		// audioMarkerIdxWithTag (index 1) has one tag (tagIdxWithMarkers)
+		markerID := audioMarkerIDs[audioMarkerIdxWithTag]
+
+		tags, err := tqb.FindByAudioMarkerID(ctx, markerID)
+
+		if err != nil {
+			t.Errorf("Error finding tags: %s", err.Error())
+		}
+
+		assert.Len(t, tags, 1)
+		assert.Equal(t, tagIDs[tagIdxWithMarkers], tags[0].ID)
+
+		// audioMarkerIdxWithAudioTag (index 2) has one tag (tagIdx2WithMarkers)
+		markerID = audioMarkerIDs[audioMarkerIdxWithAudioTag]
+
+		tags, err = tqb.FindByAudioMarkerID(ctx, markerID)
+
+		if err != nil {
+			t.Errorf("Error finding tags: %s", err.Error())
+		}
+
+		assert.Len(t, tags, 1)
+		assert.Equal(t, tagIDs[tagIdx2WithMarkers], tags[0].ID)
+
+		// audioMarkerIdxWithDuration (index 3) has two tags (tagIdxWithMarkers, tagIdx2WithMarkers)
+		markerID = audioMarkerIDs[audioMarkerIdxWithDuration]
+
+		tags, err = tqb.FindByAudioMarkerID(ctx, markerID)
+
+		if err != nil {
+			t.Errorf("Error finding tags: %s", err.Error())
+		}
+
+		assert.Len(t, tags, 2)
+
+		// Test with invalid ID
+		tags, err = tqb.FindByAudioMarkerID(ctx, 0)
+
+		if err != nil {
+			t.Errorf("Error finding tags: %s", err.Error())
+		}
+
+		assert.Len(t, tags, 0)
+
+		return nil
+	})
+}
+
 func TestTagFindByName(t *testing.T) {
 	withTxn(func(ctx context.Context) error {
 		tqb := db.Tag

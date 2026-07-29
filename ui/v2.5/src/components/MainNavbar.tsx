@@ -30,6 +30,7 @@ import {
   faImage,
   faImages,
   faMapMarkerAlt,
+  faMusic,
   faPlayCircle,
   faQuestionCircle,
   faSignOutAlt,
@@ -53,6 +54,10 @@ const messages = defineMessages({
   scenes: {
     id: "scenes",
     defaultMessage: "Scenes",
+  },
+  audios: {
+    id: "audios",
+    defaultMessage: "Audios",
   },
   images: {
     id: "images",
@@ -103,6 +108,14 @@ const allMenuItems: IMenuItem[] = [
     href: "/scenes",
     icon: faPlayCircle,
     hotkey: "g s",
+    userCreatable: true,
+  },
+  {
+    name: "audios",
+    message: messages.audios,
+    href: "/audios",
+    icon: faMusic,
+    hotkey: "g a",
     userCreatable: true,
   },
   {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/stashapp/stash/internal/manager/config"
 	"github.com/stashapp/stash/pkg/file"
+	file_audio "github.com/stashapp/stash/pkg/file/audio"
 	file_image "github.com/stashapp/stash/pkg/file/image"
 	"github.com/stashapp/stash/pkg/file/video"
 	"github.com/stashapp/stash/pkg/fsutil"
@@ -35,6 +36,15 @@ func useAsImage(pathname string) bool {
 	return isImage(pathname)
 }
 
+func useAsAudio(pathname string) bool {
+	stash := config.StashConfigs.GetStashFromDirPath(instance.Config.GetStashPaths(), pathname)
+
+	if stash != nil && stash.ExcludeAudio {
+		return false
+	}
+	return isAudio(pathname)
+}
+
 func isZip(pathname string) bool {
 	gExt := config.GetInstance().GetGalleryExtensions()
 	return fsutil.MatchExtension(pathname, gExt)
@@ -48,6 +58,11 @@ func isVideo(pathname string) bool {
 func isImage(pathname string) bool {
 	imgExt := config.GetInstance().GetImageExtensions()
 	return fsutil.MatchExtension(pathname, imgExt)
+}
+
+func isAudio(pathname string) bool {
+	audioExt := config.GetInstance().GetAudioExtensions()
+	return fsutil.MatchExtension(pathname, audioExt)
 }
 
 func getScanPaths(inputPaths []string) []*config.StashConfig {
@@ -138,6 +153,12 @@ func (s *Manager) Scan(ctx context.Context, input ScanMetadataInput) (int, error
 					FFProbe: s.FFProbe,
 				},
 				Filter: file.FilterFunc(imageFileFilter),
+			},
+			&file.FilteredDecorator{
+				Decorator: &file_audio.Decorator{
+					FFProbe: s.FFProbe,
+				},
+				Filter: file.FilterFunc(audioFileFilter),
 			},
 		},
 		FingerprintCalculator: &fingerprintCalculator{s.Config},
@@ -288,6 +309,42 @@ func (s *Manager) generateScreenshot(ctx context.Context, sceneId string, at *fl
 	})
 
 	return s.JobManager.Add(ctx, fmt.Sprintf("Generating screenshot for scene id %s", sceneId), j)
+}
+
+func (s *Manager) GenerateAudioWaveform(ctx context.Context, audioId string) int {
+	j := job.MakeJobExec(func(ctx context.Context, progress *job.Progress) error {
+		audioIdInt, err := strconv.Atoi(audioId)
+		if err != nil {
+			return fmt.Errorf("error parsing audio id %s: %w", audioId, err)
+		}
+
+		var audio *models.Audio
+		if err := s.Repository.WithTxn(ctx, func(ctx context.Context) error {
+			audio, err = s.Repository.Audio.Find(ctx, audioIdInt)
+			if err != nil {
+				return err
+			}
+			if audio == nil {
+				return fmt.Errorf("audio with id %s not found", audioId)
+			}
+
+			return audio.LoadPrimaryFile(ctx, s.Repository.File)
+		}); err != nil {
+			return fmt.Errorf("error finding audio for waveform generation: %w", err)
+		}
+
+		task := GenerateAudioThumbnailTask{
+			repository: s.Repository,
+			Audio:      *audio,
+			Overwrite:  true,
+		}
+
+		task.Start(ctx)
+
+		return nil
+	})
+
+	return s.JobManager.Add(ctx, fmt.Sprintf("Generating waveform for audio id %s", audioId), j)
 }
 
 type AutoTagMetadataInput struct {

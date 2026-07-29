@@ -47,6 +47,7 @@ import { PatchComponent } from "src/patch";
 
 const allMenuItems = [
   { id: "scenes", headingID: "scenes" },
+  { id: "audios", headingID: "audios" },
   { id: "images", headingID: "images" },
   { id: "groups", headingID: "groups" },
   { id: "markers", headingID: "markers" },
@@ -788,6 +789,19 @@ export const SettingsInterfacePanel: React.FC = PatchComponent(
                   disableDropdownCreate: {
                     ...iface.disableDropdownCreate,
                     gallery: v,
+                  },
+                })
+              }
+            />
+            <BooleanSetting
+              id="disableDropdownCreate_audio"
+              headingID="audio"
+              checked={iface.disableDropdownCreate?.audio ?? undefined}
+              onChange={(v) =>
+                saveInterface({
+                  disableDropdownCreate: {
+                    ...iface.disableDropdownCreate,
+                    audio: v,
                   },
                 })
               }

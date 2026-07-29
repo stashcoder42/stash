@@ -30,6 +30,8 @@ type TagFilterType struct {
 	MovieCount *HierarchicalCountInput `json:"movie_count"`
 	// Filter by number of markers with this tag
 	MarkerCount *HierarchicalCountInput `json:"marker_count"`
+	// Filter by number of audios with this tag
+	AudioCount *IntCriterionInput `json:"audio_count"`
 	// Filter by parent tags
 	Parents *HierarchicalMultiCriterionInput `json:"parents"`
 	// Filter by child tags
@@ -58,6 +60,8 @@ type TagFilterType struct {
 	StudiosFilter *StudioFilterType `json:"studios_filter"`
 	// Filter by related scene markers that meet this criteria
 	MarkersFilter *SceneMarkerFilterType `json:"markers_filter"`
+	// Filter by related audios that meet this criteria
+	AudiosFilter *AudioFilterType `json:"audios_filter"`
 	// Filter by created at
 	CreatedAt *TimestampCriterionInput `json:"created_at"`
 	// Filter by updated at

@@ -130,6 +130,27 @@ const makePerformerGroupsUrl = (
   return `/groups?${filter.makeQueryParameters()}`;
 };
 
+const makePerformerAudiosUrl = (
+  performer: Partial<GQL.PerformerDataFragment>,
+  extraPerformer?: ILabeledId,
+  extraCriteria?: ModifierCriterion<CriterionValue>[]
+) => {
+  if (!performer.id) return "#";
+  const filter = new ListFilterModel(GQL.FilterMode.Audios, undefined);
+  const criterion = new PerformersCriterion();
+  criterion.value.items = [
+    { id: performer.id, label: performer.name || `Performer ${performer.id}` },
+  ];
+
+  if (extraPerformer) {
+    criterion.value.items.push(extraPerformer);
+  }
+
+  filter.criteria.push(criterion);
+  addExtraCriteria(filter.criteria, extraCriteria);
+  return `/audios?${filter.makeQueryParameters()}`;
+};
+
 const makePerformerSceneMarkersUrl = (
   performer: Partial<GQL.PerformerDataFragment>
 ) => {
@@ -324,6 +345,14 @@ const makeTagGroupsUrl = (tag: INamedObject) => {
   return `/groups?${makeTagFilter(GQL.FilterMode.Groups, tag)}`;
 };
 
+const makeTagAudiosUrl = (tag: INamedObject) => {
+  return `/audios?${makeTagFilter(GQL.FilterMode.Audios, tag)}`;
+};
+
+const makeTagAudioMarkersUrl = (tag: INamedObject) => {
+  return `/audios/markers?${makeTagFilter(GQL.FilterMode.AudioMarkers, tag)}`;
+};
+
 type SceneMarkerDataFragment = Pick<GQL.SceneMarker, "id" | "seconds"> & {
   scene: Pick<GQL.Scene, "id">;
 };
@@ -482,6 +511,7 @@ const NavUtils = {
   makePerformerImagesUrl,
   makePerformerGalleriesUrl,
   makePerformerGroupsUrl,
+  makePerformerAudiosUrl,
   makePerformerSceneMarkersUrl,
   makePerformersCountryUrl,
   makeStudioScenesUrl,
@@ -500,6 +530,8 @@ const NavUtils = {
   makeTagGalleriesUrl,
   makeTagImagesUrl,
   makeTagGroupsUrl,
+  makeTagAudiosUrl,
+  makeTagAudioMarkersUrl,
   makeScenesPHashMatchUrl,
   makeSceneMarkerUrl,
   makeImagesPHashMatchUrl,

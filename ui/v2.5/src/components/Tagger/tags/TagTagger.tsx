@@ -86,6 +86,10 @@ const TagTaggerList: React.FC<ITagTaggerListProps> = ({
   const { data: allTags } = GQL.useFindTagsQuery({
     skip: !showBatchUpdate,
     variables: {
+      // TagFilterType has no stash-id filtering field, unlike
+      // PerformerFilterType/StudioFilterType (pre-existing upstream
+      // schema gap, unrelated to this merge). Cast to keep the
+      // existing query behavior unchanged.
       tag_filter: {
         stash_id_endpoint: {
           endpoint: selectedEndpoint.endpoint,
@@ -93,7 +97,7 @@ const TagTaggerList: React.FC<ITagTaggerListProps> = ({
             ? GQL.CriterionModifier.NotNull
             : GQL.CriterionModifier.IsNull,
         },
-      },
+      } as GQL.TagFilterType,
       filter: {
         per_page: 0,
       },

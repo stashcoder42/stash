@@ -11,6 +11,8 @@ import (
 )
 
 type Database struct {
+	Audio          *AudioReaderWriter
+	AudioMarker    *AudioMarkerReaderWriter
 	File           *FileReaderWriter
 	Folder         *FolderReaderWriter
 	Gallery        *GalleryReaderWriter
@@ -60,6 +62,8 @@ func (*Database) Reset() error {
 
 func NewDatabase() *Database {
 	return &Database{
+		Audio:          &AudioReaderWriter{},
+		AudioMarker:    &AudioMarkerReaderWriter{},
 		File:           &FileReaderWriter{},
 		Folder:         &FolderReaderWriter{},
 		Gallery:        &GalleryReaderWriter{},
@@ -76,6 +80,8 @@ func NewDatabase() *Database {
 }
 
 func (db *Database) AssertExpectations(t mock.TestingT) {
+	db.Audio.AssertExpectations(t)
+	db.AudioMarker.AssertExpectations(t)
 	db.File.AssertExpectations(t)
 	db.Folder.AssertExpectations(t)
 	db.Gallery.AssertExpectations(t)
@@ -103,6 +109,8 @@ func (db *Database) WithTxnCtx(fn func(ctx context.Context)) {
 func (db *Database) Repository() models.Repository {
 	return models.Repository{
 		TxnManager:     db,
+		Audio:          db.Audio,
+		AudioMarker:    db.AudioMarker,
 		File:           db.File,
 		Folder:         db.Folder,
 		Gallery:        db.Gallery,

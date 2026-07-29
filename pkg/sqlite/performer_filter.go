@@ -220,6 +220,7 @@ func (qb *performerFilterHandler) criterionHandler() criterionHandler {
 		qb.markerCountCriterionHandler(filter.MarkerCount),
 		qb.imageCountCriterionHandler(filter.ImageCount),
 		qb.galleryCountCriterionHandler(filter.GalleryCount),
+		qb.audioCountCriterionHandler(filter.AudioCount),
 		qb.playCounterCriterionHandler(filter.PlayCount),
 		qb.oCounterCriterionHandler(filter.OCounter),
 		&dateCriterionHandler{filter.Birthdate, tableName + ".birthdate", nil},
@@ -270,6 +271,15 @@ func (qb *performerFilterHandler) criterionHandler() criterionHandler {
 			relatedHandler: &tagFilterHandler{filter.TagsFilter},
 			joinFn: func(f *filterBuilder) {
 				performerRepository.tags.innerJoin(f, "performer_tag", "performers.id")
+			},
+		},
+
+		&relatedFilterHandler{
+			relatedIDCol:   "audio_performers.audio_id",
+			relatedRepo:    audioRepository.repository,
+			relatedHandler: &audioFilterHandler{filter.AudiosFilter},
+			joinFn: func(f *filterBuilder) {
+				performerRepository.audios.innerJoin(f, "", "performers.id")
 			},
 		},
 
@@ -470,6 +480,16 @@ func (qb *performerFilterHandler) galleryCountCriterionHandler(count *models.Int
 	h := countCriterionHandlerBuilder{
 		primaryTable: performerTable,
 		joinTable:    performersGalleriesTable,
+		primaryFK:    performerIDColumn,
+	}
+
+	return h.handler(count)
+}
+
+func (qb *performerFilterHandler) audioCountCriterionHandler(count *models.IntCriterionInput) criterionHandlerFunc {
+	h := countCriterionHandlerBuilder{
+		primaryTable: performerTable,
+		joinTable:    audioPerformersTable,
 		primaryFK:    performerIDColumn,
 	}
 

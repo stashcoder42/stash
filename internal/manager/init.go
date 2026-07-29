@@ -15,6 +15,7 @@ import (
 	"github.com/stashapp/stash/internal/log"
 	"github.com/stashapp/stash/internal/watcher"
 	"github.com/stashapp/stash/internal/manager/config"
+	"github.com/stashapp/stash/pkg/audio"
 	"github.com/stashapp/stash/pkg/ffmpeg"
 	"github.com/stashapp/stash/pkg/fsutil"
 	"github.com/stashapp/stash/pkg/gallery"
@@ -59,6 +60,10 @@ func Initialize(cfg *config.Config, l *log.Logger) (*Manager, error) {
 	imageService := &image.Service{
 		File:       db.File,
 		Repository: db.Image,
+	}
+
+	audioService := &audio.Service{
+		Repository: db.Audio,
 	}
 
 	galleryService := &gallery.Service{
@@ -106,6 +111,7 @@ func Initialize(cfg *config.Config, l *log.Logger) (*Manager, error) {
 		ImageService:   imageService,
 		GalleryService: galleryService,
 		GroupService:   groupService,
+		AudioService:   audioService,
 
 		scanSubs: &subscriptionManager{},
 	}

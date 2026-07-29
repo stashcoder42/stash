@@ -70,6 +70,18 @@ func (r *Resolver) Image() ImageResolver {
 func (r *Resolver) SceneMarker() SceneMarkerResolver {
 	return &sceneMarkerResolver{r}
 }
+func (r *Resolver) Audio() AudioResolver {
+	return &audioResolver{r}
+}
+func (r *Resolver) AudioMarker() AudioMarkerResolver {
+	return &audioMarkerResolver{r}
+}
+func (r *Resolver) AudioCreateInput() AudioCreateInputResolver {
+	return &audioCreateInputResolver{r}
+}
+func (r *Resolver) AudioFile() AudioFileResolver {
+	return &audioFileResolver{r}
+}
 func (r *Resolver) Studio() StudioResolver {
 	return &studioResolver{r}
 }
@@ -122,6 +134,10 @@ type performerResolver struct{ *Resolver }
 type sceneResolver struct{ *Resolver }
 type sceneMarkerResolver struct{ *Resolver }
 type imageResolver struct{ *Resolver }
+type audioResolver struct{ *Resolver }
+type audioMarkerResolver struct{ *Resolver }
+type audioCreateInputResolver struct{ *Resolver }
+type audioFileResolver struct{ *Resolver }
 type studioResolver struct{ *Resolver }
 
 // movie is group under the hood

@@ -100,7 +100,7 @@ input FileDuplicationCriterionInput {
 input StashIDCriterionInput {
   """
   If present, this value is treated as a predicate.
-  That is, it will filter based on stash_id with the matching endpoint
+  That is, it will filter based on stash_ids with the matching endpoint
   """
   endpoint: String
   stash_id: String
@@ -183,15 +183,14 @@ input PerformerFilterType {
   image_count: IntCriterionInput
   "Filter by gallery count"
   gallery_count: IntCriterionInput
+  "Filter by audio count"
+  audio_count: IntCriterionInput
   "Filter by play count"
   play_count: IntCriterionInput
   "Filter by o count"
   o_counter: IntCriterionInput
   "Filter by StashID"
   stash_id_endpoint: StashIDCriterionInput
-    @deprecated(reason: "use stash_ids_endpoint instead")
-  "Filter by StashIDs"
-  stash_ids_endpoint: StashIDsCriterionInput
   # rating expressed as 1-100
   rating100: IntCriterionInput
   "Filter by url"
@@ -224,6 +223,8 @@ input PerformerFilterType {
   tags_filter: TagFilterType
   "Filter by related scene markers (via scene) that meet this criteria"
   markers_filter: SceneMarkerFilterType
+  "Filter by related audios that meet this criteria"
+  audios_filter: AudioFilterType
   "Filter by creation time"
   created_at: TimestampCriterionInput
   "Filter by last update time"
@@ -255,6 +256,34 @@ input SceneMarkerFilterType {
   scene_updated_at: TimestampCriterionInput
   "Filter by related scenes that meet this criteria"
   scene_filter: SceneFilterType
+}
+
+input AudioMarkerFilterType {
+  AND: AudioMarkerFilterType
+  OR: AudioMarkerFilterType
+  NOT: AudioMarkerFilterType
+
+  "Filter by audio marker id"
+  id: IntCriterionInput
+  "Filter by title"
+  title: StringCriterionInput
+  "Filter by start/end time"
+  seconds: FloatCriterionInput
+  "Filter by audio"
+  audios: MultiCriterionInput
+  "Filter to only include audio markers with these tags"
+  tags: HierarchicalMultiCriterionInput
+  "Filter by tag count"
+  tag_count: IntCriterionInput
+  "Filter by creation time"
+  created_at: TimestampCriterionInput
+  "Filter by last update time"
+  updated_at: TimestampCriterionInput
+
+  "Filter by related audios that meet this criteria"
+  audios_filter: AudioFilterType
+  "Filter by related tags that meet this criteria"
+  tags_filter: TagFilterType
 }
 
 input SceneFilterType {
@@ -448,8 +477,6 @@ input GroupFilterType {
   created_at: TimestampCriterionInput
   "Filter by last update time"
   updated_at: TimestampCriterionInput
-  "Filter by o-counter"
-  o_counter: IntCriterionInput
 
   "Filter by containing groups"
   containing_groups: HierarchicalMultiCriterionInput
@@ -482,9 +509,6 @@ input StudioFilterType {
   parents: MultiCriterionInput
   "Filter by StashID"
   stash_id_endpoint: StashIDCriterionInput
-    @deprecated(reason: "use stash_ids_endpoint instead")
-  "Filter by StashIDs"
-  stash_ids_endpoint: StashIDsCriterionInput
   "Filter to only include studios with these tags"
   tags: HierarchicalMultiCriterionInput
   "Filter to only include studios missing this property"
@@ -656,6 +680,9 @@ input TagFilterType {
   "Filter by number of markers with this tag"
   marker_count: HierarchicalCountInput
 
+  "Filter by number of audios with this tag"
+  audio_count: IntCriterionInput
+
   "Filter by parent tags"
   parents: HierarchicalMultiCriterionInput
 
@@ -671,13 +698,6 @@ input TagFilterType {
   "Filter by autotag ignore value"
   ignore_auto_tag: Boolean
 
-  "Filter by StashID"
-  stash_id_endpoint: StashIDCriterionInput
-    @deprecated(reason: "use stash_ids_endpoint instead")
-
-  "Filter by StashID"
-  stash_ids_endpoint: StashIDsCriterionInput
-
   "Filter by related scenes that meet this criteria"
   scenes_filter: SceneFilterType
   "Filter by related images that meet this criteria"
@@ -692,6 +712,8 @@ input TagFilterType {
   studios_filter: StudioFilterType
   "Filter by related scene markers that meet this criteria"
   markers_filter: SceneMarkerFilterType
+  "Filter by related audios that meet this criteria"
+  audios_filter: AudioFilterType
 
   "Filter by creation time"
   created_at: TimestampCriterionInput
@@ -730,6 +752,7 @@ input ImageFilterType {
   organized: Boolean
   "Filter by o-counter"
   o_counter: IntCriterionInput
+    @deprecated(reason: "Use play_count or other filters")
   "Filter by resolution"
   resolution: ResolutionCriterionInput
   "Filter by orientation"
@@ -777,6 +800,71 @@ input ImageFilterType {
   custom_fields: [CustomFieldCriterionInput!]
 }
 
+input AudioFilterType {
+  AND: AudioFilterType
+  OR: AudioFilterType
+  NOT: AudioFilterType
+
+  title: StringCriterionInput
+  details: StringCriterionInput
+
+  "Filter by audio id"
+  id: IntCriterionInput
+  "Filter by file checksum"
+  checksum: StringCriterionInput
+  "Filter by path"
+  path: StringCriterionInput
+  "Filter by file count"
+  file_count: IntCriterionInput
+  # rating expressed as 1-100
+  rating100: IntCriterionInput
+  "Filter by date"
+  date: DateCriterionInput
+  "Filter by url"
+  url: StringCriterionInput
+  "Filter by organized"
+  organized: Boolean
+  "Filter by o-counter"
+  o_counter: IntCriterionInput
+  "Filter by duration"
+  duration: IntCriterionInput
+  "Filter by resume time"
+  resume_time: FloatCriterionInput
+  "Filter by play count"
+  play_count: IntCriterionInput
+  "Filter by play duration (in seconds)"
+  play_duration: FloatCriterionInput
+  "Filter by audio last played time"
+  last_played_at: TimestampCriterionInput
+  "Filter to only include audios missing this property"
+  is_missing: String
+  "Filter to only include audios with these tags"
+  tags: HierarchicalMultiCriterionInput
+  "Filter by tag count"
+  tag_count: IntCriterionInput
+  "Filter to only include audios with performers with these tags"
+  performer_tags: HierarchicalMultiCriterionInput
+  "Filter to only include audios with these performers"
+  performers: MultiCriterionInput
+  "Filter by performer count"
+  performer_count: IntCriterionInput
+  "Filter audios that have performers that have been favorited"
+  performer_favorite: Boolean
+  "Filter audios by performer age at time of audio"
+  performer_age: IntCriterionInput
+  "Filter by creation time"
+  created_at: TimestampCriterionInput
+  "Filter by last update time"
+  updated_at: TimestampCriterionInput
+
+  "Filter by related performers that meet this criteria"
+  performers_filter: PerformerFilterType
+  "Filter by related tags that meet this criteria"
+  tags_filter: TagFilterType
+  "Filter by custom fields"
+  custom_fields: [CustomFieldCriterionInput!]
+}
+
 input FileFilterType {
   AND: FileFilterType
   OR: FileFilterType
@@ -800,10 +888,12 @@ input FileFilterType {
 
   video_file_filter: VideoFileFilterInput
   image_file_filter: ImageFileFilterInput
+  audio_file_filter: AudioFileFilterInput
 
   scene_count: IntCriterionInput
   image_count: IntCriterionInput
   gallery_count: IntCriterionInput
+  audio_count: IntCriterionInput
 
   "Filter by related scenes that meet this criteria"
   scenes_filter: SceneFilterType
@@ -811,6 +901,8 @@ input FileFilterType {
   images_filter: ImageFilterType
   "Filter by related galleries that meet this criteria"
   galleries_filter: GalleryFilterType
+  "Filter by related audios that meet this criteria"
+  audios_filter: AudioFilterType
 
   "Filter by creation time"
   created_at: TimestampCriterionInput
@@ -867,6 +959,17 @@ input ImageFileFilterInput {
   format: StringCriterionInput
   resolution: ResolutionCriterionInput
   orientation: OrientationCriterionInput
+}
+
+input AudioFileFilterInput {
+  format: StringCriterionInput
+  bitrate: IntCriterionInput
+  audio_codec: StringCriterionInput
+  sample_rate: IntCriterionInput
+  channels: IntCriterionInput
+
+  "in seconds"
+  duration: IntCriterionInput
 }
 
 input FingerprintFilterInput {
@@ -976,10 +1079,12 @@ enum FilterMode {
   STUDIOS
   GALLERIES
   SCENE_MARKERS
+  AUDIO_MARKERS
   MOVIES
   GROUPS
   TAGS
   IMAGES
+  AUDIOS
 }
 
 type SavedFilter {
