@@ -9,11 +9,7 @@ query FindAudios(
   $audio_filter: AudioFilterType
   $ids: [ID!]
 ) {
-  findAudios(
-    filter: $filter
-    audio_filter: $audio_filter
-    ids: $ids
-  ) {
+  findAudios(filter: $filter, audio_filter: $audio_filter, ids: $ids) {
     count
     duration
     filesize

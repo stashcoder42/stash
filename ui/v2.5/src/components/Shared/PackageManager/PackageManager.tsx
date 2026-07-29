@@ -79,18 +79,13 @@ function displayScraperTypes(
   if (!scraperTypes) return null;
 
   const labels: string[] = [];
-  if (scraperTypes.scene)
-    labels.push(intl.formatMessage({ id: "scene" }));
-  if (scraperTypes.gallery)
-    labels.push(intl.formatMessage({ id: "gallery" }));
-  if (scraperTypes.image)
-    labels.push(intl.formatMessage({ id: "image" }));
+  if (scraperTypes.scene) labels.push(intl.formatMessage({ id: "scene" }));
+  if (scraperTypes.gallery) labels.push(intl.formatMessage({ id: "gallery" }));
+  if (scraperTypes.image) labels.push(intl.formatMessage({ id: "image" }));
   if (scraperTypes.performer)
     labels.push(intl.formatMessage({ id: "performer" }));
-  if (scraperTypes.group)
-    labels.push(intl.formatMessage({ id: "group" }));
-  if (scraperTypes.audio)
-    labels.push(intl.formatMessage({ id: "audio" }));
+  if (scraperTypes.group) labels.push(intl.formatMessage({ id: "group" }));
+  if (scraperTypes.audio) labels.push(intl.formatMessage({ id: "audio" }));
 
   return labels.join(", ");
 }

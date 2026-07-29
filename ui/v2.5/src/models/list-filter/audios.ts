@@ -45,7 +45,11 @@ const sortByOptions = [
     },
   ]);
 
-const displayModeOptions = [DisplayMode.Grid, DisplayMode.List, DisplayMode.Wall];
+const displayModeOptions = [
+  DisplayMode.Grid,
+  DisplayMode.List,
+  DisplayMode.Wall,
+];
 
 export const DurationCriterionOption =
   createDurationCriterionOption("duration");

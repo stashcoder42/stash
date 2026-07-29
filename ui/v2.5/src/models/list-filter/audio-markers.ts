@@ -2,9 +2,7 @@ import { PerformersCriterionOption } from "./criteria/performers";
 import { TagsCriterionOption } from "./criteria/tags";
 import { ListFilterOptions } from "./filter-options";
 import { DisplayMode } from "./types";
-import {
-  createMandatoryTimestampCriterionOption,
-} from "./criteria/criterion";
+import { createMandatoryTimestampCriterionOption } from "./criteria/criterion";
 
 const defaultSortBy = "title";
 const sortByOptions = [

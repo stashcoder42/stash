@@ -11,11 +11,7 @@ import { AudioQueue } from "src/models/audioQueue";
 import { PerformerPopoverButton } from "../Shared/PerformerPopoverButton";
 import { GridCard } from "../Shared/GridCard/GridCard";
 import { RatingBanner } from "../Shared/RatingBanner";
-import {
-  faBox,
-  faHeadphones,
-  faTag,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBox, faHeadphones, faTag } from "@fortawesome/free-solid-svg-icons";
 import { objectPath, objectTitle } from "src/core/files";
 import { PatchComponent } from "src/patch";
 import { OCounterButton } from "../Shared/CountButton";

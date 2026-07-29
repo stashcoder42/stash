@@ -22,12 +22,13 @@ import {
 } from "src/components/Performers/PerformerSelect";
 import { formikUtils } from "src/utils/form";
 import { useTagsEdit } from "src/hooks/tagsEdit";
-import { useListAudioScrapers, queryScrapeAudioURL } from "src/core/StashService";
+import {
+  useListAudioScrapers,
+  queryScrapeAudioURL,
+} from "src/core/StashService";
 import { lazyComponent } from "src/utils/lazyComponent";
 
-const AudioScrapeDialog = lazyComponent(
-  () => import("./AudioScrapeDialog")
-);
+const AudioScrapeDialog = lazyComponent(() => import("./AudioScrapeDialog"));
 
 interface IProps {
   audio: Partial<GQL.AudioDataFragment>;

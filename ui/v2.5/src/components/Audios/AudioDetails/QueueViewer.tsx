@@ -98,9 +98,7 @@ export const QueueViewer: React.FC<IPlaylistViewer> = ({
               <span className="queue-audio-title">{objectTitle(audio)}</span>
               <span className="queue-audio-performers">
                 {audio?.performers
-                  ?.map(function (performer) {
-                    return performer.name;
-                  })
+                  ?.map((performer) => performer.name)
                   .join(", ")}
               </span>
               <span className="queue-audio-date">{audio?.date}</span>

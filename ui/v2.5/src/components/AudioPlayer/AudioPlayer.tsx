@@ -27,9 +27,9 @@ import * as GQL from "src/core/generated-graphql";
 import { useConfigurationContext } from "src/hooks/Config";
 import { VIDEO_PLAYER_ID } from "../ScenePlayer/util";
 
-// @ts-ignore
+// @ts-expect-error
 import airplay from "@silvermine/videojs-airplay";
-// @ts-ignore
+// @ts-expect-error
 import chromecast from "@silvermine/videojs-chromecast";
 import abLoopPlugin from "videojs-abloop";
 import ScreenUtils from "src/utils/screen";
@@ -527,7 +527,11 @@ export const AudioPlayer: React.FC<IAudioPlayerProps> = PatchComponent(
         );
       }
 
-      if (!audio.captions || audio.captions.length === 0 || !audio.paths.caption)
+      if (
+        !audio.captions ||
+        audio.captions.length === 0 ||
+        !audio.paths.caption
+      )
         return;
 
       function getDefaultLanguageCode() {

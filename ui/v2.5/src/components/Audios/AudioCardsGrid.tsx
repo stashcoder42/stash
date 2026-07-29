@@ -21,27 +21,28 @@ const zoomWidths = [280, 340, 480, 640];
 export const AudioCardsGrid: React.FC<IAudioCardsGrid> = PatchComponent(
   "AudioCardsGrid",
   ({ audios, queue, selectedIds, zoomIndex, onSelectChange }) => {
-  const [componentRef, { width: containerWidth }] = useContainerDimensions();
+    const [componentRef, { width: containerWidth }] = useContainerDimensions();
 
-  const cardWidth = useCardWidth(containerWidth, zoomIndex, zoomWidths);
+    const cardWidth = useCardWidth(containerWidth, zoomIndex, zoomWidths);
 
-  return (
-    <div className="row justify-content-center" ref={componentRef}>
-      {audios.map((audio, index) => (
-        <AudioCard
-          key={audio.id}
-          width={cardWidth}
-          audio={audio}
-          queue={queue}
-          index={index}
-          zoomIndex={zoomIndex}
-          selecting={selectedIds.size > 0}
-          selected={selectedIds.has(audio.id)}
-          onSelectedChanged={(selected: boolean, shiftKey: boolean) =>
-            onSelectChange(audio.id, selected, shiftKey)
-          }
-        />
-      ))}
-    </div>
-  );
-});
+    return (
+      <div className="row justify-content-center" ref={componentRef}>
+        {audios.map((audio, index) => (
+          <AudioCard
+            key={audio.id}
+            width={cardWidth}
+            audio={audio}
+            queue={queue}
+            index={index}
+            zoomIndex={zoomIndex}
+            selecting={selectedIds.size > 0}
+            selected={selectedIds.has(audio.id)}
+            onSelectedChanged={(selected: boolean, shiftKey: boolean) =>
+              onSelectChange(audio.id, selected, shiftKey)
+            }
+          />
+        ))}
+      </div>
+    );
+  }
+);

@@ -220,8 +220,8 @@ const AudioWall: React.FC<IAudioWallProps> = ({
   );
 
   function columns(containerWidth: number) {
-    let preferredSize = 300;
-    let columnCount = containerWidth / preferredSize;
+    const preferredSize = 300;
+    const columnCount = containerWidth / preferredSize;
     return Math.round(columnCount);
   }
 

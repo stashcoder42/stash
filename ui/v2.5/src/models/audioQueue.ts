@@ -107,7 +107,7 @@ export class AudioQueue {
   }
 
   public makeLink(audioID: string, options: IPlayAudioOptions) {
-    let params = [
+    const params = [
       this.makeQueryParameters(options.audioIndex, options.newPage),
     ];
     if (options.autoPlay) {
