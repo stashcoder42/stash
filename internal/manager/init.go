@@ -13,6 +13,7 @@ import (
 	"github.com/stashapp/stash/internal/desktop"
 	"github.com/stashapp/stash/internal/dlna"
 	"github.com/stashapp/stash/internal/log"
+	"github.com/stashapp/stash/internal/watcher"
 	"github.com/stashapp/stash/internal/manager/config"
 	"github.com/stashapp/stash/pkg/ffmpeg"
 	"github.com/stashapp/stash/pkg/fsutil"
@@ -197,6 +198,10 @@ func (s *Manager) postInit(ctx context.Context) error {
 	s.RefreshScraperSourceManager()
 
 	s.RefreshDLNA()
+
+	// Initialize watcher with scan trigger now that manager is ready
+	s.WatcherService = watcher.NewService(s.Config, NewWatcherScanTrigger(s))
+	s.RefreshWatcher()
 
 	s.SetBlobStoreOptions()
 

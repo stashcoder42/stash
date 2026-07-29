@@ -16,6 +16,7 @@ import {
   useConfigurePlugin,
   useConfigureScraping,
   useConfigureUI,
+  useConfigureWatcher,
 } from "src/core/StashService";
 import { useDebounce } from "src/hooks/debounce";
 import { useToast } from "src/hooks/Toast";
@@ -32,6 +33,7 @@ export interface ISettingsContextState {
   defaults: GQL.ConfigDefaultSettingsInput;
   scraping: GQL.ConfigScrapingInput;
   dlna: GQL.ConfigDlnaInput;
+  watcher: GQL.ConfigWatcherInput;
   ui: IUIConfig;
   plugins: PluginConfigs;
 
@@ -45,6 +47,7 @@ export interface ISettingsContextState {
   saveDefaults: (input: Partial<GQL.ConfigDefaultSettingsInput>) => void;
   saveScraping: (input: Partial<GQL.ConfigScrapingInput>) => void;
   saveDLNA: (input: Partial<GQL.ConfigDlnaInput>) => void;
+  saveWatcher: (input: Partial<GQL.ConfigWatcherInput>) => void;
   saveUI: (input: Partial<IUIConfig>) => void;
   savePluginSettings: (
     pluginID: string,
@@ -65,6 +68,7 @@ const emptyState: ISettingsContextState = {
   defaults: {},
   scraping: {},
   dlna: {},
+  watcher: {},
   ui: {},
   plugins: {},
 
@@ -77,6 +81,7 @@ const emptyState: ISettingsContextState = {
   saveDefaults: noop,
   saveScraping: noop,
   saveDLNA: noop,
+  saveWatcher: noop,
   saveUI: noop,
   savePluginSettings: noop,
   setAdvancedMode: noop,
@@ -137,6 +142,11 @@ export const SettingsContext: React.FC = ({ children }) => {
   const [pendingDLNA, setPendingDLNA] = useState<GQL.ConfigDlnaInput>();
   const [updateDLNAConfig] = useConfigureDLNA();
 
+  const [watcher, setWatcher] = useState<GQL.ConfigWatcherInput>({});
+  const [pendingWatcher, setPendingWatcher] =
+    useState<GQL.ConfigWatcherInput>();
+  const [updateWatcherConfig] = useConfigureWatcher();
+
   const [ui, setUI] = useState<IUIConfig>({});
   const [pendingUI, setPendingUI] = useState<IUIConfig>();
   const [updateUIConfig] = useConfigureUI();
@@ -165,6 +175,7 @@ export const SettingsContext: React.FC = ({ children }) => {
     setDefaults({ ...withoutTypename(data.configuration.defaults) });
     setScraping({ ...withoutTypename(data.configuration.scraping) });
     setDLNA({ ...withoutTypename(data.configuration.dlna) });
+    setWatcher({ ...withoutTypename(data.configuration.watcher) });
     setUI(data.configuration.ui);
     setPlugins(data.configuration.plugins);
   }, [data, error]);
@@ -426,6 +437,55 @@ export const SettingsContext: React.FC = ({ children }) => {
     });
   }
 
+  // saves the configuration if no further changes are made after a half second
+  const saveWatcherConfig = useDebounce(
+    async (input: GQL.ConfigWatcherInput) => {
+      try {
+        setUpdateSuccess(undefined);
+        await updateWatcherConfig({
+          variables: {
+            input,
+          },
+        });
+
+        setPendingWatcher(undefined);
+        onSuccess();
+      } catch (e) {
+        onError(e);
+      }
+    },
+    500
+  );
+
+  useEffect(() => {
+    if (!pendingWatcher) {
+      return;
+    }
+
+    saveWatcherConfig(pendingWatcher);
+  }, [pendingWatcher, saveWatcherConfig]);
+
+  function saveWatcher(input: Partial<GQL.ConfigWatcherInput>) {
+    if (!watcher) {
+      return;
+    }
+
+    setWatcher({
+      ...watcher,
+      ...input,
+    });
+
+    setPendingWatcher((current) => {
+      if (!current) {
+        return input;
+      }
+      return {
+        ...current,
+        ...input,
+      };
+    });
+  }
+
   type UIConfigInput = GQL.Scalars["Map"]["input"];
 
   // saves the configuration if no further changes are made after a half second
@@ -549,6 +609,7 @@ export const SettingsContext: React.FC = ({ children }) => {
       pendingDefaults ||
       pendingScraping ||
       pendingDLNA ||
+      pendingWatcher ||
       pendingUI ||
       pendingPlugins
     ) {
@@ -581,6 +642,7 @@ export const SettingsContext: React.FC = ({ children }) => {
         defaults,
         scraping,
         dlna,
+        watcher,
         ui,
         plugins,
         advancedMode: ui.advancedMode ?? false,
@@ -589,6 +651,7 @@ export const SettingsContext: React.FC = ({ children }) => {
         saveDefaults,
         saveScraping,
         saveDLNA,
+        saveWatcher,
         saveUI,
         refetch,
         savePluginSettings,

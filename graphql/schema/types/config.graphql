@@ -605,6 +605,7 @@ type ConfigResult {
   dlna: ConfigDLNAResult!
   scraping: ConfigScrapingResult!
   defaults: ConfigDefaultSettingsResult!
+  watcher: ConfigWatcherResult!
   ui: Map!
   plugins(include: [ID!]): PluginConfigMap!
 }

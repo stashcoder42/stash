@@ -1,0 +1,12 @@
+query WatcherStatus {
+  watcherStatus {
+    running
+    watchedPaths
+    watchCount
+    pendingEvents
+    processedEvents
+    triggeredScans
+    triggeredCleans
+    lastError
+  }
+}
