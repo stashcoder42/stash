@@ -120,11 +120,27 @@ Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 | 25 | `5ed738558` | Biome fixes (#7004) | Covered by the sweep above | ⬜ |
 | 26 | `4bd16c29b` | Biome format (#7005) | Covered by the sweep above | ⬜ |
 
+## Known parity gaps (not upstream ports — audio was built without these)
+
+These are places where audio diverges from scene in our own code, independent of
+any upstream commit. They surfaced during the 2026-07-29 merge-forward. Each
+needs its own fix; none is a port from upstream.
+
+| Gap | Evidence | Impact |
+| --- | --- | --- |
+| `ExportObjectsInput` has no `audios` field | `graphql/schema/types/metadata.graphql:313-323`; UI passes `{audios: …}` through a cast at `ui/v2.5/src/components/Audios/AudioList.tsx:582` | Clicking Export on the Audios list sends an unknown input field; gqlgen rejects it and the UI shows a GraphQL validation error toast. Shipped broken in `feat/audios`; the merge only added a cast to keep it compiling. |
+| `audioResetActivity` lacks partial-reset params | `graphql/schema/schema.graphql:407` is `audioResetActivity(id: ID!)`; scene's at line 340 takes `reset_resume` / `reset_duration`. Resolver hardcodes `ResetActivity(ctx, audioID, true, true)` | Audio cannot reset resume-time and play-duration independently the way scene can. |
+| Checksum filter always LEFT-joins | `pkg/sqlite/audio_filter.go:60` hardcodes `joinTypeLeft`; scene (`pkg/sqlite/scene_filter.go:77-88`) uses `joinTypeInner` unless the modifier is `IsNull` | A LEFT join where scene uses INNER can return audio rows that should have been filtered out by a checksum criterion. Found during the 2026-07-29 merge; predates it. |
+
 ## Notes
 
 - Our audio has **no marker end-time support**. Upstream #6855 (honor marker end
   times, configurable ceiling) is a *feature gap*, not a port — it does not
   appear in the twin table because there is no corresponding audio code yet.
+- Tab panels: when a detail page gates a panel on the active tab, use the
+  resolved `activeTabKey` from `useTabKey()`, never the raw `tabKey` route
+  param. Audio tabs have twice been added using `tabKey`, which breaks the
+  panel whenever audio is the *resolved default* tab (raw param is `undefined`).
 - Generated files (`*_gen.go`, mocks) must be regenerated, never hand-merged.
   Use `make generate-backend`; `go generate ./...` has a dataloaden bug that
   emits duplicate imports.
