@@ -72,6 +72,19 @@ make generate-backend   # mocks, loaders, resolvers
 make generate-ui        # graphql types
 ```
 
+**Running the audio tests.** `pkg/sqlite/audio_test.go` and the other audio
+store tests are `//go:build integration` gated. Plain `go test ./pkg/sqlite/`
+runs only the non-integration tests and silently exercises none of them — it
+will report success without having run a single audio test. Use:
+
+```bash
+make it                 # supplies the full GO_BUILD_TAGS set
+```
+
+Do not hand-roll `go test -tags integration`: it omits `sqlite_stat4`, which
+changes the SQLite query planner and makes unrelated tests
+(e.g. `TestStudioQueryFast`) fail spuriously.
+
 ## Ledger
 
 **LAST_SYNCED:** `2da807431` (pre-port baseline — bump to `afdaa082b` when the
@@ -94,7 +107,7 @@ Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 | 9 | `8a98b72c1` | json.Number custom field filters (#7040) | Port. Cross-check against our `appSchemaVersion` 89 custom-fields migration | ⬜ |
 | 10 | `b044005fc` | Recursive sort performer_count / o_counter (#6933) | Port sort options to `pkg/sqlite/audio.go`, `repository_audio.go` | ⬜ |
 | 11 | `3d333a22a` | LEFT JOIN for NULL phash (#7121) | Review — phash is video-specific; port only if audio filters on phash | ⬜ |
-| 12 | `267c7ad34` | Case-insensitive scan file lookup (#7098) | Port to `AudioStore.FindByPath`. Helpers (`pathLike`, `pathEqNoCase`, `path_match.go`) come free from shared code | ⬜ |
+| 12 | `267c7ad34` | Case-insensitive scan file lookup (#7098) | Ported to `AudioStore.FindByPath` (commit `864bc3c99`). Signature kept as single-return; wildcard branch currently has no production caller | ✅ |
 | 13 | `634f567e3` | Consolidate scene cover buttons (#6924) | Backend half in `resolver_mutation_scene.go`; port with UI item 24 | ⬜ |
 | 14 | `9cb2ffd56` | Tag count filter depth (#6929) | Test-only on twin side; verify audio tag filters behave the same | ⬜ |
 
