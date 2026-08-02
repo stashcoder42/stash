@@ -96,7 +96,7 @@ Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 
 | # | Upstream | Change | Audio action | Status |
 | --- | --- | --- | --- | --- |
-| 1 | `8e070717e` | Optimise table joins (#6648) | Port to `audio_filter.go`, `audio_marker_filter.go` | ⬜ |
+| 1 | `8e070717e` | Optimise table joins (#6648) | Ported to `audio_filter.go` (commit `9dfb466db`). Six criteria now use `joinTypeInner` unless the modifier is `IsNull`. `audio_marker_filter.go` already matched scene and needed no change | ✅ |
 | 2 | `103181a6d` | Include api key in funscript url (#6760) | Review — funscript is video-domain; the URL-builder api-key pattern may still apply | ⬜ |
 | 3 | `2b29207f1` | Upgrade go 1.25 / golangci-lint (#6869) | Lint fixes in `pkg/audio/scan.go` if linter flags them | ⬜ |
 | 4 | `fc0b2a5d9` | Fix OR sub-filter join type (#6920) | Ported to `audio_filter.go` AND `audio_marker_filter.go` (commit `ad5fa21f9`). Fix is a statement reorder — `handleCriterion` must run before `handleSubFilter` — not a join-type edit | ✅ |
@@ -143,7 +143,7 @@ needs its own fix; none is a port from upstream.
 | --- | --- | --- |
 | `ExportObjectsInput` has no `audios` field | `graphql/schema/types/metadata.graphql:313-323`; UI passes `{audios: …}` through a cast at `ui/v2.5/src/components/Audios/AudioList.tsx:582` | Clicking Export on the Audios list sends an unknown input field; gqlgen rejects it and the UI shows a GraphQL validation error toast. Shipped broken in `feat/audios`; the merge only added a cast to keep it compiling. |
 | `audioResetActivity` lacks partial-reset params | `graphql/schema/schema.graphql:407` is `audioResetActivity(id: ID!)`; scene's at line 340 takes `reset_resume` / `reset_duration`. Resolver hardcodes `ResetActivity(ctx, audioID, true, true)` | Audio cannot reset resume-time and play-duration independently the way scene can. |
-| Checksum filter always LEFT-joins | `pkg/sqlite/audio_filter.go:60` hardcodes `joinTypeLeft`; scene (`pkg/sqlite/scene_filter.go:77-88`) uses `joinTypeInner` unless the modifier is `IsNull` | A LEFT join where scene uses INNER can return audio rows that should have been filtered out by a checksum criterion. Found during the 2026-07-29 merge; predates it. |
+| ~~Checksum filter always LEFT-joins~~ | ~~`pkg/sqlite/audio_filter.go:60`~~ | **Resolved** in commit `9dfb466db` (ledger row 1). Audio now matches scene: `joinTypeInner` unless the modifier is `IsNull`. |
 
 ## Notes
 
