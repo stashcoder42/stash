@@ -15,8 +15,8 @@ import (
 	"github.com/remeh/sizedwaitgroup"
 	"github.com/stashapp/stash/internal/dlna"
 	"github.com/stashapp/stash/internal/log"
-	"github.com/stashapp/stash/internal/watcher"
 	"github.com/stashapp/stash/internal/manager/config"
+	"github.com/stashapp/stash/internal/watcher"
 	"github.com/stashapp/stash/pkg/ffmpeg"
 	"github.com/stashapp/stash/pkg/fsutil"
 	"github.com/stashapp/stash/pkg/job"
@@ -172,13 +172,14 @@ func (s *Manager) RefreshWatcher() {
 	shouldRun := s.Config.IsWatcherEffectivelyEnabled()
 	running := s.WatcherService.IsRunning()
 
-	if shouldRun && !running {
+	switch {
+	case shouldRun && !running:
 		if err := s.WatcherService.Start(); err != nil {
 			logger.Warnf("[watcher] error starting file watcher service: %v", err)
 		}
-	} else if !shouldRun && running {
+	case !shouldRun && running:
 		s.WatcherService.Stop()
-	} else if shouldRun && running {
+	case shouldRun && running:
 		// Refresh paths in case stash paths changed
 		if err := s.WatcherService.RefreshPaths(); err != nil {
 			logger.Warnf("[watcher] error refreshing file watcher paths: %v", err)

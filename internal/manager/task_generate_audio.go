@@ -145,9 +145,8 @@ func (t *GenerateAudioThumbnailTask) required(ctx context.Context) bool {
 // GenerateAudioWaveformTask generates a waveform image file to disk
 // (alternative implementation for generated path storage)
 type GenerateAudioWaveformFileTask struct {
-	Audio               models.Audio
-	Overwrite           bool
-	fileNamingAlgorithm models.HashAlgorithm
+	Audio     models.Audio
+	Overwrite bool
 }
 
 func (t *GenerateAudioWaveformFileTask) GetDescription() string {

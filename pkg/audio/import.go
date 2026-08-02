@@ -126,9 +126,7 @@ func (i *Importer) populatePerformers(ctx context.Context) error {
 				performers = append(performers, createdPerformers...)
 			}
 
-			if i.MissingRefBehaviour == models.ImportMissingRefEnumIgnore {
-				// we can ignore
-			}
+			// models.ImportMissingRefEnumIgnore needs no handling
 		}
 
 		var performerIDs []int
@@ -304,9 +302,7 @@ func importTags(ctx context.Context, tagWriter models.TagFinderCreator, names []
 			tags = append(tags, createdTags...)
 		}
 
-		if missingRefBehaviour == models.ImportMissingRefEnumIgnore {
-			// we can ignore
-		}
+		// models.ImportMissingRefEnumIgnore needs no handling
 	}
 
 	return tags, nil

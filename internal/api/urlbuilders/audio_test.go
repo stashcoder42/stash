@@ -109,11 +109,13 @@ func TestAudioURLBuilder_WithEmptyValues(t *testing.T) {
 
 	// Test that methods don't panic with empty values
 	assert.NotPanics(t, func() {
-		builder.GetCoverURL()
+		result := builder.GetCoverURL()
+		assert.Equal(t, "/audio//cover?t=", result)
 	})
 
 	assert.NotPanics(t, func() {
-		builder.GetThumbnailURL()
+		result := builder.GetThumbnailURL()
+		assert.Equal(t, "/audio//thumbnail?t=", result)
 	})
 
 	// GetStreamURL should still work with empty base URL (though the result might not be useful)

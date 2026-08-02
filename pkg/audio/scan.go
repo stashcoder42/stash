@@ -63,7 +63,7 @@ func (h *ScanHandler) validate() error {
 		return errors.New("FileNamingAlgorithm is required")
 	}
 	if h.Paths == nil {
-		return errors.New("Paths is required")
+		return errors.New("internal error: Paths is required")
 	}
 
 	return nil

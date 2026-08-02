@@ -16,10 +16,6 @@ import (
 const (
 	audioID = 1
 
-	studioID        = 4
-	missingStudioID = 5
-	errStudioID     = 6
-
 	tagID    = 10
 	errTagID = 11
 
@@ -35,7 +31,6 @@ var (
 	dateObj, _ = models.ParseDate(date)
 	details    = "A test audio track for testing purposes"
 	organized  = true
-	ocounter   = 3
 )
 
 const (
@@ -138,21 +133,6 @@ func TestToBasicJSON(t *testing.T) {
 
 		assert.Equal(t, s.expected, json, "[%d]", i)
 	}
-}
-
-type stringTestScenario struct {
-	input    models.Audio
-	expected string
-	err      bool
-}
-
-// Note: Studio tests are placeholder until StudioID is added to Audio model
-var getStudioScenarios = []stringTestScenario{
-	{
-		createFullAudio(audioID),
-		"",
-		false,
-	},
 }
 
 func TestGetTagNames(t *testing.T) {

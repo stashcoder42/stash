@@ -14,12 +14,12 @@ import (
 
 // mockFsWatcher implements FsWatcher for testing.
 type mockFsWatcher struct {
-	mu       sync.Mutex
-	added    []string
-	removed  []string
-	events   chan fsnotify.Event
-	errors   chan error
-	closed   bool
+	mu      sync.Mutex
+	added   []string
+	removed []string
+	events  chan fsnotify.Event
+	errors  chan error
+	closed  bool
 }
 
 func newMockFsWatcher() *mockFsWatcher {
@@ -81,10 +81,10 @@ type mockConfig struct {
 	audioExtensions   []string
 }
 
-func (m *mockConfig) GetStashPaths() config.StashConfigs       { return m.stashPaths }
+func (m *mockConfig) GetStashPaths() config.StashConfigs         { return m.stashPaths }
 func (m *mockConfig) GetWatcherScanMode() config.WatcherScanMode { return m.scanMode }
-func (m *mockConfig) GetWatcherDebounceMs() int                { return m.debounceMs }
-func (m *mockConfig) GetWatcherCleanOnRemove() bool            { return m.cleanOnRemove }
+func (m *mockConfig) GetWatcherDebounceMs() int                  { return m.debounceMs }
+func (m *mockConfig) GetWatcherCleanOnRemove() bool              { return m.cleanOnRemove }
 func (m *mockConfig) IsWatcherEffectivelyEnabled() bool {
 	return m.scanMode != config.WatcherScanModeDisabled || m.cleanOnRemove
 }
@@ -513,4 +513,3 @@ func TestHandleEvent_WriteMediaFileIsQueued(t *testing.T) {
 
 	assert.Equal(t, 1, s.batcher.PendingCount(), "media write should be queued")
 }
-

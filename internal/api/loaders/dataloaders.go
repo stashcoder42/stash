@@ -87,12 +87,12 @@ type Loaders struct {
 	FolderParentFolderIDs *FolderRelatedFolderIDsLoader
 	FolderSubFolderIDs    *FolderRelatedFolderIDsLoader
 
-	AudioByID        *AudioLoader
-	AudioFiles       *AudioFileIDsLoader
-	AudioPlayCount   *AudioPlayCountLoader
-	AudioOCount      *AudioOCountLoader
-	AudioPlayHistory *AudioPlayHistoryLoader
-	AudioOHistory    *AudioOHistoryLoader
+	AudioByID         *AudioLoader
+	AudioFiles        *AudioFileIDsLoader
+	AudioPlayCount    *AudioPlayCountLoader
+	AudioOCount       *AudioOCountLoader
+	AudioPlayHistory  *AudioPlayHistoryLoader
+	AudioOHistory     *AudioOHistoryLoader
 	AudioLastPlayed   *AudioLastPlayedLoader
 	AudioCustomFields *CustomFieldsLoader
 }

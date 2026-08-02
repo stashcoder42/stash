@@ -120,20 +120,6 @@ type audioRepositoryType struct {
 	files      filesRepository
 }
 
-func (r *audioRepositoryType) addAudioFilesTable(f *filterBuilder) {
-	f.addLeftJoin(audioFilesTable, "", "audios_files.audio_id = audios.id")
-}
-
-func (r *audioRepositoryType) addFilesTable(f *filterBuilder) {
-	r.addAudioFilesTable(f)
-	f.addLeftJoin(fileTable, "", "audios_files.file_id = files.id")
-}
-
-func (r *audioRepositoryType) addFoldersTable(f *filterBuilder) {
-	r.addFilesTable(f)
-	f.addLeftJoin(folderTable, "", "files.parent_folder_id = folders.id")
-}
-
 var (
 	audioRepository = audioRepositoryType{
 		repository: repository{

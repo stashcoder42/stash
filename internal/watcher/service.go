@@ -44,11 +44,11 @@ type fsnotifyWatcher struct {
 	w *fsnotify.Watcher
 }
 
-func (f *fsnotifyWatcher) Add(name string) error              { return f.w.Add(name) }
-func (f *fsnotifyWatcher) Remove(name string) error           { return f.w.Remove(name) }
-func (f *fsnotifyWatcher) Close() error                       { return f.w.Close() }
-func (f *fsnotifyWatcher) EventsChan() <-chan fsnotify.Event   { return f.w.Events }
-func (f *fsnotifyWatcher) ErrorsChan() <-chan error            { return f.w.Errors }
+func (f *fsnotifyWatcher) Add(name string) error             { return f.w.Add(name) }
+func (f *fsnotifyWatcher) Remove(name string) error          { return f.w.Remove(name) }
+func (f *fsnotifyWatcher) Close() error                      { return f.w.Close() }
+func (f *fsnotifyWatcher) EventsChan() <-chan fsnotify.Event { return f.w.Events }
+func (f *fsnotifyWatcher) ErrorsChan() <-chan error          { return f.w.Errors }
 
 // ScanTrigger interface for triggering scans and identification.
 type ScanTrigger interface {
@@ -363,7 +363,8 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 			return
 		}
 
-		if info.IsDir() {
+		switch {
+		case info.IsDir():
 			// Add inotify watch immediately so we capture events for files
 			// created inside this directory (e.g., during archive extraction)
 			s.mutex.Lock()
@@ -374,7 +375,7 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 			// Track directory for quiescence — scan is deferred until activity settles
 			s.dirTracker.TrackDir(event.Name)
 			logger.Infof("[watcher] Watching new directory, waiting for activity to settle: %s", event.Name)
-		} else if s.isMediaFile(event.Name) {
+		case s.isMediaFile(event.Name):
 			// Check if this file is inside a tracked directory
 			if trackedDir := s.dirTracker.TrackedDir(event.Name); trackedDir != "" {
 				// Activity inside a tracked dir — reset its quiesce timer
@@ -385,7 +386,7 @@ func (s *Service) handleEvent(event fsnotify.Event) {
 				s.batcher.Add(event.Name)
 				logger.Infof("[watcher] Queued media file for scan: %s", event.Name)
 			}
-		} else {
+		default:
 			// Non-media file — still counts as activity if inside a tracked dir
 			if trackedDir := s.dirTracker.TrackedDir(event.Name); trackedDir != "" {
 				s.dirTracker.NoteActivity(trackedDir)

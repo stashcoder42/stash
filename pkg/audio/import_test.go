@@ -12,14 +12,9 @@ import (
 )
 
 var (
-	existingStudioID    = 101
 	existingPerformerID = 103
 	existingTagID       = 105
 	existingFileID      = models.FileID(107)
-
-	existingStudioName = "existingStudioName"
-	existingStudioErr  = "existingStudioErr"
-	missingStudioName  = "missingStudioName"
 
 	existingPerformerName = "existingPerformerName"
 	existingPerformerErr  = "existingPerformerErr"

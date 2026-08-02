@@ -102,11 +102,12 @@ func GetAudioQualityLabel(audioFile *models.AudioFile, endpointType audioEndpoin
 	}
 
 	// Add channel information for multi-channel audio
-	if audioFile.Channels > 2 {
+	switch {
+	case audioFile.Channels > 2:
 		label += fmt.Sprintf(" %dch", audioFile.Channels)
-	} else if audioFile.Channels == 2 {
+	case audioFile.Channels == 2:
 		label += " Stereo"
-	} else if audioFile.Channels == 1 {
+	case audioFile.Channels == 1:
 		label += " Mono"
 	}
 

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/stashapp/stash/pkg/plugin/hook"
 	"github.com/stashapp/stash/pkg/models"
+	"github.com/stashapp/stash/pkg/plugin/hook"
 	"github.com/stashapp/stash/pkg/sliceutil"
 	"github.com/stashapp/stash/pkg/sliceutil/stringslice"
 )
