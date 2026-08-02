@@ -49,6 +49,7 @@ export const QueueViewer: React.FC<IPlaylistViewer> = ({
 
   const currentIndex = audios.findIndex((s) => s.id === currentID);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: explicitly want to set loading to false when audios change
   useEffect(() => {
     setLessLoading(false);
     setMoreLoading(false);

@@ -212,7 +212,7 @@ export const AudioEditPanel: React.FC<IProps> = ({
     const date = (() => {
       try {
         return schema.validateSyncAt("date", formik.values);
-      } catch (e) {
+      } catch {
         return undefined;
       }
     })();
@@ -258,7 +258,7 @@ export const AudioEditPanel: React.FC<IProps> = ({
     setIsLoading(true);
     try {
       const result = await queryScrapeAudioURL(url);
-      if (!result.data || !result.data.scrapeAudioURL) {
+      if (!result.data?.scrapeAudioURL) {
         return;
       }
       setScrapedAudio(result.data.scrapeAudioURL);

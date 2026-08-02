@@ -1,10 +1,4 @@
-import React, {
-  CSSProperties,
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-} from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "react-bootstrap";
 import * as GQL from "src/core/generated-graphql";
 import TextUtils from "src/utils/text";
@@ -24,7 +18,7 @@ interface IAudioPlayerScrubberProps {
 
 export const AudioPlayerScrubber: React.FC<IAudioPlayerScrubberProps> = ({
   file,
-  audio,
+  audio: _audio,
   time,
   onSeek,
   onScroll,
@@ -89,7 +83,7 @@ export const AudioPlayerScrubber: React.FC<IAudioPlayerScrubberProps> = ({
   useEffect(() => {
     const onResize = (entries: ResizeObserverEntry[]) => {
       const newWidth = entries[0].target.clientWidth;
-      if (_width.current != newWidth) {
+      if (_width.current !== newWidth) {
         // set prevTime to NaN to not use a transition when updating the slider position
         prevTime.current = NaN;
         _width.current = newWidth;
@@ -106,20 +100,20 @@ export const AudioPlayerScrubber: React.FC<IAudioPlayerScrubberProps> = ({
     };
   }, []);
 
-  function setLinearTransition() {
+  const setLinearTransition = useCallback(() => {
     const slider = sliderEl.current!;
     slider.style.transition = "500ms linear";
-  }
+  }, []);
 
-  function setEaseOutTransition() {
+  const setEaseOutTransition = useCallback(() => {
     const slider = sliderEl.current!;
     slider.style.transition = "333ms ease-out";
-  }
+  }, []);
 
-  function clearTransition() {
+  const clearTransition = useCallback(() => {
     const slider = sliderEl.current!;
     slider.style.transition = "";
-  }
+  }, []);
 
   // Update slider position when player time changes
   useEffect(() => {
@@ -133,7 +127,7 @@ export const AudioPlayerScrubber: React.FC<IAudioPlayerScrubberProps> = ({
     if (Math.abs(newPosition - position.current) < 1) return;
 
     const delta = Math.abs(time - prevTime.current);
-    if (isNaN(delta)) {
+    if (Number.isNaN(delta)) {
       // Don't use a transition on initial time change or after resize
       clearTransition();
     } else if (delta <= 1) {
@@ -145,7 +139,16 @@ export const AudioPlayerScrubber: React.FC<IAudioPlayerScrubberProps> = ({
     prevTime.current = time;
 
     setPosition(newPosition, false);
-  }, [file.duration, setPosition, time, width, scrubWidth]);
+  }, [
+    file.duration,
+    setPosition,
+    time,
+    width,
+    scrubWidth,
+    clearTransition,
+    setLinearTransition,
+    setEaseOutTransition,
+  ]);
 
   const onMouseUp = useCallback(
     (event: MouseEvent) => {
@@ -174,7 +177,7 @@ export const AudioPlayerScrubber: React.FC<IAudioPlayerScrubberProps> = ({
       setEaseOutTransition();
       setPosition(newPosition, true);
     },
-    [setPosition]
+    [setPosition, setEaseOutTransition]
   );
 
   const onMouseDown = useCallback((event: MouseEvent) => {
@@ -215,7 +218,7 @@ export const AudioPlayerScrubber: React.FC<IAudioPlayerScrubberProps> = ({
       setPosition(position.current + delta, false);
       lastMouseEvent.current = event;
     },
-    [onScroll, setPosition]
+    [onScroll, setPosition, clearTransition]
   );
 
   useEffect(() => {

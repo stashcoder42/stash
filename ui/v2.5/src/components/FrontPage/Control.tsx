@@ -96,7 +96,7 @@ const RecommendationRow: React.FC<IFilter> = ({ mode, filter, header }) => {
     case GQL.FilterMode.Audios:
     case GQL.FilterMode.AudioMarkers:
       // TODO: Add AudioRecommendationRow when front page audio support is implemented
-      return <></>;
+      return null;
     default:
       return null;
   }

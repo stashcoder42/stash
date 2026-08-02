@@ -84,7 +84,7 @@ export const PerformerLink: React.FC<IPerformerLinkProps> = ({
         return NavUtils.makePerformerSceneMarkersUrl(performer);
       case "audio":
         return NavUtils.makePerformerAudiosUrl(performer);
-      case "scene":
+      // case "scene":
       default:
         return NavUtils.makePerformerScenesUrl(performer);
     }

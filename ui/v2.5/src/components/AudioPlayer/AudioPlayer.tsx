@@ -226,10 +226,10 @@ export const AudioPlayer: React.FC<IAudioPlayerProps> = PatchComponent(
   "AudioPlayer",
   ({
     audio,
-    hideScrubberOverride, // eslint-disable-line @typescript-eslint/no-unused-vars
-    autoplay: _autoplay, // eslint-disable-line @typescript-eslint/no-unused-vars
+    hideScrubberOverride: _hideScrubberOverride,
+    autoplay: _autoplay,
     permitLoop = true,
-    initialTimestamp: _initialTimestamp, // eslint-disable-line @typescript-eslint/no-unused-vars
+    initialTimestamp: _initialTimestamp,
     sendSetTimestamp,
     onComplete,
     onNext,
@@ -368,7 +368,7 @@ export const AudioPlayer: React.FC<IAudioPlayerProps> = PatchComponent(
 
       const vjs = videojs(videoEl, options);
 
-      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+      /* biome-ignore lint/suspicious/noExplicitAny: intentional */
       const settings = (vjs as any).textTrackSettings;
       settings.setValues({
         backgroundColor: "#000",
@@ -699,6 +699,7 @@ export const AudioPlayer: React.FC<IAudioPlayerProps> = PatchComponent(
       player.loop(looping);
     }, [getPlayer, looping]);
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: audio is the trigger for re-running autoplay when the track changes
     useEffect(() => {
       const player = getPlayer();
       if (!player || !ready || !auto.current) {

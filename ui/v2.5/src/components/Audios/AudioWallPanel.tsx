@@ -138,7 +138,7 @@ export const AudioWallItem: React.FC<
   );
 };
 
-function getDimensions(a: GQL.SlimAudioDataFragment) {
+function getDimensions(_a: GQL.SlimAudioDataFragment) {
   // Audio uses square dimensions for cover art
   const defaults = { width: 300, height: 300 };
   return defaults;
@@ -184,6 +184,7 @@ const AudioWall: React.FC<IAudioWallProps> = ({
     setErroredImgs((prev) => [...prev, photo.src]);
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: explicitly want to clear errored images when audios change
   useEffect(() => {
     setErroredImgs([]);
   }, [audios]);
@@ -213,7 +214,7 @@ const AudioWall: React.FC<IAudioWallProps> = ({
   }, [audios, audioQueue, erroredImgs, handleError]);
 
   const onClick = useCallback(
-    (event, { index }) => {
+    (_event, { index }) => {
       history.push(photos[index].link);
     },
     [history, photos]

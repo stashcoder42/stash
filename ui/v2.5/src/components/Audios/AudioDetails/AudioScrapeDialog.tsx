@@ -101,7 +101,7 @@ export const AudioScrapeDialog: React.FC<IAudioScrapeDialogProps> = ({
     newPerformers.length === 0
   ) {
     onClose();
-    return <></>;
+    return null;
   }
 
   function makeNewScrapedItem(): GQL.ScrapedAudioDataFragment {

@@ -156,7 +156,7 @@ const AudioCardDetails = PatchComponent(
 
 const AudioCardOverlays = PatchComponent(
   "AudioCard.Overlays",
-  (props: IAudioCardProps) => {
+  (_props: IAudioCardProps) => {
     // Audio cards don't have studio overlays like scenes
     return null;
   }

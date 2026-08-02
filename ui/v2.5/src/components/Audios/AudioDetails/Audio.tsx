@@ -7,7 +7,7 @@ import React, {
   useLayoutEffect,
 } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
-import { useHistory, RouteComponentProps } from "react-router-dom";
+import { RouteComponentProps } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import * as GQL from "src/core/generated-graphql";
 import {
@@ -41,14 +41,12 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { objectPath, objectTitle } from "src/core/files";
 import { RatingSystem } from "src/components/Shared/Rating/RatingSystem";
-import TextUtils from "src/utils/text";
 import {
   OCounterButton,
   ViewCountButton,
 } from "src/components/Shared/CountButton";
 import { useRatingKeybinds } from "src/hooks/keybinds";
 import { lazyComponent } from "src/utils/lazyComponent";
-import cx from "classnames";
 import { TruncatedText } from "src/components/Shared/TruncatedText";
 import { PatchComponent, PatchContainerComponent } from "src/patch";
 
@@ -423,11 +421,6 @@ const AudioPage: React.FC<IProps> = PatchComponent("AudioPage", (props) => {
 
   const title = objectTitle(audio);
 
-  const file = useMemo(
-    () => (audio.files.length > 0 ? audio.files[0] : undefined),
-    [audio]
-  );
-
   return (
     <>
       <Helmet>
@@ -586,23 +579,23 @@ const AudioLoader: React.FC<RouteComponentProps<IAudioParams>> = ({
     };
   }, []);
 
-  async function getQueueFilterAudios(filter: ListFilterModel) {
-    const query = await queryFindAudios(filter);
-    const { audios, count } = query.data.findAudios;
-    setQueueAudios(audios);
-    setQueueTotal(count);
-    setQueueStart((filter.currentPage - 1) * filter.itemsPerPage + 1);
-  }
-
-  async function getQueueAudios(audioIDs: number[]) {
-    const query = await queryFindAudiosByID(audioIDs.map(String));
-    const { audios, count } = query.data.findAudios;
-    setQueueAudios(audios);
-    setQueueTotal(count);
-    setQueueStart(1);
-  }
-
   useEffect(() => {
+    async function getQueueFilterAudios(filter: ListFilterModel) {
+      const query = await queryFindAudios(filter);
+      const { audios, count } = query.data.findAudios;
+      setQueueAudios(audios);
+      setQueueTotal(count);
+      setQueueStart((filter.currentPage - 1) * filter.itemsPerPage + 1);
+    }
+
+    async function getQueueAudios(audioIDs: number[]) {
+      const query = await queryFindAudiosByID(audioIDs.map(String));
+      const { audios, count } = query.data.findAudios;
+      setQueueAudios(audios);
+      setQueueTotal(count);
+      setQueueStart(1);
+    }
+
     if (audioQueue.query) {
       getQueueFilterAudios(audioQueue.query);
     } else if (audioQueue.audioIDs) {

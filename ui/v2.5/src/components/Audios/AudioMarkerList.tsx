@@ -26,12 +26,11 @@ import {
   SidebarStateContext,
   useSidebarState,
 } from "../Shared/Sidebar";
-import { useCloseEditDelete, useFilterOperations } from "../List/util";
+import { useFilterOperations } from "../List/util";
 import {
   FilteredSidebarHeader,
   useFilteredSidebarKeybinds,
 } from "../List/Filters/FilterSidebar";
-import { useZoomKeybinds } from "../List/ZoomSlider";
 import {
   IListFilterOperation,
   ListOperations,

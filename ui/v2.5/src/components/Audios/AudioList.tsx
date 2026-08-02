@@ -21,7 +21,6 @@ import {
   faPlus,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
-import { objectTitle } from "src/core/files";
 import TextUtils from "src/utils/text";
 import { View } from "../List/views";
 import { FileSize } from "../Shared/FileSize";
@@ -187,9 +186,9 @@ const AudioList: React.FC<{
   audios: GQL.SlimAudioDataFragment[];
   filter: ListFilterModel;
   selectedIds: Set<string>;
-  onSelectChange: (id: string, selected: boolean, shiftKey: boolean) => void;
+  onSelectChange: (id: string, selected: boolean, _shiftKey: boolean) => void;
   fromGroupId?: string;
-}> = ({ audios, filter, selectedIds, onSelectChange, fromGroupId }) => {
+}> = ({ audios, filter, selectedIds, onSelectChange }) => {
   const queue = useMemo(() => AudioQueue.fromListFilterModel(filter), [filter]);
 
   if (audios.length === 0) {
@@ -536,7 +535,7 @@ export const FilteredAudioList = (props: IFilteredAudios) => {
       Mousetrap.unbind("e");
       Mousetrap.unbind("d d");
     };
-  }, [onSelectAll, onSelectNone, hasSelection, onEdit, onDelete]);
+  }, [hasSelection, onEdit, onDelete]);
 
   useZoomKeybinds({
     zoomIndex: filter.zoomIndex,
