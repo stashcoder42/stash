@@ -103,7 +103,7 @@ Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 | 5 | `bb67152f9` | Related object resolvers on file graphql types (#6938) | Port to `repository_audio.go`, `pkg/sqlite/audio.go`; regen mocks | ⬜ |
 | 6 | `d04ecc4f8` | Signed urls for airplay (#6529) | Port — refactors `GetCaptionPath`/`GetCaptionURL` + HMAC signing; applies to any authenticated stream, not just video | ⬜ |
 | 7 | `f3bfd8db7` | `scene_filter` param on findDuplicateScenes (#6884) | Largest backend change (333 lines). Port if audio exposes a duplicate finder; else mark n/a with reason | ⬜ |
-| 8 | `db4b33f53` | Size summary should represent all files (#7006) | Port to `pkg/sqlite/audio.go` — real bug | ⬜ |
+| 8 | `db4b33f53` | Size summary should represent all files (#7006) | Ported to `pkg/sqlite/audio.go` (commit `833fc2450`). Also fixed a worse audio-only defect found alongside it: totals ignored the query filter entirely. Audio now has `queryGroupedFields` mirroring scene's | ✅ |
 | 9 | `8a98b72c1` | json.Number custom field filters (#7040) | Port. Cross-check against our `appSchemaVersion` 89 custom-fields migration | ⬜ |
 | 10 | `b044005fc` | Recursive sort performer_count / o_counter (#6933) | Port sort options to `pkg/sqlite/audio.go`, `repository_audio.go` | ⬜ |
 | 11 | `3d333a22a` | LEFT JOIN for NULL phash (#7121) | Review — phash is video-specific; port only if audio filters on phash | ⬜ |
