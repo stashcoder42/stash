@@ -625,6 +625,12 @@ func (qb *AudioStore) OCount(ctx context.Context) (int, error) {
 	return ret, nil
 }
 
+// Size returns the total size in bytes of all files associated with all
+// audios in the library. Unlike AudioStore.Query's TotalSize option, this
+// is intentionally unfiltered - it mirrors SceneStore.Size, which is used
+// for library-wide stats (see queryResolver.Stats in internal/api/resolver.go).
+// Audio has no equivalent stats endpoint yet, but the method is kept as
+// part of the AudioReader interface for parity with scene.
 func (qb *AudioStore) Size(ctx context.Context) (float64, error) {
 	table := qb.table()
 	files := goqu.T("files")
@@ -643,6 +649,8 @@ func (qb *AudioStore) Size(ctx context.Context) (float64, error) {
 	return ret.Float64, nil
 }
 
+// Duration returns the total duration in seconds of all files associated
+// with all audios in the library. See Size for why this is unfiltered.
 func (qb *AudioStore) Duration(ctx context.Context) (float64, error) {
 	table := qb.table()
 	audioFiles := goqu.T(audioFilesTable)
@@ -726,30 +734,89 @@ func (qb *AudioStore) Query(ctx context.Context, options models.AudioQueryOption
 		return nil, err
 	}
 
-	result := models.NewAudioQueryResult(qb)
-
-	if options.TotalDuration {
-		result.TotalDuration, err = qb.Duration(ctx)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if options.TotalSize {
-		result.TotalSize, err = qb.Size(ctx)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	idsResult, countResult, err := query.executeFind(ctx)
+	result, err := qb.queryGroupedFields(ctx, options, *query)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error querying aggregate fields: %w", err)
+	}
+
+	idsResult, err := query.findIDs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error finding IDs: %w", err)
 	}
 
 	result.IDs = idsResult
-	result.Count = countResult
-
 	return result, nil
+}
+
+// queryGroupedFields computes the Count/TotalDuration/TotalSize results for
+// the given query. It mirrors SceneStore.queryGroupedFields: the SUMs run
+// over the (filtered) query passed in, rather than the whole library, and
+// the file_id column is selected so that files with equal size/duration
+// aren't collapsed by DISTINCT (upstream db4b33f53 / #7006).
+func (qb *AudioStore) queryGroupedFields(ctx context.Context, options models.AudioQueryOptions, query queryBuilder) (*models.AudioQueryResult, error) {
+	if !options.Count && !options.TotalDuration && !options.TotalSize {
+		// nothing to do - return empty result
+		return models.NewAudioQueryResult(qb), nil
+	}
+
+	aggregateQuery := audioRepository.newQuery()
+
+	if options.Count {
+		aggregateQuery.addColumn("COUNT(DISTINCT temp.id) as total")
+	}
+
+	if options.TotalDuration {
+		query.addJoins(
+			join{
+				table:    audioFilesTable,
+				onClause: "audios_files.audio_id = audios.id",
+			},
+			join{
+				table:    audioFileTable,
+				onClause: "audios_files.file_id = audio_files.file_id",
+			},
+		)
+		query.addColumn("COALESCE(audio_files.duration, 0) as duration")
+		aggregateQuery.addColumn("SUM(temp.duration) as duration")
+	}
+
+	if options.TotalSize {
+		query.addJoins(
+			join{
+				table:    audioFilesTable,
+				onClause: "audios_files.audio_id = audios.id",
+			},
+			join{
+				table:    fileTable,
+				onClause: "audios_files.file_id = files.id",
+			},
+		)
+		query.addColumn("COALESCE(files.size, 0) as size")
+		aggregateQuery.addColumn("SUM(temp.size) as size")
+	}
+
+	// #5503 - select the file id so equal-sized/duration files aren't collapsed by DISTINCT
+	if options.TotalDuration || options.TotalSize {
+		query.addColumn(audioFilesTable + ".file_id")
+	}
+
+	const includeSortPagination = false
+	aggregateQuery.from = fmt.Sprintf("(%s) as temp", query.toSQL(includeSortPagination))
+
+	out := struct {
+		Total    int
+		Duration null.Float
+		Size     null.Float
+	}{}
+	if err := audioRepository.queryStruct(ctx, aggregateQuery.toSQL(includeSortPagination), query.allArgs(), &out); err != nil {
+		return nil, err
+	}
+
+	ret := models.NewAudioQueryResult(qb)
+	ret.Count = out.Total
+	ret.TotalDuration = out.Duration.Float64
+	ret.TotalSize = out.Size.Float64
+	return ret, nil
 }
 
 func (qb *AudioStore) QueryCount(ctx context.Context, audioFilter *models.AudioFilterType, findFilter *models.FindFilterType) (int, error) {

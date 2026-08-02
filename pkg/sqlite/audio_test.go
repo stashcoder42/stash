@@ -2476,3 +2476,127 @@ func TestAudioStore_AddO_NonExistentAudio(t *testing.T) {
 		}
 	})
 }
+
+// Defect 2: TotalSize/TotalDuration must respect the query's filter, not
+// aggregate across the whole library. Ports the filter-awareness half of
+// upstream db4b33f53 (#7006) for audio, which has no equivalent upstream
+// audio store to port from directly.
+func TestAudioQueryTotalSizeRespectsFilter(t *testing.T) {
+	withRollbackTxn(func(ctx context.Context) error {
+		sqb := db.Audio
+		fqb := db.File
+
+		const matchedSize = int64(5555)
+		const matchedDuration = float64(50)
+		const unmatchedSize = int64(9999)
+		const unmatchedDuration = float64(90)
+
+		makeFile := func(basename string, size int64, duration float64) models.FileID {
+			f := &models.AudioFile{
+				BaseFile: &models.BaseFile{
+					Path:           getFilePath(folderIdxWithFiles, basename),
+					Basename:       basename,
+					ParentFolderID: folderIDs[folderIdxWithFiles],
+					Size:           size,
+				},
+				Duration: duration,
+			}
+			if err := fqb.Create(ctx, f); err != nil {
+				t.Fatalf("creating file: %v", err)
+			}
+			return f.ID
+		}
+
+		matchedFileID := makeFile("total-size-filter-matched.mp3", matchedSize, matchedDuration)
+		unmatchedFileID := makeFile("total-size-filter-unmatched.mp3", unmatchedSize, unmatchedDuration)
+
+		matchedAudio := &models.Audio{Title: "total size filter matched"}
+		if err := sqb.Create(ctx, matchedAudio, []models.FileID{matchedFileID}); err != nil {
+			t.Fatalf("creating matched audio: %v", err)
+		}
+
+		unmatchedAudio := &models.Audio{Title: "total size filter unmatched"}
+		if err := sqb.Create(ctx, unmatchedAudio, []models.FileID{unmatchedFileID}); err != nil {
+			t.Fatalf("creating unmatched audio: %v", err)
+		}
+
+		result, err := sqb.Query(ctx, models.AudioQueryOptions{
+			QueryOptions: models.QueryOptions{Count: true},
+			AudioFilter: &models.AudioFilterType{
+				ID: &models.IntCriterionInput{
+					Modifier: models.CriterionModifierEquals,
+					Value:    matchedAudio.ID,
+				},
+			},
+			TotalDuration: true,
+			TotalSize:     true,
+		})
+		if err != nil {
+			t.Fatalf("querying audio: %v", err)
+		}
+
+		assert.Equal(t, 1, result.Count)
+		assert.Equal(t, float64(matchedSize), result.TotalSize)
+		assert.Equal(t, matchedDuration, result.TotalDuration)
+
+		return nil
+	})
+}
+
+// Defect 1: DISTINCT must not collapse rows for files that happen to share
+// a size/duration, undercounting totals. Ports upstream db4b33f53 (#7006)'s
+// TestSceneQueryTotalSizeMultipleFiles for audio.
+func TestAudioSizeSummaryAllFiles(t *testing.T) {
+	withRollbackTxn(func(ctx context.Context) error {
+		sqb := db.Audio
+		fqb := db.File
+
+		const fileSize = int64(1234)
+		const fileDuration = float64(100)
+
+		makeFile := func(basename string) models.FileID {
+			f := &models.AudioFile{
+				BaseFile: &models.BaseFile{
+					Path:           getFilePath(folderIdxWithFiles, basename),
+					Basename:       basename,
+					ParentFolderID: folderIDs[folderIdxWithFiles],
+					Size:           fileSize,
+				},
+				Duration: fileDuration,
+			}
+			if err := fqb.Create(ctx, f); err != nil {
+				t.Fatalf("creating file: %v", err)
+			}
+			return f.ID
+		}
+
+		f1 := makeFile("multifile-audio-1.mp3")
+		f2 := makeFile("multifile-audio-2.mp3")
+
+		audio := &models.Audio{Title: "multifile audio"}
+		if err := sqb.Create(ctx, audio, []models.FileID{f1, f2}); err != nil {
+			t.Fatalf("creating audio: %v", err)
+		}
+
+		result, err := sqb.Query(ctx, models.AudioQueryOptions{
+			QueryOptions: models.QueryOptions{Count: true},
+			AudioFilter: &models.AudioFilterType{
+				ID: &models.IntCriterionInput{
+					Modifier: models.CriterionModifierEquals,
+					Value:    audio.ID,
+				},
+			},
+			TotalDuration: true,
+			TotalSize:     true,
+		})
+		if err != nil {
+			t.Fatalf("querying audio: %v", err)
+		}
+
+		assert.Equal(t, 1, result.Count)
+		assert.Equal(t, float64(fileSize*2), result.TotalSize)
+		assert.Equal(t, fileDuration*2, result.TotalDuration)
+
+		return nil
+	})
+}
