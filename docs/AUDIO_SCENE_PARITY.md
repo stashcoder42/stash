@@ -100,7 +100,7 @@ Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 | 2 | `103181a6d` | Include api key in funscript url (#6760) | Review — funscript is video-domain; the URL-builder api-key pattern may still apply | ⬜ |
 | 3 | `2b29207f1` | Upgrade go 1.25 / golangci-lint (#6869) | Lint fixes in `pkg/audio/scan.go` if linter flags them | ⬜ |
 | 4 | `fc0b2a5d9` | Fix OR sub-filter join type (#6920) | Ported to `audio_filter.go` AND `audio_marker_filter.go` (commit `ad5fa21f9`). Fix is a statement reorder — `handleCriterion` must run before `handleSubFilter` — not a join-type edit | ✅ |
-| 5 | `bb67152f9` | Related object resolvers on file graphql types (#6938) | Port to `repository_audio.go`, `pkg/sqlite/audio.go`; regen mocks | ⬜ |
+| 5 | `bb67152f9` | Related object resolvers on file graphql types (#6938) | Ported (commit `8abbc2f66`). Adds `AudioFile.audios`, `AudioStore.GetManyIDsByFileIDs`, and an `AudioIDsByFileID` loader — distinct from the pre-existing `AudioFileIDsLoader`, which maps the opposite direction | ✅ |
 | 6 | `d04ecc4f8` | Signed urls for airplay (#6529) | Port — refactors `GetCaptionPath`/`GetCaptionURL` + HMAC signing; applies to any authenticated stream, not just video | ⬜ |
 | 7 | `f3bfd8db7` | `scene_filter` param on findDuplicateScenes (#6884) | Largest backend change (333 lines). Port if audio exposes a duplicate finder; else mark n/a with reason | ⬜ |
 | 8 | `db4b33f53` | Size summary should represent all files (#7006) | Ported to `pkg/sqlite/audio.go` (commit `833fc2450`). Also fixed a worse audio-only defect found alongside it: totals ignored the query filter entirely. Audio now has `queryGroupedFields` mirroring scene's | ✅ |
