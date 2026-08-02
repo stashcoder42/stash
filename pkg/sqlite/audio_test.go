@@ -937,6 +937,56 @@ func verifyAudiosRating100(t *testing.T, ratingCriterion models.IntCriterionInpu
 	})
 }
 
+// TestAudioQueryDurationIsNullUsesLeftJoin is a guard test for the join-type
+// optimisation ported from upstream #6648: durationCriterionHandler (and its
+// siblings for bitrate/audio codec/sample rate/channels/checksum) now use an
+// INNER join against audio_files except when the criterion modifier is
+// IsNull, in which case a LEFT join is required to surface audios with no
+// matching audio_files row at all. This does not reproduce a pre-existing
+// bug (there was none to reproduce); it exists solely to prove the IsNull
+// branch of the new conditional keeps working. It must pass both before and
+// after the join-type change.
+func TestAudioQueryDurationIsNullUsesLeftJoin(t *testing.T) {
+	withRollbackTxn(func(ctx context.Context) error {
+		aqb := db.Audio
+
+		// Create an audio with no linked audio_files row at all, so that an
+		// (incorrect) INNER join on audio_files would silently drop it from
+		// an IsNull result set.
+		audio := &models.Audio{
+			Title: "audio with no files for duration IsNull guard test",
+		}
+		if err := aqb.Create(ctx, audio, nil); err != nil {
+			t.Errorf("Error creating audio with no files: %s", err.Error())
+			return nil
+		}
+
+		durationCriterion := models.IntCriterionInput{
+			Modifier: models.CriterionModifierIsNull,
+		}
+		audioFilter := models.AudioFilterType{
+			Duration: &durationCriterion,
+		}
+
+		audios, _, err := queryAudiosWithCount(ctx, aqb, &audioFilter, nil)
+		if err != nil {
+			t.Errorf("Error querying audio: %s", err.Error())
+			return nil
+		}
+
+		found := false
+		for _, a := range audios {
+			if a.ID == audio.ID {
+				found = true
+			}
+		}
+
+		assert.True(t, found, "audio with no audio_files row should be returned when Duration modifier is IsNull")
+
+		return nil
+	})
+}
+
 func TestAudioQueryPerformers(t *testing.T) {
 	tests := []struct {
 		name        string

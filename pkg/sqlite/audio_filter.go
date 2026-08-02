@@ -57,8 +57,12 @@ func (qb *audioFilterHandler) criterionHandler() criterionHandler {
 		intCriterionHandler(audioFilter.ID, "audios.id", nil),
 		criterionHandlerFunc(func(ctx context.Context, f *filterBuilder) {
 			if audioFilter.Checksum != nil {
-				qb.addAudioFilesTable(f, joinTypeLeft)
-				f.addLeftJoin(fingerprintTable, "fingerprints_md5", "audios_files.file_id = fingerprints_md5.file_id AND fingerprints_md5.type = 'md5'")
+				joinType := joinTypeInner
+				if audioFilter.Checksum.Modifier == models.CriterionModifierIsNull {
+					joinType = joinTypeLeft
+				}
+				qb.addAudioFilesTable(f, joinType)
+				f.addJoin(joinType, fingerprintTable, "fingerprints_md5", "audios_files.file_id = fingerprints_md5.file_id AND fingerprints_md5.type = 'md5'")
 			}
 
 			stringCriterionHandler(audioFilter.Checksum, "fingerprints_md5.fingerprint")(ctx, f)
@@ -160,8 +164,12 @@ func (qb *audioFilterHandler) playCountCriterionHandler(count *models.IntCriteri
 func (qb *audioFilterHandler) durationCriterionHandler(duration *models.IntCriterionInput) criterionHandlerFunc {
 	return func(ctx context.Context, f *filterBuilder) {
 		if duration != nil {
-			qb.addAudioFilesTable(f, joinTypeLeft)
-			f.addLeftJoin("audio_files", "af_duration", "audios_files.file_id = af_duration.file_id")
+			joinType := joinTypeInner
+			if duration.Modifier == models.CriterionModifierIsNull {
+				joinType = joinTypeLeft
+			}
+			qb.addAudioFilesTable(f, joinType)
+			f.addJoin(joinType, "audio_files", "af_duration", "audios_files.file_id = af_duration.file_id")
 			intCriterionHandler(duration, "af_duration.duration", nil)(ctx, f)
 		}
 	}
@@ -170,8 +178,12 @@ func (qb *audioFilterHandler) durationCriterionHandler(duration *models.IntCrite
 func (qb *audioFilterHandler) bitrateCriterionHandler(bitrate *models.IntCriterionInput) criterionHandlerFunc {
 	return func(ctx context.Context, f *filterBuilder) {
 		if bitrate != nil {
-			qb.addAudioFilesTable(f, joinTypeLeft)
-			f.addLeftJoin("audio_files", "af_bitrate", "audios_files.file_id = af_bitrate.file_id")
+			joinType := joinTypeInner
+			if bitrate.Modifier == models.CriterionModifierIsNull {
+				joinType = joinTypeLeft
+			}
+			qb.addAudioFilesTable(f, joinType)
+			f.addJoin(joinType, "audio_files", "af_bitrate", "audios_files.file_id = af_bitrate.file_id")
 			intCriterionHandler(bitrate, "af_bitrate.bitrate", nil)(ctx, f)
 		}
 	}
@@ -180,8 +192,12 @@ func (qb *audioFilterHandler) bitrateCriterionHandler(bitrate *models.IntCriteri
 func (qb *audioFilterHandler) audioCodecCriterionHandler(audioCodec *models.StringCriterionInput) criterionHandlerFunc {
 	return func(ctx context.Context, f *filterBuilder) {
 		if audioCodec != nil {
-			qb.addAudioFilesTable(f, joinTypeLeft)
-			f.addLeftJoin("audio_files", "af_codec", "audios_files.file_id = af_codec.file_id")
+			joinType := joinTypeInner
+			if audioCodec.Modifier == models.CriterionModifierIsNull {
+				joinType = joinTypeLeft
+			}
+			qb.addAudioFilesTable(f, joinType)
+			f.addJoin(joinType, "audio_files", "af_codec", "audios_files.file_id = af_codec.file_id")
 			stringCriterionHandler(audioCodec, "af_codec.audio_codec")(ctx, f)
 		}
 	}
@@ -190,8 +206,12 @@ func (qb *audioFilterHandler) audioCodecCriterionHandler(audioCodec *models.Stri
 func (qb *audioFilterHandler) sampleRateCriterionHandler(sampleRate *models.IntCriterionInput) criterionHandlerFunc {
 	return func(ctx context.Context, f *filterBuilder) {
 		if sampleRate != nil {
-			qb.addAudioFilesTable(f, joinTypeLeft)
-			f.addLeftJoin("audio_files", "af_sample_rate", "audios_files.file_id = af_sample_rate.file_id")
+			joinType := joinTypeInner
+			if sampleRate.Modifier == models.CriterionModifierIsNull {
+				joinType = joinTypeLeft
+			}
+			qb.addAudioFilesTable(f, joinType)
+			f.addJoin(joinType, "audio_files", "af_sample_rate", "audios_files.file_id = af_sample_rate.file_id")
 			intCriterionHandler(sampleRate, "af_sample_rate.sample_rate", nil)(ctx, f)
 		}
 	}
@@ -200,8 +220,12 @@ func (qb *audioFilterHandler) sampleRateCriterionHandler(sampleRate *models.IntC
 func (qb *audioFilterHandler) channelsCriterionHandler(channels *models.IntCriterionInput) criterionHandlerFunc {
 	return func(ctx context.Context, f *filterBuilder) {
 		if channels != nil {
-			qb.addAudioFilesTable(f, joinTypeLeft)
-			f.addLeftJoin("audio_files", "af_channels", "audios_files.file_id = af_channels.file_id")
+			joinType := joinTypeInner
+			if channels.Modifier == models.CriterionModifierIsNull {
+				joinType = joinTypeLeft
+			}
+			qb.addAudioFilesTable(f, joinType)
+			f.addJoin(joinType, "audio_files", "af_channels", "audios_files.file_id = af_channels.file_id")
 			intCriterionHandler(channels, "af_channels.channels", nil)(ctx, f)
 		}
 	}
