@@ -1153,6 +1153,51 @@ func TestAudioQueryTags(t *testing.T) {
 	}
 }
 
+// TestAudioQueryOrSubFilterJoinType ports upstream fc0b2a5d9 (#6920): when a
+// filter's primary criterion is ANDed against an OR sub-filter, the joins
+// registered by the primary criterion handler must exist before the OR
+// sub-filter is resolved, so that innerJoinsToLeftJoins can convert them to
+// LEFT JOINs. If handleCriterion runs after handleSubFilter, the primary
+// criterion's joins are still INNER at OR-resolution time and rows that only
+// match the OR branch (and not the primary criterion's joined table) are
+// silently dropped.
+//
+// audioIdxWithPerformer has a performer but no tags; audioIdxWithTag has a
+// tag but no performer. A filter of Performers=[performerIdxWithScene] OR
+// Tags=[tagIdxWithScene] should return both audios.
+func TestAudioQueryOrSubFilterJoinType(t *testing.T) {
+	audioFilter := models.AudioFilterType{
+		Performers: &models.MultiCriterionInput{
+			Value:    []string{strconv.Itoa(performerIDs[performerIdxWithScene])},
+			Modifier: models.CriterionModifierIncludes,
+		},
+		OperatorFilter: models.OperatorFilter[models.AudioFilterType]{
+			Or: &models.AudioFilterType{
+				Tags: &models.HierarchicalMultiCriterionInput{
+					Value:    []string{strconv.Itoa(tagIDs[tagIdxWithScene])},
+					Modifier: models.CriterionModifierIncludes,
+				},
+			},
+		},
+	}
+
+	withTxn(func(ctx context.Context) error {
+		sqb := db.Audio
+
+		audios := queryAudios(ctx, t, sqb, &audioFilter, nil)
+
+		var ids []int
+		for _, a := range audios {
+			ids = append(ids, a.ID)
+		}
+
+		assert.Contains(t, ids, audioIDs[audioIdxWithPerformer])
+		assert.Contains(t, ids, audioIDs[audioIdxWithTag])
+
+		return nil
+	})
+}
+
 func queryAudios(ctx context.Context, t *testing.T, sqb models.AudioReader, audioFilter *models.AudioFilterType, findFilter *models.FindFilterType) []*models.Audio {
 	audios, _, err := queryAudiosWithCount(ctx, sqb, audioFilter, findFilter)
 	if err != nil {

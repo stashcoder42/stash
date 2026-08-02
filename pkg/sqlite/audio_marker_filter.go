@@ -42,13 +42,13 @@ func (qb *audioMarkerFilterHandler) handle(ctx context.Context, f *filterBuilder
 		return
 	}
 
+	f.handleCriterion(ctx, qb.criterionHandler())
+
 	sf := audioMarkerFilter.SubFilter()
 	if sf != nil {
 		sub := &audioMarkerFilterHandler{sf}
 		handleSubFilter(ctx, sub, f, audioMarkerFilter.OperatorFilter)
 	}
-
-	f.handleCriterion(ctx, qb.criterionHandler())
 }
 
 func (qb *audioMarkerFilterHandler) joinAudios(f *filterBuilder) {
