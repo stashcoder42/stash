@@ -2650,3 +2650,58 @@ func TestAudioSizeSummaryAllFiles(t *testing.T) {
 		return nil
 	})
 }
+
+// TestAudioStoreGetManyIDsByFileIDs is a capability test: it proves the new
+// file->audio related-object resolution path (ported from upstream bb67152f9,
+// #6938) works, mirroring scene's GetManyIDsByFileIDs. This is not a
+// bug-reproduction test — there is no pre-existing failure being fixed here,
+// since audio never had this capability before.
+func TestAudioStoreGetManyIDsByFileIDs(t *testing.T) {
+	withRollbackTxn(func(ctx context.Context) error {
+		sqb := db.Audio
+		fqb := db.File
+
+		const fileSize = int64(1234)
+		const fileDuration = float64(100)
+
+		makeFile := func(basename string) models.FileID {
+			f := &models.AudioFile{
+				BaseFile: &models.BaseFile{
+					Path:           getFilePath(folderIdxWithFiles, basename),
+					Basename:       basename,
+					ParentFolderID: folderIDs[folderIdxWithFiles],
+					Size:           fileSize,
+				},
+				Duration: fileDuration,
+			}
+			if err := fqb.Create(ctx, f); err != nil {
+				t.Fatalf("creating file: %v", err)
+			}
+			return f.ID
+		}
+
+		// file with an associated audio
+		fWithAudio := makeFile("get-many-ids-by-file-ids-with-audio.mp3")
+		audio := &models.Audio{Title: "get many ids by file ids audio"}
+		if err := sqb.Create(ctx, audio, []models.FileID{fWithAudio}); err != nil {
+			t.Fatalf("creating audio: %v", err)
+		}
+
+		// file with no associated audio
+		fWithoutAudio := makeFile("get-many-ids-by-file-ids-without-audio.mp3")
+
+		got, err := sqb.GetManyIDsByFileIDs(ctx, []models.FileID{fWithAudio, fWithoutAudio})
+		if err != nil {
+			t.Fatalf("GetManyIDsByFileIDs: %v", err)
+		}
+
+		if !assert.Len(t, got, 2) {
+			return nil
+		}
+
+		assert.Equal(t, []int{audio.ID}, got[0], "expected audio ID for file with associated audio")
+		assert.Empty(t, got[1], "expected empty slice for file with no associated audio")
+
+		return nil
+	})
+}

@@ -123,3 +123,14 @@ func (r *audioFileResolver) ParentFolder(ctx context.Context, obj *AudioFile) (*
 func (r *audioFileResolver) ZipFile(ctx context.Context, obj *AudioFile) (*BasicFile, error) {
 	return zipFileResolver(ctx, obj.ZipFileID)
 }
+
+func (r *audioFileResolver) Audios(ctx context.Context, obj *AudioFile) ([]*models.Audio, error) {
+	audioIDs, err := loaders.From(ctx).AudioIDsByFileID.Load(obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	var errs []error
+	ret, errs := loaders.From(ctx).AudioByID.LoadAll(audioIDs)
+	return ret, firstError(errs)
+}

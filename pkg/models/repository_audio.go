@@ -14,6 +14,7 @@ type AudioGetter interface {
 // AudioFinder provides methods to find audio.
 type AudioFinder interface {
 	AudioGetter
+	IDsFromFileIDsLoader
 	FindByChecksum(ctx context.Context, checksum string) ([]*Audio, error)
 	FindByPath(ctx context.Context, path string) (*Audio, error)
 	FindByFileID(ctx context.Context, fileID FileID) ([]*Audio, error)

@@ -88,6 +88,7 @@ type Loaders struct {
 	FolderSubFolderIDs    *FolderRelatedFolderIDsLoader
 
 	AudioByID         *AudioLoader
+	AudioIDsByFileID  *FileIDsRelatedIDsLoader
 	AudioFiles        *AudioFileIDsLoader
 	AudioPlayCount    *AudioPlayCountLoader
 	AudioOCount       *AudioOCountLoader
@@ -254,6 +255,11 @@ func (m Middleware) Middleware(next http.Handler) http.Handler {
 				wait:     wait,
 				maxBatch: maxBatch,
 				fetch:    m.fetchAudios(ctx),
+			},
+			AudioIDsByFileID: &FileIDsRelatedIDsLoader{
+				wait:     wait,
+				maxBatch: maxBatch,
+				fetch:    m.fetchAudioIDsByFileID(ctx),
 			},
 			AudioFiles: &AudioFileIDsLoader{
 				wait:     wait,
@@ -643,6 +649,17 @@ func (m Middleware) fetchAudios(ctx context.Context) func(keys []int) ([]*models
 		err := m.Repository.WithDB(ctx, func(ctx context.Context) error {
 			var err error
 			ret, err = m.Repository.Audio.FindMany(ctx, keys)
+			return err
+		})
+		return ret, toErrorSlice(err)
+	}
+}
+
+func (m Middleware) fetchAudioIDsByFileID(ctx context.Context) func(keys []models.FileID) ([][]int, []error) {
+	return func(keys []models.FileID) (ret [][]int, errs []error) {
+		err := m.Repository.WithDB(ctx, func(ctx context.Context) error {
+			var err error
+			ret, err = m.Repository.Audio.GetManyIDsByFileIDs(ctx, keys)
 			return err
 		})
 		return ret, toErrorSlice(err)

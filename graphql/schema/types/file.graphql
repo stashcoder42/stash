@@ -152,6 +152,8 @@ type AudioFile implements BaseFile {
   sample_rate: Int!
   channels: Int!
 
+  audios: [Audio!]!
+
   created_at: Time!
   updated_at: Time!
 }
