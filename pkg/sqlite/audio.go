@@ -539,11 +539,19 @@ func (qb *AudioStore) FindByPath(ctx context.Context, p string) (*models.Audio, 
 		InnerJoin(audioFiles, goqu.On(audioFiles.Col(audioIDColumn).Eq(table.Col(idColumn)))).
 		InnerJoin(files, goqu.On(files.Col(idColumn).Eq(audioFiles.Col("file_id")))).
 		InnerJoin(folders, goqu.On(folders.Col(idColumn).Eq(files.Col("parent_folder_id")))).
-		Select(table.Col(idColumn)).
-		Where(
-			files.Col("basename").Eq(basename),
-			folders.Col("path").Eq(dir),
+		Select(table.Col(idColumn))
+
+	if pathHasWildcard(basename) || pathHasWildcard(dir) {
+		sq = sq.Where(
+			pathLike(folders.Col("path"), dir),
+			pathLike(files.Col("basename"), basename),
 		)
+	} else {
+		sq = sq.Where(
+			pathEqNoCase(folders.Col("path"), dir),
+			pathEqNoCase(files.Col("basename"), basename),
+		)
+	}
 
 	ret, err := qb.findBySubquery(ctx, sq)
 	if err != nil {

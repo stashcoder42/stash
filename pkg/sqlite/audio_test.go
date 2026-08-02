@@ -7,6 +7,7 @@ import (
 	"context"
 	"reflect"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -101,7 +102,7 @@ func Test_audioQueryBuilder_Create(t *testing.T) {
 				Organized:    true,
 				CreatedAt:    createdAt,
 				UpdatedAt:    updatedAt,
-				TagIDs:       models.NewRelatedIDs([]int{tagIDs[tagIdxWithScene], tagIDs[tagIdx1WithDupName]}),
+				TagIDs:       models.NewRelatedIDs([]int{tagIDs[tagIdxWithScene], tagIDs[tagIdx1WithScene]}),
 				PerformerIDs: models.NewRelatedIDs([]int{performerIDs[performerIdx1WithScene], performerIDs[performerIdx1WithDupName]}),
 			},
 			false,
@@ -218,7 +219,7 @@ func Test_audioQueryBuilder_Update(t *testing.T) {
 				Organized:    true,
 				CreatedAt:    createdAt,
 				UpdatedAt:    updatedAt,
-				TagIDs:       models.NewRelatedIDs([]int{tagIDs[tagIdxWithScene], tagIDs[tagIdx1WithDupName]}),
+				TagIDs:       models.NewRelatedIDs([]int{tagIDs[tagIdxWithScene], tagIDs[tagIdx1WithScene]}),
 				PerformerIDs: models.NewRelatedIDs([]int{performerIDs[performerIdx1WithScene], performerIDs[performerIdx1WithDupName]}),
 			},
 			false,
@@ -336,7 +337,7 @@ func Test_audioQueryBuilder_UpdatePartial(t *testing.T) {
 				CreatedAt: models.NewOptionalTime(createdAt),
 				UpdatedAt: models.NewOptionalTime(updatedAt),
 				TagIDs: &models.UpdateIDs{
-					IDs:  []int{tagIDs[tagIdxWithScene], tagIDs[tagIdx1WithDupName]},
+					IDs:  []int{tagIDs[tagIdxWithScene], tagIDs[tagIdx1WithScene]},
 					Mode: models.RelationshipUpdateModeSet,
 				},
 				PerformerIDs: &models.UpdateIDs{
@@ -357,7 +358,7 @@ func Test_audioQueryBuilder_UpdatePartial(t *testing.T) {
 				}),
 				CreatedAt:    createdAt,
 				UpdatedAt:    updatedAt,
-				TagIDs:       models.NewRelatedIDs([]int{tagIDs[tagIdxWithScene], tagIDs[tagIdx1WithDupName]}),
+				TagIDs:       models.NewRelatedIDs([]int{tagIDs[tagIdxWithScene], tagIDs[tagIdx1WithScene]}),
 				PerformerIDs: models.NewRelatedIDs([]int{performerIDs[performerIdx1WithScene], performerIDs[performerIdx1WithDupName]}),
 			},
 			false,
@@ -643,6 +644,73 @@ func Test_audioQueryBuilder_FindByChecksum(t *testing.T) {
 			}
 
 			assert.Equal(tt.want, got)
+		})
+	}
+}
+
+func Test_audioQueryBuilder_FindByPath(t *testing.T) {
+	getPath := func(index int) string {
+		return getFilePath(folderIdxWithFiles, getAudioBasename(index))
+	}
+
+	tests := []struct {
+		name    string
+		path    string
+		want    *models.Audio
+		wantErr bool
+	}{
+		{
+			"valid",
+			getPath(audioIdxWithPerformer),
+			makeAudioWithID(audioIdxWithPerformer),
+			false,
+		},
+		{
+			"case insensitive",
+			strings.ToUpper(getPath(audioIdxWithPerformer)),
+			makeAudioWithID(audioIdxWithPerformer),
+			false,
+		},
+		{
+			"invalid",
+			"invalid path",
+			nil,
+			false,
+		},
+	}
+
+	qb := db.Audio
+
+	for _, tt := range tests {
+		runWithRollbackTxn(t, tt.name, func(t *testing.T, ctx context.Context) {
+			assert := assert.New(t)
+			got, err := qb.FindByPath(ctx, tt.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("audioQueryBuilder.FindByPath() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			var want []*models.Audio
+			if tt.want != nil {
+				want = []*models.Audio{tt.want}
+			}
+
+			var gotSlice []*models.Audio
+			if got != nil {
+				gotSlice = []*models.Audio{got}
+			}
+
+			if err := postFindAudios(ctx, want, gotSlice); err != nil {
+				t.Errorf("loadAudioRelationships() error = %v", err)
+				return
+			}
+
+			if len(want) == 0 {
+				assert.Nil(got)
+			} else {
+				require.NotNil(t, got)
+				assert.Equal(want[0], got)
+			}
 		})
 	}
 }
