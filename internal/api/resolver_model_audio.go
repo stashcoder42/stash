@@ -242,10 +242,27 @@ func (r *audioResolver) OHistory(ctx context.Context, obj *models.Audio) ([]*tim
 }
 
 func (r *audioResolver) AudioStreams(ctx context.Context, obj *models.Audio) ([]*AudioStreamEndpoint, error) {
+	config := manager.GetInstance().Config
+
 	baseURL, _ := ctx.Value(BaseURLCtxKey).(string)
 	builder := urlbuilders.NewAudioURLBuilder(baseURL, obj)
 
+	// Build the base stream URL with signing params or apikey
 	streamURL := builder.GetStreamURL("")
+	if config.HasCredentials() {
+		userID := session.GetCurrentUserID(ctx)
+		if userID == nil {
+			return nil, fmt.Errorf("user ID not found")
+		}
+		streamURL.RawQuery = signedParams(config, *userID, signedurl.DerivePrefix(streamURL.Path)).Encode()
+	} else {
+		apiKey := config.GetAPIKey()
+		if apiKey != "" {
+			v := streamURL.Query()
+			v.Set("apikey", apiKey)
+			streamURL.RawQuery = v.Encode()
+		}
+	}
 
 	var managerEndpoints []*manager.AudioStreamEndpoint
 

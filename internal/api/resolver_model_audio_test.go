@@ -273,6 +273,118 @@ func TestAudioResolver_Paths_SignedWhenCredentialsConfigured(t *testing.T) {
 	db.AssertExpectations(t)
 }
 
+func TestAudioResolver_AudioStreams_Unsigned(t *testing.T) {
+	// No credentials configured: base stream URL handed to
+	// manager.GetAudioStreamPaths must be unsigned (and carry no apikey,
+	// since none is configured either).
+	setTestManagerConfig(false)
+
+	db := mocks.NewDatabase()
+
+	r := &audioResolver{
+		Resolver: &Resolver{
+			repository: db.Repository(),
+		},
+	}
+
+	audioFile := &models.AudioFile{
+		BaseFile:   &models.BaseFile{},
+		AudioCodec: "flac",
+	}
+	audio := &models.Audio{
+		ID:    1,
+		Files: models.NewRelatedFiles([]models.File{audioFile}),
+	}
+
+	baseURL := "http://localhost:9999"
+	ctx := context.WithValue(context.Background(), BaseURLCtxKey, baseURL)
+
+	result, err := r.AudioStreams(ctx, audio)
+
+	assert.NoError(t, err)
+	if assert.NotEmpty(t, result) {
+		for _, ep := range result {
+			assert.True(t, strings.HasPrefix(ep.URL, "http://localhost:9999/audio/1/stream"))
+			assert.NotContains(t, ep.URL, "signature=")
+			assert.NotContains(t, ep.URL, "apikey=")
+		}
+	}
+}
+
+func TestAudioResolver_AudioStreams_SignedWhenCredentialsConfigured(t *testing.T) {
+	// Credentials configured + user in context: the base stream URL handed
+	// to manager.GetAudioStreamPaths must be signed, mirroring
+	// sceneResolver.SceneStreams / queryResolver.SceneStreams. This is the
+	// endpoint AirPlay/Chromecast clients actually consume, so this is the
+	// scenario #6529 exists to fix.
+	setTestManagerConfig(true)
+
+	db := mocks.NewDatabase()
+
+	r := &audioResolver{
+		Resolver: &Resolver{
+			repository: db.Repository(),
+		},
+	}
+
+	// Give the audio a real primary file so manager.GetAudioStreamPaths
+	// returns endpoints instead of short-circuiting to (nil, nil). This
+	// lets the test observe the signed query string on the returned
+	// endpoint URLs, rather than merely asserting "no error".
+	audioFile := &models.AudioFile{
+		BaseFile:   &models.BaseFile{},
+		AudioCodec: "flac",
+	}
+	audio := &models.Audio{
+		ID:    1,
+		Files: models.NewRelatedFiles([]models.File{audioFile}),
+	}
+
+	baseURL := "http://localhost:9999"
+	ctx := context.WithValue(context.Background(), BaseURLCtxKey, baseURL)
+	ctx = session.SetCurrentUserID(ctx, "testuser")
+
+	result, err := r.AudioStreams(ctx, audio)
+
+	assert.NoError(t, err)
+	if assert.NotEmpty(t, result) {
+		for _, ep := range result {
+			assert.True(t, strings.HasPrefix(ep.URL, "http://localhost:9999/audio/1/stream"))
+			assert.Contains(t, ep.URL, "signature=")
+			assert.Contains(t, ep.URL, "cid=")
+			assert.Contains(t, ep.URL, "expires=")
+			assert.NotContains(t, ep.URL, "apikey=")
+		}
+	}
+}
+
+func TestAudioResolver_AudioStreams_SignedWithoutUserIDErrors(t *testing.T) {
+	// Credentials configured but no user in context: must error, matching
+	// sceneResolver.SceneStreams / audioResolver.Paths.
+	setTestManagerConfig(true)
+
+	db := mocks.NewDatabase()
+
+	r := &audioResolver{
+		Resolver: &Resolver{
+			repository: db.Repository(),
+		},
+	}
+
+	audio := &models.Audio{
+		ID:    1,
+		Files: models.NewRelatedFiles([]models.File{}),
+	}
+
+	baseURL := "http://localhost:9999"
+	ctx := context.WithValue(context.Background(), BaseURLCtxKey, baseURL)
+
+	result, err := r.AudioStreams(ctx, audio)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
 func TestAudioResolver_Paths_SignedWithoutUserIDErrors(t *testing.T) {
 	// Credentials configured but no user in context: must error, not panic
 	// or silently produce an unscoped/unsigned URL.
