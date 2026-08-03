@@ -101,7 +101,7 @@ Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 | 3 | `2b29207f1` | Upgrade go 1.25 / golangci-lint (#6869) | Lint fixes in `pkg/audio/scan.go` if linter flags them | ⬜ |
 | 4 | `fc0b2a5d9` | Fix OR sub-filter join type (#6920) | Ported to `audio_filter.go` AND `audio_marker_filter.go` (commit `ad5fa21f9`). Fix is a statement reorder — `handleCriterion` must run before `handleSubFilter` — not a join-type edit | ✅ |
 | 5 | `bb67152f9` | Related object resolvers on file graphql types (#6938) | Ported (commit `8abbc2f66`). Adds `AudioFile.audios`, `AudioStore.GetManyIDsByFileIDs`, and an `AudioIDsByFileID` loader — distinct from the pre-existing `AudioFileIDsLoader`, which maps the opposite direction | ✅ |
-| 6 | `d04ecc4f8` | Signed urls for airplay (#6529) | Port — refactors `GetCaptionPath`/`GetCaptionURL` + HMAC signing; applies to any authenticated stream, not just video | ⬜ |
+| 6 | `d04ecc4f8` | Signed urls for airplay (#6529) | Ported (commits `6e6e1e286`, `320159b74`). Signs both `audioResolver.Paths` and `audioResolver.AudioStreams`; added `GetCaptionPath`. Marker endpoints stay unsigned, matching scene. Audio has no `Query.audioStreams`, so scene's third signing site has no counterpart | ✅ |
 | 7 | `f3bfd8db7` | `scene_filter` param on findDuplicateScenes (#6884) | Largest backend change (333 lines). Port if audio exposes a duplicate finder; else mark n/a with reason | ⬜ |
 | 8 | `db4b33f53` | Size summary should represent all files (#7006) | Ported to `pkg/sqlite/audio.go` (commit `833fc2450`). Also fixed a worse audio-only defect found alongside it: totals ignored the query filter entirely. Audio now has `queryGroupedFields` mirroring scene's | ✅ |
 | 9 | `8a98b72c1` | json.Number custom field filters (#7040) | **No code to port** — the fix lives in shared `pkg/sqlite/custom_fields.go:105` and arrived with the merge; `AudioStore` embeds the same `customFieldsStore`. Audio had no custom-field tests at all, so regression tests were added instead (commit `88646ad83`). Verified decisive: removing the `json.Number` branch makes them fail | ✅ |
@@ -120,7 +120,7 @@ Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 | 17 | `c637b2931` | `data-action` attributes (#6977) | Port to `OCounterButton.tsx` | ⬜ |
 | 18 | `1534587cb` | Safari auto-start on transcode (#7016) | Review — transcode path is video-specific | ⬜ |
 | 19 | `f222bddf9` | Memoize cards / IntersectionObserver churn (#6935) | Port to `AudioCard.tsx` — perf fix, 179 lines | ⬜ |
-| 20 | `7b5e84d69` | Signed caption URLs with auth (#7069) | Port to `AudioPlayer.tsx` alongside item 6 | ⬜ |
+| 20 | `7b5e84d69` | Signed caption URLs with auth (#7069) | Ported to `AudioPlayer.tsx` (commit `6e6e1e286`). Builds the caption URL via the `URL` API so appending `lang`/`type` cannot corrupt a signed query string | ✅ |
 | 21 | `5bbd821e5` | Respect wall preview type (#7017) | Port to `AudioWallPanel.tsx`, `AudioMarkerWallPanel.tsx` | ⬜ |
 | 22 | `afdaa082b` | Plugin UI extension hooks (#7117) | Port to `AudioList.tsx`, `AudioMarkerList.tsx` | ⬜ |
 | 23 | `634f567e3` | Consolidate cover buttons — UI half (#6924) | Port to `Audio.tsx`, `AudioEditPanel.tsx` | ⬜ |
