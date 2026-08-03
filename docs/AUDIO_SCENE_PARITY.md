@@ -31,7 +31,7 @@ ported.
 | `ui/v2.5/src/components/Scenes/SceneCard.tsx` | `ui/v2.5/src/components/Audios/AudioCard.tsx` |
 | `ui/v2.5/src/components/Scenes/SceneList.tsx` | `ui/v2.5/src/components/Audios/AudioList.tsx` |
 | `ui/v2.5/src/components/Scenes/SceneMarkerList.tsx` | `ui/v2.5/src/components/Audios/AudioMarkerList.tsx` |
-| `ui/v2.5/src/components/Scenes/SceneMarkerWallPanel.tsx` | `ui/v2.5/src/components/Audios/AudioMarkerWallPanel.tsx` |
+| `ui/v2.5/src/components/Scenes/SceneMarkerWallPanel.tsx` | `ui/v2.5/src/components/Audios/AudioMarkerWallPanel.tsx` ⚠️ *not a structural twin — see below* |
 | `ui/v2.5/src/components/Scenes/SceneWallPanel.tsx` | `ui/v2.5/src/components/Audios/AudioWallPanel.tsx` |
 | `ui/v2.5/src/components/Scenes/SceneDetails/Scene.tsx` | `ui/v2.5/src/components/Audios/AudioDetails/Audio.tsx` |
 | `ui/v2.5/src/components/Scenes/SceneDetails/SceneEditPanel.tsx` | `ui/v2.5/src/components/Audios/AudioDetails/AudioEditPanel.tsx` |
@@ -64,6 +64,15 @@ that reason is what stops the next resync from re-litigating the same commit.
 
 Pure-formatting sweeps (biome/prettier reformats) are **Skip** — handle them by
 running the formatter over audio files, not by hand-porting hunks.
+
+The `<LAST_SYNCED>..upstream/develop` range only catches commits *newer* than
+the last sync. It does not catch scene fixes that predate it and were never
+ported in the first place — audio was branched from an older scene, so some
+gaps are arbitrarily old. Upstream `74a8f2e5d` (#6649, disable wall links while
+selecting) was found this way: it sat outside every sync range and only
+surfaced because a reviewer diffed the audio and scene files side by side.
+When porting a fix, diff the whole twin function against its scene counterpart
+rather than applying the upstream hunk in isolation.
 
 After porting, regenerate rather than hand-editing generated files:
 
@@ -115,13 +124,13 @@ Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 
 | # | Upstream | Change | Audio action | Status |
 | --- | --- | --- | --- | --- |
-| 15 | `98074e3b5` | Wall item double history push (#6803) | Port to `AudioWallPanel.tsx`, `AudioMarkerWallPanel.tsx` — real bug | ⬜ |
+| 15 | `98074e3b5` | Wall item double history push (#6803) | Ported to `AudioWallPanel.tsx` (commit `3f485b9d0`). Real bug — `handleClick` was on both the item div and the nested img. **Not applicable to `AudioMarkerWallPanel.tsx`**, which is a plain card grid with no gallery, no `handleClick` and no `history.push` | ✅ |
 | 16 | `083ba25d0` | ui package updates sprint 1 (#6777) | Port to `AudioEditPanel.tsx` (2 lines) | ⬜ |
 | 17 | `c637b2931` | `data-action` attributes (#6977) | Port to `OCounterButton.tsx` | ⬜ |
 | 18 | `1534587cb` | Safari auto-start on transcode (#7016) | **N/A while audio has no source-selector** (conditional — see note below). The fix guards two unconditional `player.play()` calls inside `SourceSelectorPlugin`; `AudioPlayer/` has no `source-selector.ts` and nothing calls `setShouldAutoplay`. Audited every `.play()` in the audio player: hotkey toggle, external-seek handler, and the one-shot autostart effect — none is a failover/preload path. `AudioPlayer.tsx` sets a single source with no `player.on("error")` handler and no next-source retry | ➖ |
 | 19 | `f222bddf9` | Memoize cards / IntersectionObserver churn (#6935) | Port to `AudioCard.tsx` — perf fix, 179 lines | ⬜ |
 | 20 | `7b5e84d69` | Signed caption URLs with auth (#7069) | Ported to `AudioPlayer.tsx` (commit `6e6e1e286`). Builds the caption URL via the `URL` API so appending `lang`/`type` cannot corrupt a signed query string | ✅ |
-| 21 | `5bbd821e5` | Respect wall preview type (#7017) | Port to `AudioWallPanel.tsx`, `AudioMarkerWallPanel.tsx` | ⬜ |
+| 21 | `5bbd821e5` | Respect wall preview type (#7017) | **Mostly N/A** (commit `3f485b9d0`). Audio has no video or animated preview, so there is no preview type to respect — `wallPlayback` has nothing to select. Adopted the shared `getFirstValidPreviewSource` helper anyway to match scene's structure and kill a dead ternary (both branches returned `paths.cover`). `paths.preview` is deliberately not a fallback: its `/thumbnail` route reads the same blob via the same `GetCover` call as `/cover`. Not applicable to `AudioMarkerWallPanel.tsx` — no preview-source selection exists there | ✅ |
 | 22 | `afdaa082b` | Plugin UI extension hooks (#7117) | Port to `AudioList.tsx`, `AudioMarkerList.tsx` | ⬜ |
 | 23 | `634f567e3` | Consolidate cover buttons — UI half (#6924) | Port to `Audio.tsx`, `AudioEditPanel.tsx` | ⬜ |
 
@@ -154,6 +163,13 @@ needs its own fix; none is a port from upstream.
   resolved `activeTabKey` from `useTabKey()`, never the raw `tabKey` route
   param. Audio tabs have twice been added using `tabKey`, which breaks the
   panel whenever audio is the *resolved default* tab (raw param is `undefined`).
+- `AudioMarkerWallPanel.tsx` is listed in the twin map for routing purposes but
+  is **not** a structural copy of `SceneMarkerWallPanel.tsx`. Scene's is a
+  `react-photo-gallery` wall; audio's is a plain card grid that delegates to
+  `AudioMarkerCard`. It has no `handleClick`, no `history.push`, and no
+  preview-source selection. Upstream fixes to scene's marker wall usually do
+  **not** apply — check the actual file before assuming a row covers it. Two
+  ledger rows (15, 21) initially overclaimed on this and were corrected.
 - Ledger row 18 (#7016, Safari auto-start) is N/A for the *current* tree, not
   permanently. The backend already returns multiple endpoints from
   `audioResolver.AudioStreams`; the frontend just uses index 0 and never fails
