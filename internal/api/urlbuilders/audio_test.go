@@ -85,6 +85,28 @@ func TestAudioURLBuilder_GetThumbnailURL(t *testing.T) {
 	assert.Equal(t, expected, result)
 }
 
+func TestAudioURLBuilderGetCaptionPath(t *testing.T) {
+	b := AudioURLBuilder{
+		BaseURL: "http://localhost:9999",
+		AudioID: "123",
+	}
+
+	const want = "/audio/123/caption"
+	if got := b.GetCaptionPath(); got != want {
+		t.Errorf("GetCaptionPath() = %q, want %q", got, want)
+	}
+
+	const wantURL = "http://localhost:9999/audio/123/caption"
+	if got := b.GetCaptionURL(); got != wantURL {
+		t.Errorf("GetCaptionURL() = %q, want %q", got, wantURL)
+	}
+
+	// GetCaptionURL must always equal BaseURL + GetCaptionPath()
+	if got, want := b.GetCaptionURL(), b.BaseURL+b.GetCaptionPath(); got != want {
+		t.Errorf("GetCaptionURL() = %q, want BaseURL+GetCaptionPath() = %q", got, want)
+	}
+}
+
 func TestAudioURLBuilder_GetStreamURL_PanicOnInvalidURL(t *testing.T) {
 	// Create a builder with an invalid base URL that would cause url.Parse to fail
 	builder := AudioURLBuilder{

@@ -564,12 +564,16 @@ export const AudioPlayer: React.FC<IAudioPlayerProps> = PatchComponent(
           hasDefault = true;
         }
 
+        const captionURL = new URL(audio.paths.caption, window.location.href);
+        captionURL.searchParams.set("lang", lang);
+        captionURL.searchParams.set("type", caption.caption_type);
+
         player.addRemoteTextTrack(
           {
             kind: "captions",
             language: lang,
             label: label,
-            src: `${audio.paths.caption}?lang=${lang}&type=${caption.caption_type}`,
+            src: captionURL.toString(),
             default: setAsDefault,
           },
           false

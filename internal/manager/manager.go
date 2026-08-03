@@ -83,6 +83,14 @@ func GetInstance() *Manager {
 	return instance
 }
 
+// SetInstanceForTesting sets the package-level Manager instance returned by
+// GetInstance. It exists so unit tests can exercise resolver code paths that
+// call GetInstance without going through the full Initialize setup. It is
+// not intended for use outside of tests.
+func SetInstanceForTesting(m *Manager) {
+	instance = m
+}
+
 func (s *Manager) SetBlobStoreOptions() {
 	storageType := s.Config.GetBlobsStorage()
 	blobsPath := s.Config.GetBlobsPath()

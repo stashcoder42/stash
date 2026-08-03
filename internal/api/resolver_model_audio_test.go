@@ -3,15 +3,32 @@ package api
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stashapp/stash/internal/api/loaders"
+	"github.com/stashapp/stash/internal/manager"
+	"github.com/stashapp/stash/internal/manager/config"
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/models/mocks"
+	"github.com/stashapp/stash/pkg/session"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+// setTestManagerConfig initializes the manager and config singletons used by
+// GetInstance() so resolver code under test (e.g. audioResolver.Paths) can
+// read credentials/signing configuration without a full manager.Initialize.
+func setTestManagerConfig(hasCredentials bool) {
+	cfg := config.InitializeEmpty()
+	if hasCredentials {
+		cfg.SetString(config.Username, "testuser")
+		cfg.SetPassword("testpass")
+	}
+	cfg.SetString(config.JWTSignKey, "test-jwt-sign-key")
+	manager.SetInstanceForTesting(&manager.Manager{Config: cfg})
+}
 
 func TestAudioResolver_Date(t *testing.T) {
 	r := &audioResolver{}
@@ -166,6 +183,9 @@ func TestAudioResolver_Urls(t *testing.T) {
 }
 
 func TestAudioResolver_Paths(t *testing.T) {
+	// No credentials configured: streams/captions should be unsigned.
+	setTestManagerConfig(false)
+
 	// Create a mock database
 	db := mocks.NewDatabase()
 
@@ -195,13 +215,90 @@ func TestAudioResolver_Paths(t *testing.T) {
 	assert.NotNil(t, result.Stream)
 	assert.NotNil(t, result.Cover)
 	assert.NotNil(t, result.Preview)
+	assert.NotNil(t, result.Caption)
 
 	assert.Contains(t, *result.Stream, "/audio/1/stream")
 	assert.Contains(t, *result.Cover, "/audio/1/cover")
 	assert.Contains(t, *result.Preview, "/audio/1/thumbnail")
+	assert.Equal(t, "http://localhost:9999/audio/1/caption", *result.Caption)
+
+	// Unsigned URLs must not carry signed URL query params.
+	assert.NotContains(t, *result.Stream, "signature=")
+	assert.NotContains(t, *result.Caption, "signature=")
 
 	// Verify that the expected repository calls were made
 	db.AssertExpectations(t)
+}
+
+func TestAudioResolver_Paths_SignedWhenCredentialsConfigured(t *testing.T) {
+	// Credentials configured: streams/captions should be HMAC-signed and
+	// scoped to the current user, mirroring sceneResolver.Paths.
+	setTestManagerConfig(true)
+
+	db := mocks.NewDatabase()
+
+	r := &audioResolver{
+		Resolver: &Resolver{
+			repository: db.Repository(),
+		},
+	}
+
+	audio := &models.Audio{
+		ID:        1,
+		Checksum:  "abc123",
+		UpdatedAt: time.Unix(1234567890, 0),
+	}
+
+	db.Audio.On("HasCover", mock.Anything, 1).Return(false, nil).Once()
+
+	baseURL := "http://localhost:9999"
+	ctx := context.WithValue(context.Background(), BaseURLCtxKey, baseURL)
+	ctx = session.SetCurrentUserID(ctx, "testuser")
+
+	result, err := r.Paths(ctx, audio)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.NotNil(t, result.Stream)
+	assert.NotNil(t, result.Caption)
+
+	assert.True(t, strings.HasPrefix(*result.Stream, "http://localhost:9999/audio/1/stream?"))
+	assert.Contains(t, *result.Stream, "signature=")
+	assert.Contains(t, *result.Stream, "cid=")
+	assert.Contains(t, *result.Stream, "expires=")
+
+	assert.True(t, strings.HasPrefix(*result.Caption, "http://localhost:9999/audio/1/caption?"))
+	assert.Contains(t, *result.Caption, "signature=")
+
+	db.AssertExpectations(t)
+}
+
+func TestAudioResolver_Paths_SignedWithoutUserIDErrors(t *testing.T) {
+	// Credentials configured but no user in context: must error, not panic
+	// or silently produce an unscoped/unsigned URL.
+	setTestManagerConfig(true)
+
+	db := mocks.NewDatabase()
+
+	r := &audioResolver{
+		Resolver: &Resolver{
+			repository: db.Repository(),
+		},
+	}
+
+	audio := &models.Audio{
+		ID:        1,
+		Checksum:  "abc123",
+		UpdatedAt: time.Unix(1234567890, 0),
+	}
+
+	baseURL := "http://localhost:9999"
+	ctx := context.WithValue(context.Background(), BaseURLCtxKey, baseURL)
+
+	result, err := r.Paths(ctx, audio)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
 }
 
 // Helper function to create a context with real loaders backed by mock repository

@@ -47,6 +47,10 @@ func (b AudioURLBuilder) GetThumbnailURL() string {
 	return b.BaseURL + "/audio/" + b.AudioID + "/thumbnail?t=" + b.UpdatedAt
 }
 
+func (b AudioURLBuilder) GetCaptionPath() string {
+	return "/audio/" + b.AudioID + "/caption"
+}
+
 func (b AudioURLBuilder) GetCaptionURL() string {
-	return b.BaseURL + "/audio/" + b.AudioID + "/caption"
+	return b.BaseURL + b.GetCaptionPath()
 }

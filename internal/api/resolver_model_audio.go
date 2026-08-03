@@ -2,12 +2,15 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/stashapp/stash/internal/api/loaders"
 	"github.com/stashapp/stash/internal/api/urlbuilders"
 	"github.com/stashapp/stash/internal/manager"
 	"github.com/stashapp/stash/pkg/models"
+	"github.com/stashapp/stash/pkg/session"
+	"github.com/stashapp/stash/pkg/signedurl"
 )
 
 func (r *audioResolver) getFiles(ctx context.Context, obj *models.Audio) ([]models.File, error) {
@@ -49,11 +52,33 @@ func (r *audioResolver) Files(ctx context.Context, obj *models.Audio) ([]*AudioF
 
 func (r *audioResolver) Paths(ctx context.Context, obj *models.Audio) (*AudioPathsType, error) {
 	baseURL, _ := ctx.Value(BaseURLCtxKey).(string)
+	config := manager.GetInstance().Config
 	builder := urlbuilders.NewAudioURLBuilder(baseURL, obj)
 
-	streamURL := builder.GetStreamURL("").String()
+	var streamPath string
+	var captionBasePath string
+	if config.HasCredentials() {
+		userID := session.GetCurrentUserID(ctx)
+		if userID == nil {
+			return nil, fmt.Errorf("user ID not found")
+		}
+
+		// Sign the stream prefix
+		streamURL := builder.GetStreamURL("")
+		streamURL.RawQuery = signedParams(config, *userID, signedurl.DerivePrefix(streamURL.Path)).Encode()
+		streamPath = streamURL.String()
+
+		// Sign the caption prefix
+		captionBase := builder.GetCaptionURL()
+		captionBasePath = captionBase + "?" + signedParams(config, *userID, builder.GetCaptionPath()).Encode()
+	} else {
+		apiKey := config.GetAPIKey()
+		streamURL := builder.GetStreamURL(apiKey)
+		streamPath = streamURL.String()
+		captionBasePath = builder.GetCaptionURL()
+	}
+
 	thumbnailURL := builder.GetThumbnailURL()
-	captionBasePath := builder.GetCaptionURL()
 
 	// Check if audio has a cover before including the cover URL
 	var coverURL *string
@@ -72,7 +97,7 @@ func (r *audioResolver) Paths(ctx context.Context, obj *models.Audio) (*AudioPat
 	}
 
 	return &AudioPathsType{
-		Stream:  &streamURL,
+		Stream:  &streamPath,
 		Cover:   coverURL,
 		Preview: &thumbnailURL,
 		Caption: &captionBasePath,
