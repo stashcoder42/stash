@@ -635,6 +635,14 @@ export function setObjectFilter(
       }
       out.audios_filter = relatedFilterOutput as AudioFilterType;
       break;
+    case FilterMode.AudioMarkers:
+      // Audio markers have no cross-object filter surface: there is no
+      // audio_markers_filter or audio_marker_count in the schema, unlike
+      // scene markers. Fall back to the audio count so the sidebar filter
+      // still narrows to objects that have audios. Without this case the
+      // default below threw and took down the whole audio markers page.
+      out.audio_count = makeCountCriterion(options);
+      break;
     default:
       throw new Error("Invalid filter mode");
   }
