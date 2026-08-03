@@ -694,6 +694,7 @@ export const FilteredAudioList = (props: IFilteredAudios) => {
             />
 
             <FilterTags
+              view={view}
               criteria={filter.criteria}
               onEditCriterion={(c) => showEditFilter(c.criterionOption.type)}
               onRemoveCriterion={removeCriterion}

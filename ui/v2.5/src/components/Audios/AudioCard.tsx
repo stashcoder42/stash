@@ -20,24 +20,26 @@ interface IAudioPreviewProps {
   image?: string;
 }
 
-export const AudioPreview: React.FC<IAudioPreviewProps> = ({ image }) => {
-  return (
-    <div className={cx("audio-card-preview")}>
-      {image ? (
-        <img
-          className="audio-card-preview-image"
-          loading="lazy"
-          src={image}
-          alt=""
-        />
-      ) : (
-        <div className="audio-card-preview-placeholder">
-          <Icon icon={faHeadphones} size="3x" />
-        </div>
-      )}
-    </div>
-  );
-};
+export const AudioPreview: React.FC<IAudioPreviewProps> = React.memo(
+  ({ image }) => {
+    return (
+      <div className={cx("audio-card-preview")}>
+        {image ? (
+          <img
+            className="audio-card-preview-image"
+            loading="lazy"
+            src={image}
+            alt=""
+          />
+        ) : (
+          <div className="audio-card-preview-placeholder">
+            <Icon icon={faHeadphones} size="3x" />
+          </div>
+        )}
+      </div>
+    );
+  }
+);
 
 interface IAudioCardProps {
   audio: GQL.SlimAudioDataFragment;
@@ -51,9 +53,8 @@ interface IAudioCardProps {
   onSelectedChanged?: (selected: boolean, shiftKey: boolean) => void;
 }
 
-const AudioCardPopovers = PatchComponent(
-  "AudioCard.Popovers",
-  (props: IAudioCardProps) => {
+const AudioCardPopovers = React.memo(
+  PatchComponent("AudioCard.Popovers", (props: IAudioCardProps) => {
     function maybeRenderTagPopoverButton() {
       if (props.audio.tags.length <= 0) return;
 
@@ -132,12 +133,11 @@ const AudioCardPopovers = PatchComponent(
     }
 
     return <>{maybeRenderPopoverButtonGroup()}</>;
-  }
+  })
 );
 
-const AudioCardDetails = PatchComponent(
-  "AudioCard.Details",
-  (props: IAudioCardProps) => {
+const AudioCardDetails = React.memo(
+  PatchComponent("AudioCard.Details", (props: IAudioCardProps) => {
     return (
       <div className="scene-card__details">
         <span className="scene-card__date">{props.audio.date}</span>
@@ -151,20 +151,18 @@ const AudioCardDetails = PatchComponent(
         />
       </div>
     );
-  }
+  })
 );
 
-const AudioCardOverlays = PatchComponent(
-  "AudioCard.Overlays",
-  (_props: IAudioCardProps) => {
+const AudioCardOverlays = React.memo(
+  PatchComponent("AudioCard.Overlays", (_props: IAudioCardProps) => {
     // Audio cards don't have studio overlays like scenes
     return null;
-  }
+  })
 );
 
-const AudioCardImage = PatchComponent(
-  "AudioCard.Image",
-  (props: IAudioCardProps) => {
+const AudioCardImage = React.memo(
+  PatchComponent("AudioCard.Image", (props: IAudioCardProps) => {
     const file = useMemo(
       () => (props.audio.files.length > 0 ? props.audio.files[0] : undefined),
       [props.audio]
@@ -191,12 +189,11 @@ const AudioCardImage = PatchComponent(
         {maybeRenderAudioSpecsOverlay()}
       </>
     );
-  }
+  })
 );
 
-export const AudioCard = PatchComponent(
-  "AudioCard",
-  (props: IAudioCardProps) => {
+export const AudioCard = React.memo(
+  PatchComponent("AudioCard", (props: IAudioCardProps) => {
     const file = useMemo(
       () => (props.audio.files.length > 0 ? props.audio.files[0] : undefined),
       [props.audio]
@@ -241,5 +238,5 @@ export const AudioCard = PatchComponent(
         onSelectedChanged={props.onSelectedChanged}
       />
     );
-  }
+  })
 );
