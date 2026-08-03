@@ -161,6 +161,10 @@ export const AudioEditPanel: React.FC<IProps> = ({
     ImageUtils.onImageChange(event, onImageLoad);
   }
 
+  function onResetCover() {
+    formik.setFieldValue("cover_image", null);
+  }
+
   const image = useMemo(() => {
     if (encodingImage) {
       return (
@@ -409,6 +413,15 @@ export const AudioEditPanel: React.FC<IProps> = ({
                 isEditing
                 onImageChange={onCoverImageChange}
                 onImageURL={onImageLoad}
+                // Only offer reset when there is a cover to clear: either one
+                // staged in the form, or an existing stored cover that has not
+                // already been marked for removal (cover_image === null).
+                onReset={
+                  formik.values.cover_image ||
+                  (formik.values.cover_image !== null && audio.paths?.cover)
+                    ? () => onResetCover()
+                    : undefined
+                }
               />
             </Form.Group>
           </Col>
