@@ -15,6 +15,7 @@ import TextUtils from "src/utils/text";
 import { useIntl } from "react-intl";
 import { useDragMoveSelect } from "../Shared/GridCard/dragMoveSelect";
 import cx from "classnames";
+import { getFirstValidPreviewSource } from "src/utils/wallPreview";
 
 interface IAudioPhoto {
   audio: GQL.SlimAudioDataFragment;
@@ -59,7 +60,7 @@ export const AudioWallItem: React.FC<
     divStyle.top = props.top;
   }
 
-  var handleClick = function handleClick(event: React.MouseEvent) {
+  function handleClick(event: React.MouseEvent) {
     if (props.selecting && props.onSelectedChanged) {
       props.onSelectedChanged(!props.selected, event.shiftKey);
       event.preventDefault();
@@ -69,7 +70,7 @@ export const AudioWallItem: React.FC<
     if (props.onClick) {
       props.onClick(event, { index: props.index });
     }
-  };
+  }
 
   const { audio } = props.photo;
   const title = objectTitle(audio);
@@ -112,14 +113,24 @@ export const AudioWallItem: React.FC<
         width={width}
         height={height}
         alt={props.photo.alt}
-        onClick={handleClick}
+        // having a click handler here results in multiple calls to handleClick
+        // due to having the same click handler on the parent div
         onError={() => {
           props.photo.onError?.(props.photo);
         }}
       />
       <div className="lineargradient">
         <footer className="wall-item-footer">
-          <Link to={props.photo.link} onClick={(e) => e.stopPropagation()}>
+          <Link
+            to={props.photo.link}
+            onClick={(e) => {
+              if (props.selecting) {
+                e.preventDefault();
+                handleClick(e);
+              }
+              e.stopPropagation();
+            }}
+          >
             {title && (
               <TruncatedText
                 text={title}
@@ -163,6 +174,18 @@ const breakpointZoomHeights = [
   { minWidth: 1400, heights: [160, 240, 300, 480] },
 ];
 
+// Unlike scenes, audio has no video or animated preview, so there is no wall
+// preview type to respect - the only candidate source is the cover image.
+//
+// `paths.preview` is deliberately NOT listed as a fallback: the /thumbnail
+// route it points at reads the same blob via the same GetCover call as
+// /cover (internal/api/routes_audio.go), so it fails in exactly the cases
+// where the cover fails. Add a fallback here only if audio gains a preview
+// image that is genuinely distinct from its cover.
+function getAudioPreviewSources(audio: GQL.SlimAudioDataFragment) {
+  return [{ src: audio.paths.cover, mediaType: "image" }] as const;
+}
+
 const AudioWall: React.FC<IAudioWallProps> = ({
   audios,
   audioQueue,
@@ -193,12 +216,14 @@ const AudioWall: React.FC<IAudioWallProps> = ({
     return audios.map((a, index) => {
       const { width, height } = getDimensions(a);
 
+      const previewSource = getFirstValidPreviewSource(
+        getAudioPreviewSources(a),
+        erroredImgs
+      );
+
       return {
         audio: a,
-        src:
-          a.paths.cover && !erroredImgs.includes(a.paths.cover)
-            ? a.paths.cover!
-            : a.paths.cover!,
+        src: previewSource.src,
         link: audioQueue
           ? audioQueue.makeLink(a.id, { audioIndex: index })
           : `/audios/${a.id}`,
