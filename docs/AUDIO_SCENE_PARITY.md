@@ -96,8 +96,10 @@ changes the SQLite query planner and makes unrelated tests
 
 ## Ledger
 
-**LAST_SYNCED:** `2da807431` (pre-port baseline — bump to `afdaa082b` when the
-table below is fully worked through)
+**LAST_SYNCED:** `afdaa082b`
+
+Every row in the tables below has been adjudicated. The next resync should run
+the procedure above with this commit as the base.
 
 Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 
@@ -138,9 +140,9 @@ Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 
 | # | Upstream | Change | Action | Status |
 | --- | --- | --- | --- | --- |
-| 24 | `b8c17f780` | Replace prettier/eslint with biome (#6996) | Run biome over audio UI files as one isolated commit | ⬜ |
-| 25 | `5ed738558` | Biome fixes (#7004) | Covered by the sweep above | ⬜ |
-| 26 | `4bd16c29b` | Biome format (#7005) | Covered by the sweep above | ⬜ |
+| 24 | `b8c17f780` | Replace prettier/eslint with biome (#6996) | **No sweep needed.** `pnpm run format-check` reports 0 files needing changes across all 644 in scope. `biome.jsonc` includes `**` with only generated/locale exclusions, so the audio files are genuinely checked, not skipped. The audio UI was formatted during the merge (commit `1aa095f15`) and everything touched since was verified by `lint:js` | ➖ |
+| 25 | `5ed738558` | Biome fixes (#7004) | Covered by row 24 — tree is format-clean | ➖ |
+| 26 | `4bd16c29b` | Biome format (#7005) | Covered by row 24 — tree is format-clean | ➖ |
 
 ## Known parity gaps (not upstream ports — audio was built without these)
 
