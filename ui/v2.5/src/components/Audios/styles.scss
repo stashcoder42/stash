@@ -91,15 +91,90 @@
   }
 }
 
-// Marker card sizing. The audio markers panel is a copy of scene's but was
-// never given the matching rules, so cards collapsed to the width of their
-// content - a narrow strip with the title wrapped one character per line.
-// Mirrors `.scene-markers-panel` in Scenes/styles.scss.
+// Marker wall item styling.
+//
+// The audio markers panel is a copy of scene's but was never given the matching
+// rules. Scene gets its overlay chrome from the `.scene-wall, .marker-wall`
+// block in Scenes/styles.scss - selectors that do NOT match audio's
+// `.audio-marker-wall` container - so those rules are reproduced here.
+//
+// Scene's MarkerWallItem is sized imperatively by react-photo-gallery (explicit
+// width/height from the source file's dimensions). Audio deliberately has no
+// gallery layout engine, so the 16:9 box is declared in CSS instead.
+.audio-marker-wall .wall-item {
+  position: relative;
+
+  .lineargradient {
+    background-image: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.3));
+    bottom: 0;
+    height: 100px;
+    position: absolute;
+    width: 100%;
+  }
+
+  &-title {
+    font-weight: bold;
+  }
+
+  &-footer {
+    bottom: 20px;
+    padding: 0 1rem;
+    position: absolute;
+    text-shadow: 1px 1px 3px black;
+    transition: 0s opacity;
+    width: 100%;
+    z-index: 2;
+
+    @media (min-width: 768px) {
+      opacity: 0;
+    }
+
+    &:hover {
+      .wall-item-title {
+        text-decoration: underline;
+      }
+    }
+
+    a {
+      color: white;
+    }
+  }
+
+  &:hover .wall-item-footer {
+    opacity: 1;
+    transition: 1s opacity;
+    transition-delay: 500ms;
+
+    a {
+      text-decoration: none;
+    }
+  }
+
+  &.show-title .wall-item-footer {
+    opacity: 1;
+  }
+}
+
 .audio-markers-panel {
   .wall .wall-item {
-    height: inherit;
-    min-height: 14rem;
+    // 16:9, matching the scene marker card. The preview image is 640x360 and
+    // the title is overlaid on it rather than stacked below, so the item box is
+    // exactly the image box - no `min-height` and no `height: inherit`, both of
+    // which previously stretched the card into a portrait strip.
+    aspect-ratio: 16 / 9;
+    height: auto;
+    max-height: none;
+    max-width: none;
+    // `.wall .wall-item` sets `min-height: 210px` under a max-width:576px media
+    // query, which would stretch the box past 16:9 on narrow screens.
+    min-height: 0;
     width: calc(100% - 2rem);
+
+    .wall-item-media {
+      height: 100%;
+      object-fit: cover;
+      width: 100%;
+    }
 
     &-missing {
       font-size: 1.5rem;
@@ -109,6 +184,8 @@
       display: none;
     }
 
+    // No hover zoom: the item is already full width, so scaling it would
+    // overflow the panel.
     &:hover {
       .wall-item-container {
         transform: scale(1);
