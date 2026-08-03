@@ -192,7 +192,7 @@ needs its own fix; none is a port from upstream.
 | Audio captions are never populated by scan | `pkg/file/audio/caption.go:49` `AssociateCaptions` has no callers; `internal/manager/task_scan.go:189-191,350` handles only `video.CaptionExts` / `*models.VideoFile` | Captions are fully readable and servable for audio (`resolver_model_audio.go:315-329`, `routes_audio.go:47`) but nothing ever fills them in. Lyrics/transcripts are meaningful for audio, so this is unfinished work, not a non-goal |
 | ~~Audio wall CSS never matches~~ | ~~`styles.scss:98` scoped rules under `.audio-wall-item`; no TSX emitted that class~~ | **Resolved** — the `.audio-wall` block was removed with the wall panel |
 | ~~`AudioMarkerList` has an unreachable Wall branch~~ | ~~`AudioMarkerList.tsx:58-67`~~ | **Resolved** — branch removed. Stale `?disp=2` URLs and saved filters now fall back to the first supported mode rather than rendering blank |
-| ~~Audio marker cards collapse into a narrow strip~~ | ~~`AudioMarkersPanel.tsx:65` renders `.audio-markers-panel` but the sizing rules were scoped to `.scene-markers-panel`~~ | **Resolved** in commit `8e0edbb66` — added the `.audio-markers-panel` equivalent of scene's block. Found while touring the Markers tab; pre-existing, unrelated to the wall removal |
+| ~~Audio marker cards rendered as a portrait box, not 16:9~~ | ~~`AudioMarkerWallPanel` rendered `AudioMarkerCard` (a `GridCard`), stacking ~118px of chrome below the 16:9 image → 427×478~~ | **Resolved** in commit `38ed8e295`, which added `AudioMarkerWallItem` mirroring scene's overlaid-title structure. Both are now 437×246 (ratio 1.78). An earlier attempt (`8e0edbb66`) added `.audio-markers-panel` sizing rules, which fixed the wrapper width but not the aspect ratio — the real cause was the component, not the stylesheet |
 | Audio's `OCounterButton` ignores `sfwContentMode` | `Audios/AudioDetails/OCounterButton.tsx` has no `useConfigurationContext`; it hardcodes the `SweatDrops` icon and the `o_count` message. Scene's reads `sfwContentMode` and swaps to `faThumbsUp` / `o_count_sfw` | SFW mode is honoured in 11 components but leaks on audio detail pages — the non-SFW icon and wording still show. The `o_count_sfw` locale key already exists |
 | `AudioEditPanel` has no custom-fields UI | `AudioUpdateInput.custom_fields` exists in the generated types and `resolver_mutation_audio.go` handles `SetCustomFields`, but the edit panel renders no `<CustomFieldsInput>` — scene's does | Audio custom fields can be set through the API but not through the UI. Plan exists at `docs/superpowers/plans/2026-04-09-audio-custom-fields-last-o-at.md` |
 | `AudioEditPanel` has no Save-and-New | Audio's `onSave(input)` (`AudioEditPanel.tsx:143`); scene's is `onSave(input, andNew?)` with an `onSaveAndNewClick` handler and a matching button | Minor UX divergence — cannot chain audio creation the way scene allows |
@@ -209,6 +209,15 @@ needs its own fix; none is a port from upstream.
   resolved `activeTabKey` from `useTabKey()`, never the raw `tabKey` route
   param. Audio tabs have twice been added using `tabKey`, which breaks the
   panel whenever audio is the *resolved default* tab (raw param is `undefined`).
+- **Check which component renders, not just the CSS.** Audio sometimes reaches
+  for a generic `GridCard` where scene has a purpose-built component. The audio
+  marker wall did this: scene's `MarkerWallItem` overlays the title on the
+  image, so the item box *is* the image box, while `GridCard` stacks metadata
+  below it. The result was a portrait card whose image was already the right
+  shape. Adding sizing rules only widened the wrapper — the aspect ratio could
+  not be fixed in the stylesheet because the extra height was real content.
+  When audio looks wrong next to scene, diff the rendered structure before
+  reaching for CSS.
 - **Widened types do not announce themselves.** When upstream widens a filter
   input (e.g. `IntCriterionInput` → `HierarchicalCountInput`, which adds
   `depth`), audio's field keeps the narrower type. Nothing fails: the narrower
