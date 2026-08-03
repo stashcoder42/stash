@@ -296,6 +296,8 @@ const (
 	audioIdxWithPerformerTwoTags
 	audioIdxWithMarkers      // audio that has audio markers
 	audioIdxWithMarkerAndTag // audio with markers AND tags
+	audioIdxWithChildTag
+	audioIdxWithGrandChildTag
 	// new indexes above
 	lastAudioIdx
 
@@ -570,6 +572,8 @@ var (
 		audioIdxWithTwoPerformerTag:  {tagIdx1WithPerformer, tagIdx2WithPerformer},
 		audioIdxWithPerformerTwoTags: {tagIdx1WithPerformer, tagIdx2WithPerformer},
 		audioIdxWithMarkerAndTag:     {tagIdx3WithScene},
+		audioIdxWithChildTag:         {tagIdxWithParentTag},
+		audioIdxWithGrandChildTag:    {tagIdxWithGrandParent},
 	}
 )
 

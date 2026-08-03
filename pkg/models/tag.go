@@ -31,7 +31,7 @@ type TagFilterType struct {
 	// Filter by number of markers with this tag
 	MarkerCount *HierarchicalCountInput `json:"marker_count"`
 	// Filter by number of audios with this tag
-	AudioCount *IntCriterionInput `json:"audio_count"`
+	AudioCount *HierarchicalCountInput `json:"audio_count"`
 	// Filter by parent tags
 	Parents *HierarchicalMultiCriterionInput `json:"parents"`
 	// Filter by child tags

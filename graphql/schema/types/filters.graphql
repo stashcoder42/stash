@@ -681,7 +681,7 @@ input TagFilterType {
   marker_count: HierarchicalCountInput
 
   "Filter by number of audios with this tag"
-  audio_count: IntCriterionInput
+  audio_count: HierarchicalCountInput
 
   "Filter by parent tags"
   parents: HierarchicalMultiCriterionInput

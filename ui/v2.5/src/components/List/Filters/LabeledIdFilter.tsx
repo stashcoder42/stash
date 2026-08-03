@@ -536,7 +536,7 @@ interface IFilterType {
   marker_count?: InputMaybe<CountCriterionInput>;
   markers_filter?: InputMaybe<SceneMarkerFilterType>;
   audios_filter?: InputMaybe<AudioFilterType>;
-  audio_count?: InputMaybe<IntCriterionInput>;
+  audio_count?: InputMaybe<CountCriterionInput>;
 }
 
 type CountCriterionInput = IntCriterionInput | HierarchicalCountInput;

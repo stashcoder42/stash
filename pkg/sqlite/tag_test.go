@@ -796,6 +796,32 @@ func TestTagQueryCounts(t *testing.T) {
 			includeIdxs: []int{tagIdxWithGroup, tagIdx3WithGroup, tagIdxWithGrandChild, tagIdxWithParentAndChild, tagIdxWithGrandParent},
 			excludeIdxs: []int{tagIdx1WithGroup, tagIdx2WithGroup},
 		},
+		{
+			name:        "audio_count_equals_1",
+			buildFilter: models.TagFilterType{AudioCount: &models.HierarchicalCountInput{Value: 1, Modifier: models.CriterionModifierEquals}},
+			includeIdxs: []int{tagIdxWithScene, tagIdxWithParentTag, tagIdxWithGrandParent},
+			excludeIdxs: []int{tagIdx1WithScene, tagIdx2WithScene, tagIdx3WithScene, tagIdx1WithNothing, tagIdx2WithNothing},
+		},
+		{
+			name: "audio_count_equals_1_depth_1",
+			buildFilter: models.TagFilterType{AudioCount: &models.HierarchicalCountInput{
+				Value:    1,
+				Modifier: models.CriterionModifierEquals,
+				Depth:    ptr(1),
+			}},
+			includeIdxs: []int{tagIdxWithScene, tagIdxWithParentTag, tagIdxWithChildTag, tagIdxWithParentAndChild, tagIdxWithGrandParent},
+			excludeIdxs: []int{tagIdx1WithScene, tagIdx2WithScene, tagIdx3WithScene, tagIdx1WithNothing, tagIdx2WithNothing},
+		},
+		{
+			name: "audio_count_equals_1_depth_-1",
+			buildFilter: models.TagFilterType{AudioCount: &models.HierarchicalCountInput{
+				Value:    1,
+				Modifier: models.CriterionModifierEquals,
+				Depth:    ptr(-1),
+			}},
+			includeIdxs: []int{tagIdxWithScene, tagIdxWithParentTag, tagIdxWithChildTag, tagIdxWithGrandChild, tagIdxWithParentAndChild, tagIdxWithGrandParent},
+			excludeIdxs: []int{tagIdx1WithScene, tagIdx2WithScene, tagIdx3WithScene},
+		},
 	}
 
 	for _, tt := range tests {

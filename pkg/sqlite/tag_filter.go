@@ -338,13 +338,6 @@ func (qb *tagFilterHandler) markerCountCriterionHandler(markerCount *models.Hier
 	}
 }
 
-func (qb *tagFilterHandler) audioCountCriterionHandler(audioCount *models.IntCriterionInput) criterionHandlerFunc {
-	return func(ctx context.Context, f *filterBuilder) {
-		if audioCount != nil {
-			f.addLeftJoin("audio_tags", "", "audio_tags.tag_id = tags.id")
-			clause, args := getIntCriterionWhereClause("count(distinct audio_tags.audio_id)", *audioCount)
-
-			f.addHaving(clause, args...)
-		}
-	}
+func (qb *tagFilterHandler) audioCountCriterionHandler(audioCount *models.HierarchicalCountInput) criterionHandlerFunc {
+	return qb.hierarchicalCountHandler(audioCount, "audio_tags", "audio_id")
 }
