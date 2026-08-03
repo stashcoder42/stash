@@ -17,6 +17,17 @@ import { useDragMoveSelect } from "../Shared/GridCard/dragMoveSelect";
 import cx from "classnames";
 import { getFirstValidPreviewSource } from "src/utils/wallPreview";
 
+// NOTE: wall display is a non-goal for audio - see docs/AUDIO_SCENE_PARITY.md
+// "Audio non-goals". The scene wall exists to play many animated previews at
+// once (muted, hover to unmute one tile); audio has no animated asset, and a
+// listener cannot pick one stream out of thirty. This panel therefore renders
+// static cover art in a grid of uniform squares, which is close to a worse
+// Grid mode. It is kept because the display mode is still offered for audio,
+// not because the mode makes sense.
+//
+// Do not port scene wall features here (animated previews, wallPlayback
+// preview-type selection, per-tile audio). They have no audio counterpart.
+
 interface IAudioPhoto {
   audio: GQL.SlimAudioDataFragment;
   link: string;

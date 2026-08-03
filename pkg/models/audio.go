@@ -2,6 +2,12 @@ package models
 
 import "context"
 
+// AudioFilterType deliberately has no phash, resolution, orientation,
+// framerate or video-codec criteria. Those describe a video raster or are
+// derived from extracted frames, so they have no audio meaning - see
+// docs/AUDIO_SCENE_PARITY.md "Audio non-goals" before adding a field here
+// because "scene has it". Audio's own axes are bitrate, sample rate,
+// channels and codec.
 type AudioFilterType struct {
 	OperatorFilter[AudioFilterType]
 	ID      *IntCriterionInput    `json:"id"`

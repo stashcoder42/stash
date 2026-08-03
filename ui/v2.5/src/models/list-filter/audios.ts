@@ -45,6 +45,15 @@ const sortByOptions = [
     },
   ]);
 
+// Audio does not support the Tagger display mode: stash-box has no audio
+// entity to match against, and the tagger's confidence scoring is built on
+// video perceptual hashes. See docs/AUDIO_SCENE_PARITY.md "Audio non-goals".
+//
+// Wall is a non-goal too - it exists to show many autoplaying animated
+// previews at once, which audio has no asset for and which a listener could
+// not parse anyway. It is still listed here only because it predates that
+// decision; audio markers already omit it. Removing it is a deliberate
+// behaviour change, not a cleanup - don't drop it in passing.
 const displayModeOptions = [
   DisplayMode.Grid,
   DisplayMode.List,

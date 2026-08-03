@@ -8,6 +8,35 @@ we still have until it is ported by hand.
 This document is the resync procedure and the running ledger of what has been
 ported.
 
+**Read [Audio non-goals](#audio-non-goals) first.** Some scene features are
+meaningless for audio and must never be ported. Adding them is not progress.
+
+## Audio non-goals
+
+Scene is video. A large part of its feature surface exists to exploit *frames*
+and a *raster* — things audio does not have. Those features are **non-goals**,
+not gaps: they should never be ported, and a future contributor who "notices
+audio is missing them" should stop here.
+
+This section is only for things that are inapplicable **by nature**. Anything
+that would make sense for audio but merely has not been built belongs in
+[Known parity gaps](#known-parity-gaps-not-upstream-ports--audio-was-built-without-these)
+instead. Do not move an unfinished feature here to excuse it.
+
+| Non-goal | Why audio cannot have it |
+| --- | --- |
+| **Wall display mode** | The wall exists to show many autoplaying animated previews at once, muted, with hover-to-unmute one tile (`SceneWallPanel.tsx:90-98,111-116,152-155`). Audio has no animated asset, and a person cannot pick one stream out of thirty playing simultaneously. The masonry layout also assumes varying aspect ratios; audio cover art is uniformly square |
+| **Preview video, animated WebP, sprite sheets, VTT thumbnails** | All are sequences of extracted video frames (`pkg/scene/generate/preview.go`, `sprite.go`). Audio has no frames. Audio's only generated asset is a waveform image (`task_generate_audio.go`), a function of the whole file rather than a timestamp. The seek-bar hover preview (`ScenePlayer/vtt-thumbnails.ts`) consumes these assets and goes with them |
+| **Perceptual hashing (phash) and duplicate detection** | `pkg/hash/videophash/phash.go:81` hashes a sprite of extracted frames. There is no frame substrate for audio. An audio analogue would be acoustic fingerprinting (chromaprint) — a different algorithm and a separate feature, not a port |
+| **Screenshot / cover-from-frame** | `sceneGenerateScreenshot(id, at: Float)` captures the frame at a timestamp. Audio at time *t* has no image |
+| **Resolution, orientation, framerate, width/height, video codec filters and sorts** | Properties of a video raster. `AudioFile` carries Format, Duration, AudioCodec, Bitrate, SampleRate and Channels — there is no resolution axis. Portrait/landscape card styling goes with it |
+| **VR / 360 / stereoscopic projection** | Spatial projection of a spherical or stereo *image* (`ScenePlayer/vrmode.ts`). Nothing to project. Spatial *audio* is a real thing but an entirely different feature |
+| **Resolution-stepped streaming (HLS/DASH ladder)** | "Give me the 480p version" has no meaning for audio. **Careful:** this covers the *resolution ladder* only. Transcoding a FLAC or Opus file a browser cannot decode is perfectly meaningful and is a real gap — see the gap table. Do not use this row to excuse it |
+| **Video filter panel (brightness, contrast, saturation, hue, rotate)** | Applies filters to the video element's picture. No picture |
+| **Marker *visual* preview generation** | `generateMarker` is typed to `*models.VideoFile` and cuts a clip at the marker timestamp. Marker *audio* excerpts are meaningful and already exist (`/audio_marker/{id}/stream`); only the visual preview is out |
+| **Funscript / interactive / haptics** | A funscript is a time→position script, and audio does have time — so this is a non-goal on ecosystem grounds rather than physics: funscripts are keyed to `VideoFile` throughout, and audio funscripts do not exist in the wild. The weakest entry here; revisit if that ever changes |
+| **stash-box / StashDB integration and the Tagger** | stash-box has no audio entity to match against. `pkg/stashbox/` covers scene, performer, studio and tag only, and the submission path posts `scene_ids` to a scene-only endpoint. The Tagger's confidence scoring is also phash-based, so it degenerates for audio by construction. **Blocked upstream rather than impossible** — if stash-box ever adds an audio entity, re-litigate this row. Note audio *does* support URL scraping (`audioByURL`); what it lacks is fingerprint-based identification |
+
 ## Twin file map
 
 | Scene (upstream) | Audio (ours) |
@@ -154,6 +183,11 @@ needs its own fix; none is a port from upstream.
 | --- | --- | --- |
 | `ExportObjectsInput` has no `audios` field | `graphql/schema/types/metadata.graphql:313-323`; UI passes `{audios: …}` through a cast at `ui/v2.5/src/components/Audios/AudioList.tsx:582` | Clicking Export on the Audios list sends an unknown input field; gqlgen rejects it and the UI shows a GraphQL validation error toast. Shipped broken in `feat/audios`; the merge only added a cast to keep it compiling. |
 | `audioResetActivity` lacks partial-reset params | `graphql/schema/schema.graphql:407` is `audioResetActivity(id: ID!)`; scene's at line 340 takes `reset_resume` / `reset_duration`. Resolver hardcodes `ResetActivity(ctx, audioID, true, true)` | Audio cannot reset resume-time and play-duration independently the way scene can. |
+| `audioStreams` advertises URLs that 404 | `internal/manager/audio.go:163,194-209` builds MP3/AAC/OGG/WebM endpoints by appending extensions, but `routes_audio.go:44` registers only `/stream` → `StreamAudioDirect`, a plain `http.ServeFile`. `IsDirectAudioStreamable` is defined and never called | Anything consuming `audioStreams` past index 0 gets a dead URL. This is the *format* transcoding gap — meaningful for audio (a browser that cannot decode FLAC or Opus needs it) and distinct from the resolution-ladder non-goal |
+| Four audio filters are unreachable | `ui/v2.5/src/models/list-filter/audios.ts:66-69` offers `bitrate`, `sample_rate`, `channels` and `audio_codec` in the filter UI, and `pkg/sqlite/audio_filter.go:86-88` implements working SQL — but `AudioFilterType` in `filters.graphql` omits all four, so the values never reach the handlers | User-visible: setting any of these four filters silently does nothing. The corresponding *sorts* do work (`pkg/sqlite/audio.go:950,956`) |
+| Audio captions are never populated by scan | `pkg/file/audio/caption.go:49` `AssociateCaptions` has no callers; `internal/manager/task_scan.go:189-191,350` handles only `video.CaptionExts` / `*models.VideoFile` | Captions are fully readable and servable for audio (`resolver_model_audio.go:315-329`, `routes_audio.go:47`) but nothing ever fills them in. Lyrics/transcripts are meaningful for audio, so this is unfinished work, not a non-goal |
+| Audio wall CSS never matches | `ui/v2.5/src/components/Audios/styles.scss:98` scopes every rule under `.audio-wall-item`; `AudioWallPanel.tsx:87` emits `wall-item`. That class appears in no TSX file | The wall footer, gradient and hover-reveal rules are inert. Moot if wall display is ever removed — see non-goals |
+| `AudioMarkerList` has an unreachable Wall branch | `AudioMarkerList.tsx:58-67` checks `DisplayMode.Wall` before Grid, but `audio-markers.ts:15` offers only Grid | Not reachable from the mode toggle, but a saved filter or a hand-typed `?disp=2` still hits it |
 | Audio's `OCounterButton` ignores `sfwContentMode` | `Audios/AudioDetails/OCounterButton.tsx` has no `useConfigurationContext`; it hardcodes the `SweatDrops` icon and the `o_count` message. Scene's reads `sfwContentMode` and swaps to `faThumbsUp` / `o_count_sfw` | SFW mode is honoured in 11 components but leaks on audio detail pages — the non-SFW icon and wording still show. The `o_count_sfw` locale key already exists |
 | `AudioEditPanel` has no custom-fields UI | `AudioUpdateInput.custom_fields` exists in the generated types and `resolver_mutation_audio.go` handles `SetCustomFields`, but the edit panel renders no `<CustomFieldsInput>` — scene's does | Audio custom fields can be set through the API but not through the UI. Plan exists at `docs/superpowers/plans/2026-04-09-audio-custom-fields-last-o-at.md` |
 | `AudioEditPanel` has no Save-and-New | Audio's `onSave(input)` (`AudioEditPanel.tsx:143`); scene's is `onSave(input, andNew?)` with an `onSaveAndNewClick` handler and a matching button | Minor UX divergence — cannot chain audio creation the way scene allows |

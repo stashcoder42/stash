@@ -41,6 +41,14 @@ type AudioFileType {
   channels: Int
 }
 
+"""
+Audio has no sprite, webp, vtt or preview-video paths. Those are all built
+from extracted video frames, which audio does not have - see
+docs/AUDIO_SCENE_PARITY.md "Audio non-goals".
+
+Note `preview` is a misnomer inherited from the scene copy: it is not an
+animated preview, it resolves to the same waveform/cover blob as `cover`.
+"""
 type AudioPathsType {
   stream: String
   preview: String
