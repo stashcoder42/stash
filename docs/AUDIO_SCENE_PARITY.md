@@ -107,6 +107,16 @@ surfaced because a reviewer diffed the audio and scene files side by side.
 When porting a fix, diff the whole twin function against its scene counterpart
 rather than applying the upstream hunk in isolation.
 
+**Check our own files too, not just the twins.** A merge-forward can break
+fork-only files that no scene commit touches, so nothing in the twin map points
+at them. The 2026-08-03 sync raised the `go.mod` floor to 1.25.0 (upstream
+`2b29207f1`) and broke `.github/workflows/docker-build.yml`, which pinned
+`stashapp/compiler:12` (Go 1.24.3) — the Docker image silently stopped
+building. Local `make build` passed throughout, because `mise.toml` supplies a
+current Go. After any upstream merge that moves a toolchain floor, grep our
+fork-only files for pinned versions; upstream's own workflows use
+`go-version-file: 'go.mod'` and so track it automatically, but ours did not.
+
 After porting, regenerate rather than hand-editing generated files:
 
 ```bash
