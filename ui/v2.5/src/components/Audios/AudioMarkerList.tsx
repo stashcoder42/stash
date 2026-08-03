@@ -11,7 +11,6 @@ import {
 import { useFilteredItemList } from "../List/ItemList";
 import { ListFilterModel } from "src/models/list-filter/filter";
 import { DisplayMode } from "src/models/list-filter/types";
-import { AudioMarkerWallPanel } from "./AudioMarkerWallPanel";
 import { View } from "../List/views";
 import { AudioMarkerCardGrid } from "./AudioMarkerCardGrid";
 import { PatchComponent, PatchContainerComponent } from "src/patch";
@@ -55,16 +54,14 @@ const AudioMarkerListContent: React.FC<{
       return null;
     }
 
-    if (filter.displayMode === DisplayMode.Wall) {
-      return (
-        <AudioMarkerWallPanel
-          markers={markers}
-          zoomIndex={filter.zoomIndex}
-          selectedIds={selectedIds}
-          onSelectChange={onSelectChange}
-        />
-      );
-    }
+    // No DisplayMode.Wall branch: wall display is a non-goal for audio, and
+    // audio-markers.ts has never offered the mode. It was still reachable
+    // here through a saved filter or a hand-typed ?disp=2 URL.
+    // See docs/AUDIO_SCENE_PARITY.md "Audio non-goals".
+    //
+    // AudioMarkerWallPanel itself is NOT dead: despite the name it is not a
+    // wall, it is the marker grid rendered on every audio detail page via
+    // AudioDetails/AudioMarkersPanel.tsx. Do not delete it with this branch.
 
     if (filter.displayMode === DisplayMode.Grid) {
       return (

@@ -88,6 +88,19 @@ export class ListFilterModel {
     }
   }
 
+  // Display modes arrive from URL params and saved filters, neither of which
+  // is validated against what this object type actually supports. A stale
+  // value would otherwise select a display branch the list does not render,
+  // showing a blank page - e.g. a bookmarked ?disp=2 (Wall) audio URL, since
+  // audio does not support wall display. Fall back to the first supported
+  // mode instead.
+  private supportedDisplayMode(displayMode: DisplayMode) {
+    const { displayModeOptions } = this.options;
+    return displayModeOptions.includes(displayMode)
+      ? displayMode
+      : displayModeOptions[0];
+  }
+
   public clone() {
     const ret = Object.assign(
       new ListFilterModel(this.mode, this.config),
@@ -151,7 +164,7 @@ export class ListFilterModel {
           : SortDirectionEnum.Asc;
     }
     if (params.disp !== undefined) {
-      this.displayMode = params.disp;
+      this.displayMode = this.supportedDisplayMode(params.disp);
     }
     if (params.q !== undefined) {
       this.searchTerm = params.q;
@@ -304,7 +317,9 @@ export class ListFilterModel {
     this.sortDirection = findFilter?.direction ?? this.sortDirection;
     this.searchTerm = findFilter?.q ?? this.searchTerm;
 
-    this.displayMode = uiOptions?.display_mode ?? this.displayMode;
+    this.displayMode = this.supportedDisplayMode(
+      uiOptions?.display_mode ?? this.displayMode
+    );
     this.zoomIndex = uiOptions?.zoom_index ?? this.zoomIndex;
 
     this.currentPage = 1;

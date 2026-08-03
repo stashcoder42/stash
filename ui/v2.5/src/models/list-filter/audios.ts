@@ -45,20 +45,14 @@ const sortByOptions = [
     },
   ]);
 
-// Audio does not support the Tagger display mode: stash-box has no audio
-// entity to match against, and the tagger's confidence scoring is built on
-// video perceptual hashes. See docs/AUDIO_SCENE_PARITY.md "Audio non-goals".
+// Audio supports neither the Wall nor the Tagger display mode - both are
+// non-goals, see docs/AUDIO_SCENE_PARITY.md "Audio non-goals".
 //
-// Wall is a non-goal too - it exists to show many autoplaying animated
-// previews at once, which audio has no asset for and which a listener could
-// not parse anyway. It is still listed here only because it predates that
-// decision; audio markers already omit it. Removing it is a deliberate
-// behaviour change, not a cleanup - don't drop it in passing.
-const displayModeOptions = [
-  DisplayMode.Grid,
-  DisplayMode.List,
-  DisplayMode.Wall,
-];
+// Wall exists to play many animated previews at once, muted, with hover to
+// unmute one tile. Audio has no animated asset, and a listener cannot pick
+// one stream out of thirty. Tagger is blocked on stash-box, which has no
+// audio entity to match against.
+const displayModeOptions = [DisplayMode.Grid, DisplayMode.List];
 
 export const DurationCriterionOption =
   createDurationCriterionOption("duration");

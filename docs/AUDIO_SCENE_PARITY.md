@@ -25,7 +25,7 @@ instead. Do not move an unfinished feature here to excuse it.
 
 | Non-goal | Why audio cannot have it |
 | --- | --- |
-| **Wall display mode** | The wall exists to show many autoplaying animated previews at once, muted, with hover-to-unmute one tile (`SceneWallPanel.tsx:90-98,111-116,152-155`). Audio has no animated asset, and a person cannot pick one stream out of thirty playing simultaneously. The masonry layout also assumes varying aspect ratios; audio cover art is uniformly square |
+| **Wall display mode** | The wall exists to show many autoplaying animated previews at once, muted, with hover-to-unmute one tile (`SceneWallPanel.tsx:90-98,111-116,152-155`). Audio has no animated asset, and a person cannot pick one stream out of thirty playing simultaneously. The masonry layout also assumes varying aspect ratios; audio cover art is uniformly square. **Removed** for audio — `DisplayMode.Wall` is no longer offered and `AudioWallPanel.tsx` is deleted. Do not reinstate it by porting scene wall commits |
 | **Preview video, animated WebP, sprite sheets, VTT thumbnails** | All are sequences of extracted video frames (`pkg/scene/generate/preview.go`, `sprite.go`). Audio has no frames. Audio's only generated asset is a waveform image (`task_generate_audio.go`), a function of the whole file rather than a timestamp. The seek-bar hover preview (`ScenePlayer/vtt-thumbnails.ts`) consumes these assets and goes with them |
 | **Perceptual hashing (phash) and duplicate detection** | `pkg/hash/videophash/phash.go:81` hashes a sprite of extracted frames. There is no frame substrate for audio. An audio analogue would be acoustic fingerprinting (chromaprint) — a different algorithm and a separate feature, not a port |
 | **Screenshot / cover-from-frame** | `sceneGenerateScreenshot(id, at: Float)` captures the frame at a timestamp. Audio at time *t* has no image |
@@ -60,8 +60,8 @@ instead. Do not move an unfinished feature here to excuse it.
 | `ui/v2.5/src/components/Scenes/SceneCard.tsx` | `ui/v2.5/src/components/Audios/AudioCard.tsx` |
 | `ui/v2.5/src/components/Scenes/SceneList.tsx` | `ui/v2.5/src/components/Audios/AudioList.tsx` |
 | `ui/v2.5/src/components/Scenes/SceneMarkerList.tsx` | `ui/v2.5/src/components/Audios/AudioMarkerList.tsx` |
-| `ui/v2.5/src/components/Scenes/SceneMarkerWallPanel.tsx` | `ui/v2.5/src/components/Audios/AudioMarkerWallPanel.tsx` ⚠️ *not a structural twin — see below* |
-| `ui/v2.5/src/components/Scenes/SceneWallPanel.tsx` | `ui/v2.5/src/components/Audios/AudioWallPanel.tsx` |
+| `ui/v2.5/src/components/Scenes/SceneMarkerWallPanel.tsx` | *(none)* ⚠️ `AudioMarkerWallPanel.tsx` is **not** its twin — see below |
+| `ui/v2.5/src/components/Scenes/SceneWallPanel.tsx` | *(none — wall is a non-goal, panel deleted)* |
 | `ui/v2.5/src/components/Scenes/SceneDetails/Scene.tsx` | `ui/v2.5/src/components/Audios/AudioDetails/Audio.tsx` |
 | `ui/v2.5/src/components/Scenes/SceneDetails/SceneEditPanel.tsx` | `ui/v2.5/src/components/Audios/AudioDetails/AudioEditPanel.tsx` |
 | `ui/v2.5/src/components/Scenes/SceneDetails/SceneMarkersPanel.tsx` | `ui/v2.5/src/components/Audios/AudioDetails/AudioMarkersPanel.tsx` |
@@ -87,7 +87,11 @@ TWINS=$(awk '/^## Twin file map/{t=1} t && /^## Resync/{exit} t' \
 git log --reverse --format='%h %s' <LAST_SYNCED>..upstream/develop -- $TWINS
 ```
 
-For each commit: `git show <sha>` and decide **Port**, **Skip**, or **N/A**.
+Before adjudicating anything, drop commits that only touch a
+[non-goal](#audio-non-goals). Those need no per-commit review — a scene wall or
+phash commit is not a decision, it is out of scope by construction.
+
+For each remaining commit: `git show <sha>` and decide **Port**, **Skip**, or **N/A**.
 Record the decision in the ledger. Skip/N/A still get a one-line reason —
 that reason is what stops the next resync from re-litigating the same commit.
 
@@ -155,13 +159,13 @@ Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 
 | # | Upstream | Change | Audio action | Status |
 | --- | --- | --- | --- | --- |
-| 15 | `98074e3b5` | Wall item double history push (#6803) | Ported to `AudioWallPanel.tsx` (commit `3f485b9d0`). Real bug — `handleClick` was on both the item div and the nested img. **Not applicable to `AudioMarkerWallPanel.tsx`**, which is a plain card grid with no gallery, no `handleClick` and no `history.push` | ✅ |
+| 15 | `98074e3b5` | Wall item double history push (#6803) | **Superseded — wall is a non-goal.** Was ported to `AudioWallPanel.tsx` in `3f485b9d0` before that was decided; the file has since been deleted. Nothing to maintain. Future scene wall commits need no adjudication | ➖ |
 | 16 | `083ba25d0` | ui package updates sprint 1 (#6777) | **Already satisfied — nothing to do.** The only twin-file hunk swaps `cloneDeep` from `@apollo/client/utilities` to `lodash-es/cloneDeep`. `AudioEditPanel.tsx` has no `cloneDeep` at all; `AudioList.tsx:2` and `AudioMarkerList.tsx:1` already import the `lodash-es` form. Remaining `@apollo/client/utilities` imports in the tree are `getMainDefinition`, untouched by this commit | ➖ |
 | 17 | `c637b2931` | `data-action` attributes (#6977) | Ported to `Audios/AudioDetails/OCounterButton.tsx` (commit `44bb9ce1c`). One line — `data-action="o-counter"` on the button group. The commit's other targets (`MainNavbar`, `SceneDuplicateChecker`, shared `CountButton`) are shared or scene-only and arrived with the merge | ✅ |
 | 18 | `1534587cb` | Safari auto-start on transcode (#7016) | **N/A while audio has no source-selector** (conditional — see note below). The fix guards two unconditional `player.play()` calls inside `SourceSelectorPlugin`; `AudioPlayer/` has no `source-selector.ts` and nothing calls `setShouldAutoplay`. Audited every `.play()` in the audio player: hotkey toggle, external-seek handler, and the one-shot autostart effect — none is a failover/preload path. `AudioPlayer.tsx` sets a single source with no `player.on("error")` handler and no next-source retry | ➖ |
 | 19 | `f222bddf9` | Memoize cards / IntersectionObserver churn (#6935) | Ported to `AudioCard.tsx` (commit `a3c5108eb`). `React.memo` on `AudioPreview` and the five `PatchComponent` sub-components, matching scene's `React.memo(PatchComponent(...))` ordering. **The IntersectionObserver half is N/A** — scene's observer lives in `ScenePreview` to drive video preview playback; `AudioCard` has no observer and no video preview. Scene's `useCallback` is on `onScrubberClick`, which has no `AudioCard` counterpart (audio's scrubber is in `AudioPlayer`) | ✅ |
 | 20 | `7b5e84d69` | Signed caption URLs with auth (#7069) | Ported to `AudioPlayer.tsx` (commit `6e6e1e286`). Builds the caption URL via the `URL` API so appending `lang`/`type` cannot corrupt a signed query string | ✅ |
-| 21 | `5bbd821e5` | Respect wall preview type (#7017) | **Mostly N/A** (commit `3f485b9d0`). Audio has no video or animated preview, so there is no preview type to respect — `wallPlayback` has nothing to select. Adopted the shared `getFirstValidPreviewSource` helper anyway to match scene's structure and kill a dead ternary (both branches returned `paths.cover`). `paths.preview` is deliberately not a fallback: its `/thumbnail` route reads the same blob via the same `GetCover` call as `/cover`. Not applicable to `AudioMarkerWallPanel.tsx` — no preview-source selection exists there | ✅ |
+| 21 | `5bbd821e5` | Respect wall preview type (#7017) | **Superseded — wall is a non-goal.** Was already adjudicated mostly N/A (audio has no animated preview, so `wallPlayback` had nothing to select); the wall panel it touched has since been deleted | ➖ |
 | 22 | `afdaa082b` | Plugin UI extension hooks (#7117) | Ported to `AudioList.tsx`, `AudioMarkerList.tsx` (commit `a3c5108eb`). One line each — `view={view}` on `<FilterTags>`, so the new filter-tag-extras hook can target audio. The hook implementations live in shared `List/FilterTags.tsx` and `List/SavedFilterList.tsx` and arrived with the merge | ✅ |
 | 23 | `634f567e3` | Consolidate cover buttons — UI half (#6924) | Ported to `AudioEditPanel.tsx` (commit `44bb9ce1c`). Only the cover **reset** applies: audio passed no `onReset`, so a cover could never be cleared from the edit panel even though the backend supported removal and `coverImagePreview` already had unreachable handling for a null form value. The two `extraActions` (generate thumb from playback position / default) are N/A — see row 13. `Audio.tsx` needed no change: its `useMonitorJob` screenshot tracking exists only to poll the screenshot job audio has no counterpart for | ✅ |
 
@@ -186,8 +190,8 @@ needs its own fix; none is a port from upstream.
 | `audioStreams` advertises URLs that 404 | `internal/manager/audio.go:163,194-209` builds MP3/AAC/OGG/WebM endpoints by appending extensions, but `routes_audio.go:44` registers only `/stream` → `StreamAudioDirect`, a plain `http.ServeFile`. `IsDirectAudioStreamable` is defined and never called | Anything consuming `audioStreams` past index 0 gets a dead URL. This is the *format* transcoding gap — meaningful for audio (a browser that cannot decode FLAC or Opus needs it) and distinct from the resolution-ladder non-goal |
 | Four audio filters are unreachable | `ui/v2.5/src/models/list-filter/audios.ts:66-69` offers `bitrate`, `sample_rate`, `channels` and `audio_codec` in the filter UI, and `pkg/sqlite/audio_filter.go:86-88` implements working SQL — but `AudioFilterType` in `filters.graphql` omits all four, so the values never reach the handlers | User-visible: setting any of these four filters silently does nothing. The corresponding *sorts* do work (`pkg/sqlite/audio.go:950,956`) |
 | Audio captions are never populated by scan | `pkg/file/audio/caption.go:49` `AssociateCaptions` has no callers; `internal/manager/task_scan.go:189-191,350` handles only `video.CaptionExts` / `*models.VideoFile` | Captions are fully readable and servable for audio (`resolver_model_audio.go:315-329`, `routes_audio.go:47`) but nothing ever fills them in. Lyrics/transcripts are meaningful for audio, so this is unfinished work, not a non-goal |
-| Audio wall CSS never matches | `ui/v2.5/src/components/Audios/styles.scss:98` scopes every rule under `.audio-wall-item`; `AudioWallPanel.tsx:87` emits `wall-item`. That class appears in no TSX file | The wall footer, gradient and hover-reveal rules are inert. Moot if wall display is ever removed — see non-goals |
-| `AudioMarkerList` has an unreachable Wall branch | `AudioMarkerList.tsx:58-67` checks `DisplayMode.Wall` before Grid, but `audio-markers.ts:15` offers only Grid | Not reachable from the mode toggle, but a saved filter or a hand-typed `?disp=2` still hits it |
+| ~~Audio wall CSS never matches~~ | ~~`styles.scss:98` scoped rules under `.audio-wall-item`; no TSX emitted that class~~ | **Resolved** — the `.audio-wall` block was removed with the wall panel |
+| ~~`AudioMarkerList` has an unreachable Wall branch~~ | ~~`AudioMarkerList.tsx:58-67`~~ | **Resolved** — branch removed. Stale `?disp=2` URLs and saved filters now fall back to the first supported mode rather than rendering blank |
 | Audio's `OCounterButton` ignores `sfwContentMode` | `Audios/AudioDetails/OCounterButton.tsx` has no `useConfigurationContext`; it hardcodes the `SweatDrops` icon and the `o_count` message. Scene's reads `sfwContentMode` and swaps to `faThumbsUp` / `o_count_sfw` | SFW mode is honoured in 11 components but leaks on audio detail pages — the non-SFW icon and wording still show. The `o_count_sfw` locale key already exists |
 | `AudioEditPanel` has no custom-fields UI | `AudioUpdateInput.custom_fields` exists in the generated types and `resolver_mutation_audio.go` handles `SetCustomFields`, but the edit panel renders no `<CustomFieldsInput>` — scene's does | Audio custom fields can be set through the API but not through the UI. Plan exists at `docs/superpowers/plans/2026-04-09-audio-custom-fields-last-o-at.md` |
 | `AudioEditPanel` has no Save-and-New | Audio's `onSave(input)` (`AudioEditPanel.tsx:143`); scene's is `onSave(input, andNew?)` with an `onSaveAndNewClick` handler and a matching button | Minor UX divergence — cannot chain audio creation the way scene allows |
@@ -215,13 +219,14 @@ needs its own fix; none is a port from upstream.
 - Generated files are **gitignored** in this repo (`.gitignore:22`,
   `ui/v2.5/.gitignore:2`), so `git status` will not show regenerated output.
   Confirm regeneration by grepping the generated file directly.
-- `AudioMarkerWallPanel.tsx` is listed in the twin map for routing purposes but
-  is **not** a structural copy of `SceneMarkerWallPanel.tsx`. Scene's is a
-  `react-photo-gallery` wall; audio's is a plain card grid that delegates to
-  `AudioMarkerCard`. It has no `handleClick`, no `history.push`, and no
-  preview-source selection. Upstream fixes to scene's marker wall usually do
-  **not** apply — check the actual file before assuming a row covers it. Two
-  ledger rows (15, 21) initially overclaimed on this and were corrected.
+- **`AudioMarkerWallPanel.tsx` is misnamed and must not be deleted as wall
+  code.** Despite the name it is not a wall and is not a copy of
+  `SceneMarkerWallPanel.tsx`: it is a plain card grid delegating to
+  `AudioMarkerCard`, and it renders the markers on every audio detail page via
+  `AudioDetails/AudioMarkersPanel.tsx`. It has no `react-photo-gallery`, no
+  `handleClick`, no `history.push` and no preview-source selection, so upstream
+  marker-wall fixes do not apply to it. Ledger rows 15 and 21 initially
+  overclaimed on this.
 - Ledger row 18 (#7016, Safari auto-start) is N/A for the *current* tree, not
   permanently. The backend already returns multiple endpoints from
   `audioResolver.AudioStreams`; the frontend just uses index 0 and never fails

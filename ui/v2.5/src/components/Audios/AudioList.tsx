@@ -13,7 +13,6 @@ import { EditAudiosDialog } from "./EditAudiosDialog";
 import { DeleteAudiosDialog } from "./DeleteAudiosDialog";
 import { ExportDialog } from "../Shared/ExportDialog";
 import { AudioCardsGrid } from "./AudioCardsGrid";
-import { AudioWallPanel } from "./AudioWallPanel";
 import { useConfigurationContext } from "src/hooks/Config";
 import {
   faPencil,
@@ -216,17 +215,8 @@ const AudioList: React.FC<{
       />
     );
   }
-  if (filter.displayMode === DisplayMode.Wall) {
-    return (
-      <AudioWallPanel
-        audios={audios}
-        audioQueue={queue}
-        zoomIndex={filter.zoomIndex}
-        selectedIds={selectedIds}
-        onSelectChange={onSelectChange}
-      />
-    );
-  }
+  // No DisplayMode.Wall branch: wall display is a non-goal for audio.
+  // See docs/AUDIO_SCENE_PARITY.md "Audio non-goals".
 
   return null;
 };
