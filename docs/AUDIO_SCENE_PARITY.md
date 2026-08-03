@@ -107,7 +107,7 @@ Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 | --- | --- | --- | --- | --- |
 | 1 | `8e070717e` | Optimise table joins (#6648) | Ported to `audio_filter.go` (commit `9dfb466db`). Six criteria now use `joinTypeInner` unless the modifier is `IsNull`. `audio_marker_filter.go` already matched scene and needed no change | ✅ |
 | 2 | `103181a6d` | Include api key in funscript url (#6760) | **N/A — audio has no funscript/interactive support.** `AudioPathsType` (`types/audio.graphql`) is `stream`/`preview`/`cover`/`caption` only, and `urlbuilders/audio.go` has no `GetFunscriptURL`. The commit is confined to funscript URL building; its api-key mechanism is not a general pattern audio is missing — audio's `GetStreamURL` already has the identical `(apiKey string) *url.URL` shape, and `resolver_model_audio.go` already branches on `config.HasCredentials()` (row 6) | ➖ |
-| 3 | `2b29207f1` | Upgrade go 1.25 / golangci-lint (#6869) | Lint fixes in `pkg/audio/scan.go` if linter flags them | ⬜ |
+| 3 | `2b29207f1` | Upgrade go 1.25 / golangci-lint (#6869) | **Nothing to fix.** `make lint` under golangci-lint 2.11.4 reports 0 issues across the tree, `pkg/audio/scan.go` included. The toolchain bump itself was handled in the Phase 1 gate | ➖ |
 | 4 | `fc0b2a5d9` | Fix OR sub-filter join type (#6920) | Ported to `audio_filter.go` AND `audio_marker_filter.go` (commit `ad5fa21f9`). Fix is a statement reorder — `handleCriterion` must run before `handleSubFilter` — not a join-type edit | ✅ |
 | 5 | `bb67152f9` | Related object resolvers on file graphql types (#6938) | Ported (commit `8abbc2f66`). Adds `AudioFile.audios`, `AudioStore.GetManyIDsByFileIDs`, and an `AudioIDsByFileID` loader — distinct from the pre-existing `AudioFileIDsLoader`, which maps the opposite direction | ✅ |
 | 6 | `d04ecc4f8` | Signed urls for airplay (#6529) | Ported (commits `6e6e1e286`, `320159b74`). Signs both `audioResolver.Paths` and `audioResolver.AudioStreams`; added `GetCaptionPath`. Marker endpoints stay unsigned, matching scene. Audio has no `Query.audioStreams`, so scene's third signing site has no counterpart | ✅ |
@@ -118,7 +118,7 @@ Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 | 11 | `3d333a22a` | LEFT JOIN for NULL phash (#7121) | **N/A — audio has no phash at all.** `AudioFilterType` (`types/filters.graphql:803-866`) has `checksum` but no `phash`/`phash_distance`/`duplicated`; `audio_filter.go` has no phash criterion handler; no phash reference exists in any audio Go file. The `IsMissing: "phash"` path is absent too — audio's `missingCriterionHandler` (`audio_filter.go:234-260`) accepts only performers/tags/cover/url plus the `validateIsMissing` set. Perceptual hashing is frame-based; nothing computes one for audio | ➖ |
 | 12 | `267c7ad34` | Case-insensitive scan file lookup (#7098) | Ported to `AudioStore.FindByPath` (commit `864bc3c99`). Signature kept as single-return; wildcard branch currently has no production caller | ✅ |
 | 13 | `634f567e3` | Consolidate scene cover buttons (#6924) | **N/A — backend half is screenshot generation.** The change makes `sceneGenerateScreenshot` return a job ID; there is no `audioGenerateScreenshot` mutation and audio has no video frames to capture. UI half ported under row 23 | ➖ |
-| 14 | `9cb2ffd56` | Tag count filter depth (#6929) | Test-only on twin side; verify audio tag filters behave the same | ⬜ |
+| 14 | `9cb2ffd56` | Tag count filter depth (#6929) | **Not test-only — a real filter bug.** Ported (commit `1c6f216c7`). Upstream converted every tag count field to `HierarchicalCountInput` and routed it through `hierarchicalCountHandler`; `AudioCount` was the sole field never converted and ignored depth. The output resolver (`tag.graphql:21`) already took a `depth` argument, so audio counts could be *read* hierarchically but not *filtered* on. UI needed only a type correction — our `makeCountCriterion` refactor already sent `depth: -1` at runtime, and the stale `IntCriterionInput` annotation was an assignable subtype so `tsc` never flagged it | ✅ |
 
 ### Frontend
 
@@ -168,6 +168,17 @@ needs its own fix; none is a port from upstream.
   resolved `activeTabKey` from `useTabKey()`, never the raw `tabKey` route
   param. Audio tabs have twice been added using `tabKey`, which breaks the
   panel whenever audio is the *resolved default* tab (raw param is `undefined`).
+- **Widened types do not announce themselves.** When upstream widens a filter
+  input (e.g. `IntCriterionInput` → `HierarchicalCountInput`, which adds
+  `depth`), audio's field keeps the narrower type. Nothing fails: the narrower
+  type is assignable, so `tsc` stays silent and Go still compiles because the
+  audio handler has its own signature. The feature is simply missing at
+  runtime. Row 14 was mislabelled "test-only" for exactly this reason. After
+  any upstream commit that changes a shared input type, grep for audio's
+  counterpart field and confirm it was widened too.
+- Generated files are **gitignored** in this repo (`.gitignore:22`,
+  `ui/v2.5/.gitignore:2`), so `git status` will not show regenerated output.
+  Confirm regeneration by grepping the generated file directly.
 - `AudioMarkerWallPanel.tsx` is listed in the twin map for routing purposes but
   is **not** a structural copy of `SceneMarkerWallPanel.tsx`. Scene's is a
   `react-photo-gallery` wall; audio's is a plain card grid that delegates to
