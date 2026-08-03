@@ -97,16 +97,16 @@ Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 | # | Upstream | Change | Audio action | Status |
 | --- | --- | --- | --- | --- |
 | 1 | `8e070717e` | Optimise table joins (#6648) | Ported to `audio_filter.go` (commit `9dfb466db`). Six criteria now use `joinTypeInner` unless the modifier is `IsNull`. `audio_marker_filter.go` already matched scene and needed no change | ✅ |
-| 2 | `103181a6d` | Include api key in funscript url (#6760) | Review — funscript is video-domain; the URL-builder api-key pattern may still apply | ⬜ |
+| 2 | `103181a6d` | Include api key in funscript url (#6760) | **N/A — audio has no funscript/interactive support.** `AudioPathsType` (`types/audio.graphql`) is `stream`/`preview`/`cover`/`caption` only, and `urlbuilders/audio.go` has no `GetFunscriptURL`. The commit is confined to funscript URL building; its api-key mechanism is not a general pattern audio is missing — audio's `GetStreamURL` already has the identical `(apiKey string) *url.URL` shape, and `resolver_model_audio.go` already branches on `config.HasCredentials()` (row 6) | ➖ |
 | 3 | `2b29207f1` | Upgrade go 1.25 / golangci-lint (#6869) | Lint fixes in `pkg/audio/scan.go` if linter flags them | ⬜ |
 | 4 | `fc0b2a5d9` | Fix OR sub-filter join type (#6920) | Ported to `audio_filter.go` AND `audio_marker_filter.go` (commit `ad5fa21f9`). Fix is a statement reorder — `handleCriterion` must run before `handleSubFilter` — not a join-type edit | ✅ |
 | 5 | `bb67152f9` | Related object resolvers on file graphql types (#6938) | Ported (commit `8abbc2f66`). Adds `AudioFile.audios`, `AudioStore.GetManyIDsByFileIDs`, and an `AudioIDsByFileID` loader — distinct from the pre-existing `AudioFileIDsLoader`, which maps the opposite direction | ✅ |
 | 6 | `d04ecc4f8` | Signed urls for airplay (#6529) | Ported (commits `6e6e1e286`, `320159b74`). Signs both `audioResolver.Paths` and `audioResolver.AudioStreams`; added `GetCaptionPath`. Marker endpoints stay unsigned, matching scene. Audio has no `Query.audioStreams`, so scene's third signing site has no counterpart | ✅ |
-| 7 | `f3bfd8db7` | `scene_filter` param on findDuplicateScenes (#6884) | Largest backend change (333 lines). Port if audio exposes a duplicate finder; else mark n/a with reason | ⬜ |
+| 7 | `f3bfd8db7` | `scene_filter` param on findDuplicateScenes (#6884) | **N/A — no audio duplicate finder exists.** `findDuplicateScenes` (`schema.graphql:47`) is the only `findDuplicate*` query in the schema; there is no `findDuplicateAudios` resolver or store method. Duplicate finding is phash-driven, and audio has no phash (row 11), so there is no substrate for one either | ➖ |
 | 8 | `db4b33f53` | Size summary should represent all files (#7006) | Ported to `pkg/sqlite/audio.go` (commit `833fc2450`). Also fixed a worse audio-only defect found alongside it: totals ignored the query filter entirely. Audio now has `queryGroupedFields` mirroring scene's | ✅ |
 | 9 | `8a98b72c1` | json.Number custom field filters (#7040) | **No code to port** — the fix lives in shared `pkg/sqlite/custom_fields.go:105` and arrived with the merge; `AudioStore` embeds the same `customFieldsStore`. Audio had no custom-field tests at all, so regression tests were added instead (commit `88646ad83`). Verified decisive: removing the `json.Number` branch makes them fail | ✅ |
 | 10 | `b044005fc` | Recursive sort performer_count / o_counter (#6933) | **N/A — no audio surface.** The commit is studio-scoped: it adds a `depth` parameter to `OCountByStudioID` and recursive studio sorts. Audio has no studio relationship at all (no `StudioID` on the model, no studio methods on the store), and `AudioCounter` declares only `OCountByPerformerID` — no `OCountByStudioID`/`OCountByGroupID`. The new sort entries went to studios, and audio already supports `performer_count` and `o_counter` sorting (`pkg/sqlite/audio.go:875-977`) | ➖ |
-| 11 | `3d333a22a` | LEFT JOIN for NULL phash (#7121) | Review — phash is video-specific; port only if audio filters on phash | ⬜ |
+| 11 | `3d333a22a` | LEFT JOIN for NULL phash (#7121) | **N/A — audio has no phash at all.** `AudioFilterType` (`types/filters.graphql:803-866`) has `checksum` but no `phash`/`phash_distance`/`duplicated`; `audio_filter.go` has no phash criterion handler; no phash reference exists in any audio Go file. The `IsMissing: "phash"` path is absent too — audio's `missingCriterionHandler` (`audio_filter.go:234-260`) accepts only performers/tags/cover/url plus the `validateIsMissing` set. Perceptual hashing is frame-based; nothing computes one for audio | ➖ |
 | 12 | `267c7ad34` | Case-insensitive scan file lookup (#7098) | Ported to `AudioStore.FindByPath` (commit `864bc3c99`). Signature kept as single-return; wildcard branch currently has no production caller | ✅ |
 | 13 | `634f567e3` | Consolidate scene cover buttons (#6924) | Backend half in `resolver_mutation_scene.go`; port with UI item 24 | ⬜ |
 | 14 | `9cb2ffd56` | Tag count filter depth (#6929) | Test-only on twin side; verify audio tag filters behave the same | ⬜ |
@@ -118,7 +118,7 @@ Status: ⬜ todo · ✅ ported · ⏭️ skipped · ➖ n/a
 | 15 | `98074e3b5` | Wall item double history push (#6803) | Port to `AudioWallPanel.tsx`, `AudioMarkerWallPanel.tsx` — real bug | ⬜ |
 | 16 | `083ba25d0` | ui package updates sprint 1 (#6777) | Port to `AudioEditPanel.tsx` (2 lines) | ⬜ |
 | 17 | `c637b2931` | `data-action` attributes (#6977) | Port to `OCounterButton.tsx` | ⬜ |
-| 18 | `1534587cb` | Safari auto-start on transcode (#7016) | Review — transcode path is video-specific | ⬜ |
+| 18 | `1534587cb` | Safari auto-start on transcode (#7016) | **N/A while audio has no source-selector** (conditional — see note below). The fix guards two unconditional `player.play()` calls inside `SourceSelectorPlugin`; `AudioPlayer/` has no `source-selector.ts` and nothing calls `setShouldAutoplay`. Audited every `.play()` in the audio player: hotkey toggle, external-seek handler, and the one-shot autostart effect — none is a failover/preload path. `AudioPlayer.tsx` sets a single source with no `player.on("error")` handler and no next-source retry | ➖ |
 | 19 | `f222bddf9` | Memoize cards / IntersectionObserver churn (#6935) | Port to `AudioCard.tsx` — perf fix, 179 lines | ⬜ |
 | 20 | `7b5e84d69` | Signed caption URLs with auth (#7069) | Ported to `AudioPlayer.tsx` (commit `6e6e1e286`). Builds the caption URL via the `URL` API so appending `lang`/`type` cannot corrupt a signed query string | ✅ |
 | 21 | `5bbd821e5` | Respect wall preview type (#7017) | Port to `AudioWallPanel.tsx`, `AudioMarkerWallPanel.tsx` | ⬜ |
@@ -154,6 +154,12 @@ needs its own fix; none is a port from upstream.
   resolved `activeTabKey` from `useTabKey()`, never the raw `tabKey` route
   param. Audio tabs have twice been added using `tabKey`, which breaks the
   panel whenever audio is the *resolved default* tab (raw param is `undefined`).
+- Ledger row 18 (#7016, Safari auto-start) is N/A for the *current* tree, not
+  permanently. The backend already returns multiple endpoints from
+  `audioResolver.AudioStreams`; the frontend just uses index 0 and never fails
+  over. If a source-selector is ever added to `AudioPlayer.tsx`, that commit
+  becomes portable and its two guarded `player.play()` call sites must be
+  carried across at the same time.
 - Generated files (`*_gen.go`, mocks) must be regenerated, never hand-merged.
   Use `make generate-backend`; `go generate ./...` has a dataloaden bug that
   emits duplicate imports.
