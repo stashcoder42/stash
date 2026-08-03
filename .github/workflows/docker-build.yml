@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  COMPILER_IMAGE: stashapp/compiler:12
+  COMPILER_IMAGE: ghcr.io/stashapp/compiler:14
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
