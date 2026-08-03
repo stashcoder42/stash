@@ -90,3 +90,29 @@
     top: 0;
   }
 }
+
+// Marker card sizing. The audio markers panel is a copy of scene's but was
+// never given the matching rules, so cards collapsed to the width of their
+// content - a narrow strip with the title wrapped one character per line.
+// Mirrors `.scene-markers-panel` in Scenes/styles.scss.
+.audio-markers-panel {
+  .wall .wall-item {
+    height: inherit;
+    min-height: 14rem;
+    width: calc(100% - 2rem);
+
+    &-missing {
+      font-size: 1.5rem;
+    }
+
+    &::before {
+      display: none;
+    }
+
+    &:hover {
+      .wall-item-container {
+        transform: scale(1);
+      }
+    }
+  }
+}
