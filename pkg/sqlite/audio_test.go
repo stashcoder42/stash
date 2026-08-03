@@ -5,6 +5,7 @@ package sqlite_test
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"strconv"
 	"strings"
@@ -2704,4 +2705,170 @@ func TestAudioStoreGetManyIDsByFileIDs(t *testing.T) {
 
 		return nil
 	})
+}
+
+// TestAudioSetCustomFieldsNumber is a regression/capability test, not a bug
+// reproduction: upstream fixed json.Number handling in
+// getSQLValueFromCustomFieldInput (pkg/sqlite/custom_fields.go) in 8a98b72c1
+// (#7040). Audio's custom fields table (migration 89_audio_custom_fields)
+// routes through the same shared customFieldsStore that scene/performer/etc
+// use, so the fix is inherited automatically. This test locks that in by
+// proving an int and a float custom field can be set and read back on an
+// audio via AudioStore.SetCustomFields/GetCustomFields.
+func TestAudioSetCustomFieldsNumber(t *testing.T) {
+	runWithRollbackTxn(t, "AudioSetCustomFieldsNumber", func(t *testing.T, ctx context.Context) {
+		assert := assert.New(t)
+
+		aqb := db.Audio
+		audioIdx := audioIdxWithPerformer
+		id := audioIDs[audioIdx]
+
+		err := aqb.SetCustomFields(ctx, id, models.CustomFieldsInput{
+			Full: map[string]interface{}{
+				"int_field":   json.Number("42"),
+				"float_field": json.Number("4.5"),
+			},
+		})
+		require.NoError(t, err)
+
+		got, err := aqb.GetCustomFields(ctx, id)
+		require.NoError(t, err)
+
+		// integers round-trip as int64 via json.Number.Int64()
+		assert.EqualValues(int64(42), got["int_field"])
+		// non-integral values fall back to float64 via json.Number.Float64()
+		assert.EqualValues(4.5, got["float_field"])
+	})
+}
+
+// TestAudioSetCustomFieldsString documents that the pre-existing non-numeric
+// custom field path continues to work for audio, alongside the json.Number
+// path exercised above.
+func TestAudioSetCustomFieldsString(t *testing.T) {
+	runWithRollbackTxn(t, "AudioSetCustomFieldsString", func(t *testing.T, ctx context.Context) {
+		assert := assert.New(t)
+
+		aqb := db.Audio
+		audioIdx := audioIdxWithPerformer
+		id := audioIDs[audioIdx]
+
+		err := aqb.SetCustomFields(ctx, id, models.CustomFieldsInput{
+			Full: map[string]interface{}{
+				"string_field": "some value",
+			},
+		})
+		require.NoError(t, err)
+
+		got, err := aqb.GetCustomFields(ctx, id)
+		require.NoError(t, err)
+
+		assert.Equal("some value", got["string_field"])
+	})
+}
+
+// TestAudioQueryCustomFieldsNumber exercises the actual path #7040 fixed:
+// filtering by a numeric custom field value submitted as json.Number, which
+// is how GraphQL input arrives in production (see internal/api/json.go /
+// resolver_query_find_performer.go upstream, which previously worked around
+// the bug by pre-converting json.Number to float64/int64 before it reached
+// the SQL layer; that workaround was removed in 8a98b72c1 once the SQL layer
+// itself was fixed to handle json.Number directly).
+func TestAudioQueryCustomFieldsNumber(t *testing.T) {
+	tests := []struct {
+		name        string
+		filter      *models.AudioFilterType
+		includeIdxs []int
+		excludeIdxs []int
+		wantErr     bool
+	}{
+		{
+			"json number equals",
+			&models.AudioFilterType{
+				CustomFields: []models.CustomFieldCriterionInput{
+					{
+						Field:    "real",
+						Modifier: models.CriterionModifierEquals,
+						Value:    []any{json.Number("0.2")},
+					},
+				},
+			},
+			[]int{audioIdxWithPerformer},
+			[]int{audioIdx1WithPerformer},
+			false,
+		},
+		{
+			"json number greater than",
+			&models.AudioFilterType{
+				CustomFields: []models.CustomFieldCriterionInput{
+					{
+						Field:    "real",
+						Modifier: models.CriterionModifierGreaterThan,
+						Value:    []any{json.Number("0.15")},
+					},
+				},
+			},
+			[]int{audioIdxWithPerformer},
+			[]int{audioIdx1WithPerformer},
+			false,
+		},
+		{
+			"json number between",
+			&models.AudioFilterType{
+				CustomFields: []models.CustomFieldCriterionInput{
+					{
+						Field:    "real",
+						Modifier: models.CriterionModifierBetween,
+						Value:    []any{json.Number("0.15"), json.Number("0.25")},
+					},
+				},
+			},
+			[]int{audioIdxWithPerformer},
+			[]int{audioIdx1WithPerformer},
+			false,
+		},
+	}
+
+	for _, tt := range tests {
+		runWithRollbackTxn(t, tt.name, func(t *testing.T, ctx context.Context) {
+			assert := assert.New(t)
+
+			aqb := db.Audio
+
+			// seed numeric custom fields on two audios with distinct values
+			require.NoError(t, aqb.SetCustomFields(ctx, audioIDs[audioIdxWithPerformer], models.CustomFieldsInput{
+				Full: map[string]interface{}{"real": float64(0.2)},
+			}))
+			require.NoError(t, aqb.SetCustomFields(ctx, audioIDs[audioIdx1WithPerformer], models.CustomFieldsInput{
+				Full: map[string]interface{}{"real": float64(0.05)},
+			}))
+
+			result, err := aqb.Query(ctx, models.AudioQueryOptions{
+				AudioFilter: tt.filter,
+			})
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AudioStore.Query() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if err != nil {
+				return
+			}
+
+			audios, err := result.Resolve(ctx)
+			if err != nil {
+				t.Errorf("AudioStore.Query().Resolve() error = %v", err)
+				return
+			}
+
+			ids := audiosToIDs(audios)
+			include := indexesToIDs(audioIDs, tt.includeIdxs)
+			exclude := indexesToIDs(audioIDs, tt.excludeIdxs)
+
+			for _, i := range include {
+				assert.Contains(ids, i)
+			}
+			for _, e := range exclude {
+				assert.NotContains(ids, e)
+			}
+		})
+	}
 }
